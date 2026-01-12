@@ -76,6 +76,6 @@ The OpenAPI spec is the source of truth for the API Reference tab. Only endpoint
 
 To add a new public endpoint:
 1. Add `x-visibility: public` to the route's Swagger annotation
-2. Set appropriate `x-access-level` (`public`, `user`, `partner`, or `admin`)
+2. Set appropriate `x-access-level` (`user`, `partner`, or `admin`)
 3. Regenerate the spec: `cd Services/api-gateway-service && npm run generate-schema-docs`
 4. Sync to docs: `cd Frontend/docs-site && npm run sync-openapi`

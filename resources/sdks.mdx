@@ -3,15 +3,13 @@ title: SDKs
 description: Official Widgetic SDKs and libraries
 ---
 
-# SDKs
-
-Widgetic provides official SDKs to simplify integration with our platform.
+Widgetic provides SDKs to simplify integration with our platform.
 
 ## Official SDKs
 
 <CardGroup cols={2}>
-  <Card title="TypeScript/JavaScript SDK" icon="js">
-    Full-featured SDK for Node.js and browsers
+  <Card title="JavaScript / TypeScript API SDK" icon="js">
+    Primary SDK for Node.js and modern browsers
   </Card>
   <Card title="Embed SDK" icon="code">
     Lightweight SDK for embedding widgets
@@ -21,48 +19,50 @@ Widgetic provides official SDKs to simplify integration with our platform.
   </Card>
 </CardGroup>
 
-## TypeScript/JavaScript SDK
+<Tip>
+  We currently publish official SDK packages for **JavaScript/TypeScript**, **Embed**, and **UI**.
+  For other languages, use the multi-language code samples in the API Reference (or cURL).
+</Tip>
+
+## JavaScript / TypeScript API SDK
 
 The primary SDK for interacting with the Widgetic API.
 
 ### Installation
 
-```bash
+<CodeGroup>
+
+```bash npm
 npm install @widgetic/api-sdk
 ```
 
+```bash yarn
+yarn add @widgetic/api-sdk
+```
+
+```bash pnpm
+pnpm add @widgetic/api-sdk
+```
+
+</CodeGroup>
+
 ### Basic Usage
 
-```typescript
-import { WidgetsApi, CompositionsApi } from '@widgetic/api-sdk';
+```javascript
+import { WidgetsApi } from '@widgetic/api-sdk';
 
 // Initialize with API key
 const widgets = new WidgetsApi('YOUR_API_KEY');
 
 // Fetch widgets
-const { data, meta } = await widgets.getWidgets({
-  page: 1,
-  size: 20
-});
+const result = await widgets.getAllWidgets({ page: 1, size: 20 });
+console.log(result);
 ```
 
-### Authentication Options
-
-```typescript
-// Option 1: Static API key
-const api = new WidgetsApi('wgt_usr_your_api_key');
-
-// Option 2: Async token provider (for rotating tokens)
-const api = new WidgetsApi({
-  apiKey: async () => await getTokenFromServer()
-});
-
-// Option 3: Full configuration
-const api = new WidgetsApi(new Configuration({
-  apiKey: 'YOUR_API_KEY',
-  basePath: 'https://api.widgetic.com/v1'
-}));
-```
+<Tip>
+  You can use either API keys (recommended for server-side) or JWTs depending on your integration.
+  See [Authentication](/docs/authentication) for details.
+</Tip>
 
 ### Available APIs
 
@@ -85,13 +85,25 @@ Lightweight SDK for embedding widgets on your website.
 
 ### Installation
 
-```bash
+<CodeGroup>
+
+```bash npm
 npm install @widgetic/embed-sdk
 ```
 
+```bash yarn
+yarn add @widgetic/embed-sdk
+```
+
+```bash pnpm
+pnpm add @widgetic/embed-sdk
+```
+
+</CodeGroup>
+
 ### Usage
 
-```typescript
+```javascript
 import { embed, embedComposition } from '@widgetic/embed-sdk';
 
 // Embed a single widget
@@ -121,13 +133,25 @@ For partners embedding Widgetic UI components.
 
 ### Installation
 
-```bash
+<CodeGroup>
+
+```bash npm
 npm install @widgetic/ui-sdk
 ```
 
+```bash yarn
+yarn add @widgetic/ui-sdk
+```
+
+```bash pnpm
+pnpm add @widgetic/ui-sdk
+```
+
+</CodeGroup>
+
 ### Usage
 
-```typescript
+```javascript
 import { WidgeticUI } from '@widgetic/ui-sdk';
 
 const ui = new WidgeticUI({
@@ -151,7 +175,8 @@ await ui.mount('widget-creator', {
   import { WidgetsApi } from 'https://cdn.widgetic.com/sdk/api-sdk.esm.js';
   
   const widgets = new WidgetsApi('YOUR_API_KEY');
-  const { data } = await widgets.getWidgets();
+  const result = await widgets.getAllWidgets();
+  console.log(result);
 </script>
 ```
 
@@ -167,97 +192,27 @@ await ui.mount('widget-creator', {
 </script>
 ```
 
-## Framework Examples
+## Multi-Language Code Samples (API Reference)
 
-### React
+Our [API Reference](/api-reference/introduction) includes code samples in **8 languages** for every public endpoint:
 
-```tsx
-import { useEffect, useState } from 'react';
-import { WidgetsApi } from '@widgetic/api-sdk';
+| Language | Sample Type |
+|----------|-------------|
+| **cURL** | HTTP examples |
+| **Node.js** | `@widgetic/api-sdk` |
+| **Python** | HTTP examples |
+| **Go** | HTTP examples |
+| **Ruby** | HTTP examples |
+| **PHP** | HTTP examples |
+| **Java** | HTTP examples |
+| **C#** | HTTP examples |
 
-function WidgetList({ apiKey }) {
-  const [widgets, setWidgets] = useState([]);
-  
-  useEffect(() => {
-    const api = new WidgetsApi(apiKey);
-    api.getWidgets({ size: 10 }).then(({ data }) => {
-      setWidgets(data);
-    });
-  }, [apiKey]);
-  
-  return (
-    <ul>
-      {widgets.map(w => <li key={w.id}>{w.name}</li>)}
-    </ul>
-  );
-}
-```
+These samples are maintained to stay in sync with the public API surface.
 
-### Vue
-
-```vue
-<script setup>
-import { ref, onMounted } from 'vue';
-import { WidgetsApi } from '@widgetic/api-sdk';
-
-const widgets = ref([]);
-
-onMounted(async () => {
-  const api = new WidgetsApi('YOUR_API_KEY');
-  const { data } = await api.getWidgets({ size: 10 });
-  widgets.value = data;
-});
-</script>
-
-<template>
-  <ul>
-    <li v-for="widget in widgets" :key="widget.id">
-      {{ widget.name }}
-    </li>
-  </ul>
-</template>
-```
-
-### Svelte
-
-```svelte
-<script>
-  import { onMount } from 'svelte';
-  import { WidgetsApi } from '@widgetic/api-sdk';
-  
-  let widgets = [];
-  
-  onMount(async () => {
-    const api = new WidgetsApi('YOUR_API_KEY');
-    const { data } = await api.getWidgets({ size: 10 });
-    widgets = data;
-  });
-</script>
-
-<ul>
-  {#each widgets as widget}
-    <li>{widget.name}</li>
-  {/each}
-</ul>
-```
-
-## TypeScript Support
-
-All SDKs include full TypeScript definitions:
-
-```typescript
-import { 
-  Widget, 
-  Composition, 
-  Canvas,
-  Configuration 
-} from '@widgetic/api-sdk';
-
-// Full type safety
-const widget: Widget = await widgets.getWidgetById({ 
-  widgetId: 'uuid' 
-});
-```
+<Info>
+  Want an official SDK published for your language (PyPI, Maven, NuGet, RubyGems, Packagist, etc.)?
+  Tell us your target registry and preferred package name/versioning.
+</Info>
 
 ## Need Help?
 

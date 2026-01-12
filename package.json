@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "mintlify dev",
+    "dev": "mintlify dev --port 3003",
     "build": "mintlify build",
     "sync-openapi": "node scripts/sync-openapi.js",
     "check-openapi-drift": "node scripts/check-openapi-drift.js",
-    "validate-links": "node scripts/validate-links.js"
+    "validate-links": "node scripts/validate-links.js",
+    "generate-code-samples": "node scripts/generate-code-samples.js"
   },
   "devDependencies": {
-    "mintlify": "^4.0.0"
+    "mintlify": "^4.2.269"
   }
 }
