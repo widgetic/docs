@@ -1,0 +1,245 @@
+---
+title: Integrations
+description: Integrate Widgetic with other platforms
+---
+
+# Integrations
+
+Widgetic can be integrated with various platforms and services to enhance your workflow.
+
+## CMS Integrations
+
+### WordPress
+
+Embed widgets in WordPress using shortcodes or the block editor:
+
+```
+[widgetic id="widget-uuid" responsive="true"]
+```
+
+Or use the Gutenberg block:
+1. Add a "Custom HTML" block
+2. Paste the embed code from your widget
+
+### Webflow
+
+1. Add an Embed element
+2. Paste the Widgetic embed code
+3. Publish your site
+
+### Shopify
+
+Add widgets to your Shopify store:
+
+```liquid
+{% comment %} In your theme template {% endcomment %}
+<div id="widgetic-widget"></div>
+<script src="https://cdn.widgetic.com/embed.js"></script>
+<script>
+  Widgetic.embed({
+    widgetId: '{{ widget_id }}',
+    container: '#widgetic-widget'
+  });
+</script>
+```
+
+## E-commerce
+
+### Product Configurators
+
+Use widgets as interactive product configurators:
+
+```typescript
+// Pass product data to widget
+embed({
+  widgetId: 'configurator-widget',
+  container: '#configurator',
+  config: {
+    product: {
+      id: 'product-123',
+      name: 'Custom T-Shirt',
+      variants: productVariants
+    }
+  },
+  callbacks: {
+    onConfiguration: (config) => {
+      // Add configured product to cart
+      addToCart(config);
+    }
+  }
+});
+```
+
+### Pricing Calculators
+
+Build interactive pricing calculators:
+
+```typescript
+embed({
+  widgetId: 'pricing-calculator',
+  container: '#pricing',
+  config: {
+    plans: [
+      { name: 'Starter', price: 9, features: [...] },
+      { name: 'Pro', price: 29, features: [...] }
+    ]
+  },
+  callbacks: {
+    onPlanSelected: (plan) => {
+      window.location.href = `/checkout?plan=${plan.id}`;
+    }
+  }
+});
+```
+
+## Marketing Tools
+
+### Email Marketing
+
+Embed widgets in email campaigns (static preview with click-through):
+
+```html
+<!-- Email template -->
+<a href="https://your-site.com/interactive-widget">
+  <img src="https://api.widgetic.com/v1/widgets/{id}/preview.png" 
+       alt="Interactive Widget" />
+</a>
+```
+
+### Landing Pages
+
+Use widgets for interactive landing page elements:
+
+- Calculators and configurators
+- Interactive demos
+- Data visualization
+- Lead capture forms
+
+## Analytics
+
+### Google Analytics
+
+Track widget interactions:
+
+```typescript
+embed({
+  widgetId: 'widget-uuid',
+  container: '#widget',
+  callbacks: {
+    onInteraction: (event) => {
+      gtag('event', event.type, {
+        event_category: 'Widget',
+        event_label: event.detail
+      });
+    }
+  }
+});
+```
+
+### Mixpanel
+
+```typescript
+callbacks: {
+  onInteraction: (event) => {
+    mixpanel.track('Widget Interaction', {
+      widget_id: 'widget-uuid',
+      event_type: event.type,
+      ...event.detail
+    });
+  }
+}
+```
+
+## Webhooks
+
+Receive real-time updates via webhooks:
+
+### Available Events
+
+| Event | Description |
+|-------|-------------|
+| `widget.created` | New widget created |
+| `widget.updated` | Widget modified |
+| `widget.published` | Widget published |
+| `composition.saved` | Composition saved |
+
+### Setup
+
+1. Go to Dashboard → Settings → Webhooks
+2. Add your endpoint URL
+3. Select events to subscribe
+4. Copy the signing secret
+
+### Example Handler
+
+```typescript
+app.post('/webhooks/widgetic', (req, res) => {
+  // Verify signature
+  if (!verifySignature(req)) {
+    return res.status(401).send('Invalid signature');
+  }
+  
+  const { event, data } = req.body;
+  
+  switch (event) {
+    case 'widget.published':
+      // Update your cache
+      cache.invalidate(`widget:${data.id}`);
+      break;
+    case 'composition.saved':
+      // Sync to your database
+      db.compositions.upsert(data);
+      break;
+  }
+  
+  res.status(200).send('OK');
+});
+```
+
+## Zapier
+
+Connect Widgetic to 5000+ apps via Zapier:
+
+1. Search for "Widgetic" in Zapier
+2. Connect your account
+3. Create Zaps with triggers and actions
+
+### Example Zaps
+
+- **Widget Created → Slack**: Notify team of new widgets
+- **Form Submission → CRM**: Add leads to HubSpot/Salesforce
+- **Widget Published → Email**: Send notification emails
+
+## API Wrappers
+
+### Python (Community)
+
+```python
+from widgetic import Widgetic
+
+client = Widgetic(api_key='YOUR_API_KEY')
+widgets = client.widgets.list(page=1, size=20)
+```
+
+### PHP (Community)
+
+```php
+use Widgetic\Client;
+
+$client = new Client('YOUR_API_KEY');
+$widgets = $client->widgets()->list(['page' => 1, 'size' => 20]);
+```
+
+<Note>
+  Community SDKs are maintained by third parties. For official support, use the TypeScript SDK.
+</Note>
+
+## Need a Custom Integration?
+
+Contact us for:
+- Custom integrations
+- Enterprise SSO (SAML, OIDC)
+- On-premise deployment
+- Dedicated support
+
+Email: [enterprise@widgetic.com](mailto:enterprise@widgetic.com)

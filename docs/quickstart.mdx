@@ -1,0 +1,114 @@
+---
+title: Quickstart
+description: Get started with the Widgetic API in minutes
+---
+
+# Quickstart
+
+This guide will help you make your first API call to Widgetic in just a few minutes.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+1. A Widgetic account ([sign up here](https://app.widgetic.com/signup))
+2. An API key from your dashboard
+3. A basic understanding of REST APIs
+
+## Step 1: Get Your API Key
+
+1. Log in to your [Widgetic dashboard](https://app.widgetic.com)
+2. Navigate to **Settings** > **API Keys**
+3. Click **Generate New Key**
+4. Copy your API key (it starts with `wgt_usr_` for user keys)
+
+<Warning>
+  Keep your API key secure! Never expose it in client-side code or public repositories.
+</Warning>
+
+## Step 2: Make Your First Request
+
+Let's verify your API key by fetching your user profile:
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.widgetic.com/v1/users/me" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.widgetic.com/v1/users/me', {
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY'
+  }
+});
+
+const user = await response.json();
+console.log(user);
+```
+
+```typescript TypeScript SDK
+import { UsersApi } from '@widgetic/api-sdk';
+
+const users = new UsersApi('YOUR_API_KEY');
+const me = await users.getUserMe();
+console.log(me);
+```
+</CodeGroup>
+
+## Step 3: Explore the API
+
+Now that you're authenticated, here are some common next steps:
+
+<CardGroup cols={2}>
+  <Card title="List Your Widgets" icon="cube" href="/docs/api/widgets">
+    Fetch all widgets in your account
+  </Card>
+  <Card title="Create a Canvas" icon="palette" href="/docs/api/canvases">
+    Start designing a new widget
+  </Card>
+  <Card title="Get Compositions" icon="layer-group" href="/docs/api/compositions">
+    View your widget compositions
+  </Card>
+  <Card title="Check Entitlements" icon="key" href="/api-reference/introduction">
+    See access levels and entitlement endpoints
+  </Card>
+</CardGroup>
+
+## Using the TypeScript SDK
+
+We recommend using our TypeScript SDK for the best developer experience:
+
+```bash
+npm install @widgetic/api-sdk
+```
+
+The SDK provides type-safe access to all API endpoints:
+
+```typescript
+import { WidgetsApi, CompositionsApi, CanvasesApi } from '@widgetic/api-sdk';
+
+// Initialize with your API key
+const widgets = new WidgetsApi('YOUR_API_KEY');
+const compositions = new CompositionsApi('YOUR_API_KEY');
+const canvases = new CanvasesApi('YOUR_API_KEY');
+
+// Fetch widgets with pagination
+const { data, meta } = await widgets.getWidgets({ page: 1, size: 20 });
+console.log(`Found ${meta.total} widgets`);
+```
+
+## Next Steps
+
+<Steps>
+  <Step title="Learn Authentication">
+    Understand the different [authentication methods](/docs/authentication) available.
+  </Step>
+  <Step title="Choose Your Path">
+    - **Partners**: Start with [Partner Overview](/docs/partners/overview)
+    - **Self-Serve**: Start with [API Overview](/docs/api/overview)
+  </Step>
+  <Step title="Explore Examples">
+    Check out our [code examples](/resources/examples) for common use cases.
+  </Step>
+</Steps>

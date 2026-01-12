@@ -1,0 +1,126 @@
+---
+title: Pagination
+description: How pagination works in the Widgetic API
+---
+
+# Pagination
+
+All list endpoints in the Widgetic API support pagination to efficiently handle large datasets.
+
+## Request Parameters
+
+| Parameter | Type | Default | Max | Description |
+|-----------|------|---------|-----|-------------|
+| `page` | integer | 1 | - | Page number (1-indexed) |
+| `size` | integer | 20 | 100 | Number of items per page |
+| `sort` | string | varies | - | Sort field and direction |
+
+## Example Request
+
+```bash
+curl -X GET "https://api.widgetic.com/v1/widgets?page=2&size=50&sort=created_at:desc" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Response Format
+
+Paginated responses include a `meta` object with pagination details:
+
+```json
+{
+  "success": true,
+  "data": [
+    { "id": "...", "name": "Widget 1" },
+    { "id": "...", "name": "Widget 2" }
+  ],
+  "meta": {
+    "page": 2,
+    "size": 50,
+    "total": 150,
+    "limit": 50,
+    "offset": 50,
+    "hasNextPage": true,
+    "hasPreviousPage": true
+  }
+}
+```
+
+## Meta Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `page` | integer | Current page number |
+| `size` | integer | Items per page |
+| `total` | integer | Total number of items |
+| `limit` | integer | Same as size |
+| `offset` | integer | Number of items skipped |
+| `hasNextPage` | boolean | Whether more pages exist after this one |
+| `hasPreviousPage` | boolean | Whether pages exist before this one |
+
+## Sorting
+
+Use the `sort` parameter with the format `field:direction`:
+
+- **Ascending**: `sort=created_at:asc`
+- **Descending**: `sort=created_at:desc`
+
+### Common Sort Fields
+
+| Field | Description |
+|-------|-------------|
+| `created_at` | Creation timestamp |
+| `updated_at` | Last update timestamp |
+| `name` | Alphabetical by name |
+
+## SDK Example
+
+Using the TypeScript SDK:
+
+```typescript
+import { WidgetsApi } from '@widgetic/api-sdk';
+
+const widgets = new WidgetsApi('YOUR_API_KEY');
+
+// Fetch page 2 with 50 items, sorted by update time
+const { data, meta } = await widgets.getWidgets({
+  page: 2,
+  size: 50,
+  sort: 'updated_at:desc'
+});
+
+console.log(`Page ${meta.page} of ${Math.ceil(meta.total / meta.size)}`);
+console.log(`Showing ${data.length} of ${meta.total} items`);
+
+// Iterate through all pages
+async function* getAllWidgets() {
+  let page = 1;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const { data, meta } = await widgets.getWidgets({ page, size: 100 });
+    yield* data;
+    hasMore = meta.hasNextPage;
+    page++;
+  }
+}
+
+for await (const widget of getAllWidgets()) {
+  console.log(widget.name);
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Reasonable Page Sizes">
+    Start with the default (20) or use 50-100 for bulk operations. Avoid requesting single items via pagination.
+  </Accordion>
+  
+  <Accordion title="Cache Total Count">
+    The `total` count is computed on each request. For expensive queries, cache it and only refresh periodically.
+  </Accordion>
+  
+  <Accordion title="Handle Empty Pages">
+    An empty `data` array is valid. Always check `hasNextPage` to determine if more data exists.
+  </Accordion>
+</AccordionGroup>

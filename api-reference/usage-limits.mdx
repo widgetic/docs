@@ -1,0 +1,164 @@
+---
+title: Usage Limits
+description: Rate limits and quotas for the Widgetic API
+---
+
+# Usage Limits
+
+The Widgetic API implements rate limits and usage quotas to ensure fair usage and service stability.
+
+## Rate Limits
+
+### By Plan
+
+| Plan | Requests/Minute | Requests/Day | Burst |
+|------|-----------------|--------------|-------|
+| Free | 60 | 1,000 | 10 |
+| Pro | 300 | 10,000 | 50 |
+| Partner | 600 | 50,000 | 100 |
+| Enterprise | Custom | Custom | Custom |
+
+### Rate Limit Headers
+
+Every response includes rate limit information:
+
+```
+X-RateLimit-Limit: 300
+X-RateLimit-Remaining: 295
+X-RateLimit-Reset: 1705317600
+```
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Maximum requests per window |
+| `X-RateLimit-Remaining` | Requests remaining in window |
+| `X-RateLimit-Reset` | Unix timestamp when window resets |
+
+## When Rate Limited
+
+If you exceed rate limits, you'll receive a `429 Too Many Requests` response:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Rate limit exceeded. Try again in 60 seconds.",
+    "correlationId": "req_123"
+  }
+}
+```
+
+The `Retry-After` header indicates when you can retry:
+
+```
+Retry-After: 60
+```
+
+## Endpoint-Specific Limits
+
+Some endpoints have additional limits:
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `POST /ai/generate` | 10 | per minute |
+| `POST /tokens/exchange` | 100 | per minute |
+| `POST /analytics/events/bulk` | 1000 events | per request |
+
+## Usage Quotas
+
+### Monthly Quotas by Plan
+
+| Resource | Free | Pro | Partner |
+|----------|------|-----|---------|
+| AI Generations | 50 | 500 | 5,000 |
+| Storage | 100 MB | 5 GB | 50 GB |
+| API Calls | 1,000 | 50,000 | 500,000 |
+| Widgets | 10 | 100 | Unlimited |
+| Compositions | 5 | 50 | Unlimited |
+
+### Checking Your Quota
+
+Use the entitlements endpoint to check your current usage:
+
+```typescript
+import { EntitlementsApi } from '@widgetic/api-sdk';
+
+const entitlements = new EntitlementsApi('YOUR_API_KEY');
+const { entitlements: features } = await entitlements.getUserEntitlements();
+
+// features: [
+//   { feature: 'ai.generations', value: '500', usage: '125' },
+//   { feature: 'storage.limit', value: '5000', usage: '1250' },
+//   ...
+// ]
+```
+
+## Best Practices
+
+### Implement Backoff
+
+```typescript
+async function withBackoff(fn, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error.status === 429) {
+        const retryAfter = parseInt(
+          error.headers?.get('Retry-After') || '60', 
+          10
+        );
+        await sleep(retryAfter * 1000);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+```
+
+### Batch Operations
+
+Use batch endpoints to reduce API calls:
+
+```typescript
+// Instead of multiple calls
+const widgets = await Promise.all(
+  ids.map(id => widgets.getWidgetById({ widgetId: id }))
+);
+
+// Use batch endpoint
+const { data: widgets } = await widgets.batchGetWidgets({
+  batchRequest: { ids }
+});
+```
+
+### Cache Responses
+
+Cache read-only data to reduce API usage:
+
+```typescript
+const cache = new Map();
+
+async function getCachedWidget(id) {
+  if (cache.has(id)) {
+    return cache.get(id);
+  }
+  
+  const widget = await widgets.getWidgetById({ widgetId: id });
+  cache.set(id, widget);
+  return widget;
+}
+```
+
+## Requesting Higher Limits
+
+If you need higher limits:
+
+1. **Upgrade your plan** via the dashboard
+2. **Contact sales** for enterprise plans
+3. **Provide use case** details for custom limits
+
+Contact [support@widgetic.com](mailto:support@widgetic.com) with your requirements.

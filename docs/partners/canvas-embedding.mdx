@@ -1,0 +1,216 @@
+---
+title: Canvas Embedding
+description: Embed the Widgetic canvas in your platform
+---
+
+# Canvas Embedding
+
+The Widgetic canvas provides a full widget creation and editing experience that you can embed directly in your platform.
+
+## Overview
+
+The canvas embedding system consists of:
+
+1. **UI SDK**: A JavaScript library for mounting UI components
+2. **Widget Creator**: The main widget creation experience
+3. **Composition Editor**: For editing widget layouts
+4. **Embed Editor**: For configuring embed settings
+
+## Installation
+
+Install the UI SDK in your project:
+
+```bash
+npm install @widgetic/ui-sdk
+```
+
+## Basic Usage
+
+### 1. List Available Components
+
+First, retrieve the list of available UI components:
+
+```typescript
+import { UIApi } from '@widgetic/api-sdk';
+
+const ui = new UIApi('wgt_prt_your_partner_key');
+const { components } = await ui.listComponents();
+
+// Returns: [
+//   { id: 'widget-creator', name: 'Widget Creator', ... },
+//   { id: 'composition-editor', name: 'Composition Editor', ... },
+//   { id: 'embed-editor', name: 'Embed Editor', ... }
+// ]
+```
+
+### 2. Get Component Manifest
+
+Retrieve the component manifest for assets and configuration:
+
+```typescript
+const manifest = await ui.getComponentManifest({ componentId: 'widget-creator' });
+
+// manifest.assets.js - JavaScript files to load
+// manifest.assets.css - CSS files to load
+// manifest.config - Component configuration options
+```
+
+### 3. Mount the Component
+
+Mount the component in your DOM:
+
+```typescript
+const { instanceId, mountStatus } = await ui.mountComponent({
+  componentId: 'widget-creator',
+  mountRequest: {
+    container: 'widgetic-canvas-container',
+    theme: {
+      mode: 'dark',
+      colors: {
+        primary: '#6366F1',
+        background: '#1F2937'
+      }
+    }
+  }
+});
+
+if (mountStatus === 'success') {
+  console.log('Canvas mounted:', instanceId);
+}
+```
+
+### 4. Unmount When Done
+
+Clean up when the component is no longer needed:
+
+```typescript
+await ui.unmountComponent({
+  componentId: 'widget-creator',
+  instanceId: instanceId
+});
+```
+
+## Theming
+
+Customize the canvas appearance to match your brand:
+
+```typescript
+const theme = {
+  mode: 'light', // or 'dark'
+  colors: {
+    primary: '#6366F1',    // Primary accent color
+    secondary: '#8B5CF6',  // Secondary color
+    background: '#FFFFFF', // Background color
+    text: '#1F2937'        // Text color
+  },
+  typography: {
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '14px'
+  }
+};
+```
+
+## Event Handling
+
+Listen for events from the embedded canvas:
+
+```typescript
+// In your mount configuration
+const { instanceId } = await ui.mountComponent({
+  componentId: 'widget-creator',
+  mountRequest: {
+    container: 'widgetic-canvas-container',
+    callbacks: {
+      onWidgetCreated: (widget) => {
+        console.log('New widget created:', widget.id);
+      },
+      onWidgetSaved: (widget) => {
+        console.log('Widget saved:', widget.id);
+      },
+      onError: (error) => {
+        console.error('Canvas error:', error);
+      }
+    }
+  }
+});
+```
+
+## Complete Example
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Widget Creator</title>
+  <style>
+    #widgetic-canvas-container {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="widgetic-canvas-container"></div>
+  
+  <script type="module">
+    import { UIApi } from '@widgetic/api-sdk';
+    
+    const ui = new UIApi('wgt_prt_your_partner_key');
+    
+    async function initCanvas() {
+      try {
+        const { instanceId, mountStatus } = await ui.mountComponent({
+          componentId: 'widget-creator',
+          mountRequest: {
+            container: 'widgetic-canvas-container',
+            theme: {
+              mode: 'dark',
+              colors: {
+                primary: '#6366F1'
+              }
+            }
+          }
+        });
+        
+        if (mountStatus !== 'success') {
+          throw new Error('Failed to mount canvas');
+        }
+        
+        console.log('Canvas ready:', instanceId);
+      } catch (error) {
+        console.error('Failed to initialize canvas:', error);
+      }
+    }
+    
+    initCanvas();
+  </script>
+</body>
+</html>
+```
+
+## Security Considerations
+
+<Warning>
+  Never expose your partner API key in client-side code. Use the token exchange flow to obtain short-lived tokens for browser usage.
+</Warning>
+
+```typescript
+// Server-side: Exchange partner key for limited token
+const { token } = await tokens.exchangeToken({
+  scopes: ['ui:mount', 'canvas:read', 'canvas:write']
+});
+
+// Send token to client, use it there
+const ui = new UIApi(token);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="UI Components" icon="puzzle-piece" href="/docs/partners/ui-components">
+    Learn about all available UI components
+  </Card>
+  <Card title="Managed Users" icon="users" href="/docs/partners/managed-users">
+    Associate canvases with your users
+  </Card>
+</CardGroup>

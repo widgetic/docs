@@ -1,0 +1,190 @@
+---
+title: Errors
+description: Error codes and handling in the Widgetic API
+---
+
+# Error Handling
+
+The Widgetic API uses standard HTTP status codes and returns detailed error information in the response body.
+
+## Error Response Format
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "correlationId": "req_123e4567-e89b-12d3-a456-426614174000",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "suggestedAction": "Optional guidance on how to resolve"
+  }
+}
+```
+
+## HTTP Status Codes
+
+| Status | Description |
+|--------|-------------|
+| 200 | Success |
+| 201 | Created |
+| 204 | No Content (successful deletion) |
+| 400 | Bad Request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not Found |
+| 409 | Conflict |
+| 422 | Unprocessable Entity |
+| 429 | Too Many Requests |
+| 500 | Internal Server Error |
+
+## Error Codes
+
+### Authentication Errors
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `AUTHENTICATION_FAILED` | 401 | Invalid or missing authentication token |
+| `TOKEN_EXPIRED` | 401 | JWT token has expired |
+| `INVALID_API_KEY` | 401 | API key is invalid or revoked |
+
+### Authorization Errors
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `FORBIDDEN` | 403 | Valid token but insufficient permissions |
+| `ACCESS_DENIED` | 403 | Access to resource denied |
+| `OWNERSHIP_REQUIRED` | 403 | You don't own this resource |
+
+### Resource Errors
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `NOT_FOUND` | 404 | Resource not found |
+| `CONFLICT` | 409 | Resource already exists |
+| `GONE` | 410 | Resource has been deleted |
+
+### Validation Errors
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `BAD_REQUEST` | 400 | Invalid request format |
+| `VALIDATION_ERROR` | 422 | Request validation failed |
+| `INVALID_PARAMETER` | 400 | Invalid parameter value |
+| `MISSING_REQUIRED_FIELD` | 400 | Required field is missing |
+
+### Rate Limiting
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
+| `QUOTA_EXCEEDED` | 429 | Usage quota exceeded |
+
+### Server Errors
+
+| Code | Status | Description |
+|------|--------|-------------|
+| `INTERNAL_ERROR` | 500 | Internal server error |
+| `SERVICE_UNAVAILABLE` | 503 | Service temporarily unavailable |
+
+## Handling Errors
+
+### JavaScript/TypeScript
+
+```typescript
+import { WidgetsApi } from '@widgetic/api-sdk';
+
+const widgets = new WidgetsApi('YOUR_API_KEY');
+
+try {
+  const widget = await widgets.getWidgetById({ widgetId: 'invalid-id' });
+} catch (error) {
+  if (error.status === 404) {
+    console.log('Widget not found');
+  } else if (error.status === 401) {
+    console.log('Authentication failed - check your API key');
+  } else if (error.status === 403) {
+    console.log('Access denied - insufficient permissions');
+  } else if (error.status === 429) {
+    // Implement retry with backoff
+    const retryAfter = error.headers?.get('Retry-After') || 60;
+    console.log(`Rate limited. Retry after ${retryAfter} seconds`);
+  } else {
+    console.error('Unexpected error:', error.message);
+  }
+}
+```
+
+### Correlation ID
+
+Every error response includes a `correlationId`. Include this when contacting support:
+
+```typescript
+catch (error) {
+  console.error('Error correlationId:', error.body?.error?.correlationId);
+  // Report to support with correlationId for faster resolution
+}
+```
+
+## Retry Strategies
+
+### Automatic Retry
+
+For transient errors (429, 503), implement exponential backoff:
+
+```typescript
+async function withRetry(fn, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error.status === 429 || error.status === 503) {
+        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+const widget = await withRetry(() => 
+  widgets.getWidgetById({ widgetId: 'widget-id' })
+);
+```
+
+### Idempotent Retries
+
+For POST/PUT operations, use idempotency keys to safely retry:
+
+```typescript
+const idempotencyKey = `create-widget-${Date.now()}`;
+
+const widget = await withRetry(() => 
+  widgets.createWidget({
+    createWidgetRequest: { name: 'My Widget' }
+  }, {
+    headers: { 'Idempotency-Key': idempotencyKey }
+  })
+);
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always Handle Errors">
+    Never assume API calls will succeed. Always wrap calls in try/catch.
+  </Accordion>
+  
+  <Accordion title="Log Correlation IDs">
+    Store correlation IDs in your logs for debugging and support requests.
+  </Accordion>
+  
+  <Accordion title="Implement Backoff">
+    For rate limiting (429), use exponential backoff with jitter.
+  </Accordion>
+  
+  <Accordion title="Validate Before Sending">
+    Validate data client-side before making API calls to catch errors early.
+  </Accordion>
+</AccordionGroup>

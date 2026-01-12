@@ -1,0 +1,198 @@
+---
+title: API Overview
+description: Use the Widgetic API to manage your widgets and compositions
+---
+
+# Self-Serve API Overview
+
+The Widgetic API allows you to programmatically manage widgets, compositions, canvases, and more within your own account.
+
+## Who Is This For?
+
+This section is for developers who:
+
+- Want to integrate Widgetic widgets into their applications
+- Need to manage widgets programmatically
+- Are building tools that interact with their Widgetic account
+
+<Info>
+  If you're a **partner** looking to embed the canvas in your platform, see the [Partner Documentation](/docs/partners/overview) instead.
+</Info>
+
+## API Key Types
+
+Self-serve developers typically use:
+
+| Key Prefix | Description |
+|------------|-------------|
+| `wgt_usr_` | Personal user API key |
+| `wdg_org_` | Organization API key (shared access) |
+
+## Core Resources
+
+<CardGroup cols={2}>
+  <Card title="Widgets" icon="cube" href="/docs/api/widgets">
+    Create and manage individual widgets
+  </Card>
+  <Card title="Compositions" icon="layer-group" href="/docs/api/compositions">
+    Combine widgets into layouts
+  </Card>
+  <Card title="Canvases" icon="palette" href="/docs/api/canvases">
+    Work with widget editing canvases
+  </Card>
+  <Card title="Components" icon="puzzle-piece" href="/docs/api/components">
+    Manage widget components
+  </Card>
+</CardGroup>
+
+## Quick Example
+
+Here's how to fetch your widgets using the API:
+
+<CodeGroup>
+```bash cURL
+curl -X GET "https://api.widgetic.com/v1/widgets" \
+  -H "Authorization: Bearer wgt_usr_your_api_key"
+```
+
+```typescript TypeScript SDK
+import { WidgetsApi } from '@widgetic/api-sdk';
+
+const widgets = new WidgetsApi('wgt_usr_your_api_key');
+
+const { data, meta } = await widgets.getWidgets({
+  page: 1,
+  size: 20
+});
+
+console.log(`Found ${meta.total} widgets`);
+data.forEach(widget => {
+  console.log(`- ${widget.name} (${widget.id})`);
+});
+```
+</CodeGroup>
+
+## API Response Format
+
+All API responses follow a consistent format:
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "data": { /* Resource or array of resources */ },
+  "meta": {
+    "page": 1,
+    "size": 20,
+    "total": 150,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  }
+}
+```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Widget not found",
+    "correlationId": "req_123e4567-e89b-12d3-a456-426614174000"
+  }
+}
+```
+
+## Pagination
+
+All list endpoints support pagination:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `page` | integer | 1 | Page number (1-indexed) |
+| `size` | integer | 20 | Items per page (max 100) |
+| `sort` | string | varies | Sort field and direction (e.g., `created_at:desc`) |
+
+Example:
+
+```typescript
+const { data, meta } = await widgets.getWidgets({
+  page: 2,
+  size: 50,
+  sort: 'updated_at:desc'
+});
+
+if (meta.hasNextPage) {
+  // Fetch next page
+}
+```
+
+## Rate Limits
+
+API requests are rate-limited based on your plan:
+
+| Plan | Requests/minute | Requests/day |
+|------|-----------------|--------------|
+| Free | 60 | 1,000 |
+| Pro | 300 | 10,000 |
+| Enterprise | Custom | Custom |
+
+See [Rate Limits](/docs/reference/rate-limits) for more details.
+
+## Idempotency
+
+For POST, PUT, and DELETE requests, you can provide an idempotency key:
+
+```bash
+curl -X POST "https://api.widgetic.com/v1/widgets" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Idempotency-Key: unique-request-id-123" \
+  -d '{"name": "My Widget"}'
+```
+
+See [Idempotency](/docs/reference/idempotency) for more details.
+
+## Using the SDK
+
+We recommend using the TypeScript SDK for the best experience:
+
+```bash
+npm install @widgetic/api-sdk
+```
+
+The SDK provides:
+
+- **Type safety**: Full TypeScript definitions
+- **Convenience**: Automatic authentication handling
+- **Flexibility**: Static tokens or async token providers
+
+```typescript
+import { 
+  WidgetsApi, 
+  CompositionsApi, 
+  CanvasesApi,
+  ComponentsApi 
+} from '@widgetic/api-sdk';
+
+// Initialize APIs
+const widgets = new WidgetsApi('YOUR_API_KEY');
+const compositions = new CompositionsApi('YOUR_API_KEY');
+const canvases = new CanvasesApi('YOUR_API_KEY');
+const components = new ComponentsApi('YOUR_API_KEY');
+```
+
+## Next Steps
+
+<Steps>
+  <Step title="Explore Widgets">
+    Learn how to [create and manage widgets](/docs/api/widgets)
+  </Step>
+  <Step title="Build Compositions">
+    Combine widgets into [compositions](/docs/api/compositions)
+  </Step>
+  <Step title="Check API Reference">
+    Browse the complete [API Reference](/api-reference/introduction)
+  </Step>
+</Steps>

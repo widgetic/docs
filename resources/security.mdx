@@ -1,0 +1,216 @@
+---
+title: Security
+description: Security best practices for Widgetic integrations
+---
+
+# Security
+
+This guide covers security best practices when integrating with the Widgetic API.
+
+## API Key Security
+
+### Storage
+
+<Warning>
+  Never expose API keys in client-side code, version control, or public repositories.
+</Warning>
+
+**Do:**
+- Store keys in environment variables
+- Use secrets management services (AWS Secrets Manager, Vault, etc.)
+- Rotate keys periodically
+
+**Don't:**
+- Commit keys to git
+- Include keys in frontend bundles
+- Share keys via unencrypted channels
+
+### Key Types
+
+| Prefix | Security Level | Use Case |
+|--------|----------------|----------|
+| `wgt_usr_` | User | Personal server-side use |
+| `wdg_org_` | Organization | Shared server-side use |
+| `wgt_prt_` | Partner | White-label integrations |
+
+## Client-Side Authentication
+
+For browser applications, use the token exchange flow:
+
+```typescript
+// Server-side: Exchange API key for limited token
+app.get('/api/widgetic-token', async (req, res) => {
+  const tokens = new TokensApi(process.env.WIDGETIC_API_KEY);
+  
+  const { token, expiresAt } = await tokens.exchangeToken({
+    scopes: ['read:widgets', 'write:compositions'],
+    expiresIn: 3600 // 1 hour
+  });
+  
+  res.json({ token, expiresAt });
+});
+
+// Client-side: Use the limited token
+const api = new WidgetsApi({
+  apiKey: async () => {
+    const res = await fetch('/api/widgetic-token');
+    const { token } = await res.json();
+    return token;
+  }
+});
+```
+
+## Domain Validation
+
+For embedded widgets, configure allowed domains:
+
+1. Go to Dashboard → Settings → Domains
+2. Add your production domains
+3. Test domains are automatically allowed in development
+
+The Embed SDK validates the requesting domain against your allowed list.
+
+## Request Signing
+
+For webhook callbacks, verify the signature:
+
+```typescript
+import crypto from 'crypto';
+
+function verifyWebhookSignature(
+  payload: string,
+  signature: string,
+  secret: string
+): boolean {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+
+app.post('/webhook', (req, res) => {
+  const signature = req.headers['x-webhook-signature'];
+  
+  if (!verifyWebhookSignature(req.body, signature, WEBHOOK_SECRET)) {
+    return res.status(401).send('Invalid signature');
+  }
+  
+  // Process webhook
+});
+```
+
+## Rate Limiting
+
+Protect your integration from abuse:
+
+```typescript
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // Limit each IP to 100 requests per window
+  message: 'Too many requests, please try again later'
+});
+
+app.use('/api/widgetic', limiter);
+```
+
+## Data Protection
+
+### Sensitive Data
+
+Don't store sensitive user data in widget configurations:
+
+```typescript
+// ❌ Bad
+widget.config = {
+  apiKey: 'secret',
+  password: 'user-password'
+};
+
+// ✅ Good
+widget.config = {
+  userId: 'user-uuid',
+  settings: { theme: 'dark' }
+};
+```
+
+### Audit Logging
+
+Log API interactions for security auditing:
+
+```typescript
+async function logApiCall(
+  action: string,
+  resourceId: string,
+  userId: string
+) {
+  await db.auditLog.create({
+    action,
+    resourceId,
+    userId,
+    timestamp: new Date(),
+    ip: req.ip
+  });
+}
+```
+
+## Compliance
+
+### GDPR
+
+When handling EU user data:
+
+- Implement data deletion on user request
+- Provide data export functionality
+- Document data processing purposes
+
+```typescript
+// Delete user data
+await widgetic.deleteUser({ userId });
+
+// Export user data
+const userData = await widgetic.exportUserData({ userId });
+```
+
+### SOC 2
+
+Widgetic maintains SOC 2 Type II compliance. For compliance documentation, contact [security@widgetic.com](mailto:security@widgetic.com).
+
+## Security Checklist
+
+<Accordion title="API Key Management">
+- [ ] Keys stored in environment variables
+- [ ] Keys rotated quarterly
+- [ ] Separate keys for dev/staging/production
+- [ ] Access logged and monitored
+</Accordion>
+
+<Accordion title="Client Security">
+- [ ] Token exchange for browser apps
+- [ ] Short token expiration (1-24 hours)
+- [ ] Domain validation enabled
+- [ ] CSP headers configured
+</Accordion>
+
+<Accordion title="Webhook Security">
+- [ ] Signature verification implemented
+- [ ] HTTPS only
+- [ ] Idempotency for retries
+- [ ] Timeout handling
+</Accordion>
+
+## Reporting Vulnerabilities
+
+Found a security issue? Report it responsibly:
+
+- Email: [security@widgetic.com](mailto:security@widgetic.com)
+- PGP key available on request
+- Response within 48 hours
+
+We appreciate responsible disclosure and may offer bug bounties for significant findings.

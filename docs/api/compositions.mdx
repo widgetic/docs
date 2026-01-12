@@ -1,0 +1,140 @@
+---
+title: Compositions
+description: Combine widgets into layouts
+---
+
+# Compositions
+
+Compositions allow you to combine multiple widgets into a single, cohesive layout. Think of them as templates that arrange widgets together.
+
+## Overview
+
+With the Compositions API, you can:
+
+- List all compositions
+- Get composition details
+- Batch fetch compositions
+- Manage composition layouts
+
+## List Compositions
+
+Retrieve all compositions with pagination:
+
+```typescript
+import { CompositionsApi } from '@widgetic/api-sdk';
+
+const compositions = new CompositionsApi('YOUR_API_KEY');
+
+const { data, meta } = await compositions.getCompositions({
+  page: 1,
+  size: 20,
+  sort: 'updated_at:desc'
+});
+
+console.log(`Found ${meta.total} compositions`);
+```
+
+## Get Composition by ID
+
+Retrieve a specific composition:
+
+```typescript
+const composition = await compositions.getCompositionById({
+  compositionId: '123e4567-e89b-12d3-a456-426614174000'
+});
+
+console.log('Composition:', composition.name);
+console.log('Widgets:', composition.widgets?.length);
+```
+
+## Batch Fetch Compositions
+
+Retrieve multiple compositions in a single request (optimized for embed SDK):
+
+```typescript
+const { data: batchCompositions } = await compositions.batchGetCompositions({
+  batchRequest: {
+    ids: [
+      '123e4567-e89b-12d3-a456-426614174000',
+      '223e4567-e89b-12d3-a456-426614174001'
+    ]
+  }
+});
+```
+
+<Note>
+  The batch endpoint includes domain validation and is designed for use by the embed SDK. It validates the requesting domain against allowed domains.
+</Note>
+
+## Composition Structure
+
+A composition object contains:
+
+```typescript
+interface Composition {
+  id: string;                    // Unique identifier
+  name: string;                  // Display name
+  description?: string;          // Optional description
+  creator_id: string;            // Owner's user ID
+  layout: CompositionLayout;     // Layout configuration
+  widgets: WidgetReference[];    // Included widgets
+  settings: CompositionSettings; // Display settings
+  created_at: string;            // ISO timestamp
+  updated_at: string;            // ISO timestamp
+}
+
+interface WidgetReference {
+  widget_id: string;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  config?: object;
+}
+```
+
+## Layout Types
+
+Compositions support various layout types:
+
+| Layout | Description |
+|--------|-------------|
+| `grid` | CSS Grid-based responsive layout |
+| `flex` | Flexbox-based layout |
+| `absolute` | Absolute positioning |
+| `stack` | Vertical or horizontal stack |
+
+## Embedding Compositions
+
+Embed a composition on your site:
+
+```html
+<div id="composition-container"></div>
+
+<script type="module">
+  import { embedComposition } from '@widgetic/embed-sdk';
+  
+  embedComposition({
+    compositionId: '123e4567-e89b-12d3-a456-426614174000',
+    container: '#composition-container',
+    responsive: true
+  });
+</script>
+```
+
+## Related Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /compositions` | List all compositions |
+| `GET /compositions/{id}` | Get composition by ID |
+| `POST /compositions/batch` | Batch fetch compositions |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Widgets" icon="cube" href="/docs/api/widgets">
+    Manage individual widgets
+  </Card>
+  <Card title="Embed SDK" icon="code" href="/resources/sdks">
+    Embed compositions on your site
+  </Card>
+</CardGroup>

@@ -1,0 +1,145 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Widgetic",
+  "logo": {
+    "dark": "/brand/logo-dark.svg",
+    "light": "/brand/logo-light.svg"
+  },
+  "favicon": "/brand/favicon.svg",
+  "colors": {
+    "primary": "#6366F1",
+    "light": "#818CF8",
+    "dark": "#4F46E5"
+  },
+  "topbar": {
+    "links": [
+      {
+        "name": "Support",
+        "url": "mailto:support@widgetic.com"
+      }
+    ],
+    "cta": {
+      "name": "Dashboard",
+      "url": "https://app.widgetic.com"
+    }
+  },
+  "anchors": [
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/widgetic"
+    },
+    {
+      "name": "npm",
+      "icon": "npm",
+      "url": "https://www.npmjs.com/org/widgetic"
+    }
+  ],
+  "errors": {
+    "404": {
+      "redirect": false,
+      "title": "Page not found",
+      "description": "We couldn't find the page you were looking for.\n\n<CardGroup cols={2}>\n  <Card title=\"Documentation\" icon=\"book\" href=\"/docs/introduction\">\n    Return to the home page\n  </Card>\n  <Card title=\"Quickstart\" icon=\"rocket\" href=\"/docs/quickstart\">\n    Get started in minutes\n  </Card>\n  <Card title=\"API Reference\" icon=\"code\" href=\"/api-reference/introduction\">\n    Explore API endpoints\n  </Card>\n  <Card title=\"SDKs\" icon=\"cube\" href=\"/resources/sdks\">\n    Explore our SDKs\n  </Card>\n</CardGroup>\n\n<Info>\n  Think this is a broken link? Email us at [support@widgetic.com](mailto:support@widgetic.com).\n</Info>"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "docs/introduction",
+              "docs/quickstart",
+              "docs/authentication"
+            ]
+          },
+          {
+            "group": "Partner Integration",
+            "pages": [
+              "docs/partners/overview",
+              "docs/partners/canvas-embedding",
+              "docs/partners/ui-components",
+              "docs/partners/managed-users",
+              "docs/partners/credits-billing"
+            ]
+          },
+          {
+            "group": "Self-Serve API",
+            "pages": [
+              "docs/api/overview",
+              "docs/api/widgets",
+              "docs/api/compositions",
+              "docs/api/canvases",
+              "docs/api/components"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "docs/reference/rate-limits",
+              "docs/reference/idempotency"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "openapi": "openapi/widgetic-api-public.json",
+        "groups": [
+          {
+            "group": "API Reference",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/pagination",
+              "api-reference/usage-limits",
+              "api-reference/errors"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Resources",
+        "groups": [
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/examples",
+              "resources/sdks",
+              "resources/security",
+              "resources/integrations"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "redirects": [
+    {
+      "source": "/start-here/overview",
+      "destination": "/docs/introduction"
+    },
+    {
+      "source": "/start-here/quickstart",
+      "destination": "/docs/quickstart"
+    },
+    {
+      "source": "/start-here/authentication",
+      "destination": "/docs/authentication"
+    }
+  ],
+  "footer": {
+    "socials": {
+      "x": "https://x.com/widgetic",
+      "github": "https://github.com/widgetic"
+    }
+  },
+  "api": {
+    "baseUrl": "https://api.widgetic.com/v1",
+    "auth": {
+      "method": "bearer"
+    }
+  }
+}

@@ -1,0 +1,67 @@
+---
+title: Introduction
+description: Welcome to the Widgetic developer documentation
+---
+
+# Welcome to Widgetic
+
+Widgetic is a platform for creating, managing, and embedding interactive widgets and compositions. Whether you're a **partner** looking to integrate our white-label canvas solution or a **developer** managing your own widgets via the API, this documentation will help you get started.
+
+## Who is this documentation for?
+
+<CardGroup cols={2}>
+  <Card title="Partners" icon="handshake" href="/docs/partners/overview">
+    Integrate the Widgetic canvas as a white-label solution in your platform. Manage end-users, credits, and UI components.
+  </Card>
+  <Card title="Self-Serve Developers" icon="code" href="/docs/api/overview">
+    Use the Widgetic API to create and manage widgets, compositions, and canvases in your own account.
+  </Card>
+</CardGroup>
+
+## Key Concepts
+
+### Widgets
+Widgets are reusable, configurable UI components built with Svelte. They can display data, collect input, or provide interactive experiences.
+
+### Compositions
+Compositions combine multiple widgets into a single layout, allowing you to create rich, multi-widget experiences.
+
+### Canvases
+Canvases are the editing environment where widgets are designed and configured. Partners can embed the canvas in their platforms.
+
+### Components
+Components are the building blocks within a canvas - individual elements that make up a widget's structure.
+
+## Getting Started
+
+<Steps>
+  <Step title="Get Your API Key">
+    Sign up at [app.widgetic.com](https://app.widgetic.com) and generate an API key from your dashboard.
+  </Step>
+  <Step title="Choose Your Integration Path">
+    Decide whether you're integrating as a [Partner](/docs/partners/overview) or using the [Self-Serve API](/docs/api/overview).
+  </Step>
+  <Step title="Make Your First API Call">
+    Follow our [Quickstart guide](/docs/quickstart) to make your first API call.
+  </Step>
+</Steps>
+
+## API Key Types
+
+Widgetic uses different API key prefixes to determine access levels:
+
+| Key Prefix | Role | Description |
+|------------|------|-------------|
+| `wgt_usr_` | User | Standard user access to manage own resources |
+| `wdg_org_` | Organization | Organization-level access |
+| `wgt_prt_` | Partner | Partner access for white-label integrations |
+| `wgt_adm_` | Admin | Administrative access (internal) |
+
+<Note>
+  All public API endpoints are documented in the [API Reference](/api-reference/introduction). The access level (`x-access-level`) determines which key types can call each endpoint.
+</Note>
+
+## Need Help?
+
+- **Email**: [support@widgetic.com](mailto:support@widgetic.com)
+- **GitHub**: [github.com/widgetic](https://github.com/widgetic)

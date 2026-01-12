@@ -1,0 +1,228 @@
+---
+title: Credits & Billing
+description: Manage operational credits for your partner account
+---
+
+# Credits & Billing
+
+Partners use a credit-based system for operational costs. Credits are consumed when your managed users utilize Widgetic features like AI generation, storage, and API calls.
+
+## Overview
+
+The credit system works as follows:
+
+1. **Purchase credits** through the billing dashboard or API
+2. **Credits are consumed** based on usage (AI, storage, API calls)
+3. **Monitor balance** and set up auto-reload thresholds
+4. **Track transactions** for accounting and reconciliation
+
+## Checking Your Balance
+
+Retrieve your current credit balance:
+
+```typescript
+import { PartnersApi } from '@widgetic/api-sdk';
+
+const partners = new PartnersApi('wgt_prt_your_partner_key');
+
+const { balance, last_updated, auto_reload_settings } = 
+  await partners.getPartnerCreditBalance({
+    partnerId: 'your-partner-id'
+  });
+
+console.log(`Current balance: ${balance} credits`);
+console.log(`Auto-reload: ${auto_reload_settings.enabled ? 'On' : 'Off'}`);
+```
+
+## Adding Credits
+
+Generate a checkout URL to purchase additional credits:
+
+```typescript
+const { checkoutUrl } = await partners.addPartnerCredits({
+  partnerId: 'your-partner-id',
+  addCreditsRequest: {
+    amount: 100, // Minimum $10
+    successUrl: 'https://yourplatform.com/billing/success',
+    cancelUrl: 'https://yourplatform.com/billing/cancel'
+  }
+});
+
+// Redirect user to checkoutUrl
+window.location.href = checkoutUrl;
+```
+
+## Auto-Reload Configuration
+
+Set up automatic credit reload when balance drops below a threshold:
+
+```typescript
+await partners.configureAutoReload({
+  partnerId: 'your-partner-id',
+  autoReloadRequest: {
+    enabled: true,
+    threshold: 20,     // Trigger when balance falls below $20
+    reload_amount: 50  // Add $50 (minimum $10)
+  }
+});
+```
+
+To disable auto-reload:
+
+```typescript
+await partners.configureAutoReload({
+  partnerId: 'your-partner-id',
+  autoReloadRequest: {
+    enabled: false
+  }
+});
+```
+
+## Transaction History
+
+View your credit transaction history:
+
+```typescript
+const transactions = await partners.getPartnerCreditTransactions({
+  partnerId: 'your-partner-id',
+  limit: 50,
+  offset: 0,
+  type: 'debit' // Filter by 'credit', 'debit', 'purchase', 'usage', 'refund'
+});
+
+// transactions: [
+//   {
+//     id: "txn_123",
+//     type: "usage",
+//     amount: -0.50,
+//     description: "AI widget generation",
+//     created_at: "2024-01-15T10:30:00Z"
+//   },
+//   ...
+// ]
+```
+
+## Billing Overview
+
+Get a comprehensive view of your billing status:
+
+```typescript
+const overview = await partners.getPartnerBillingOverview({
+  partnerId: 'your-partner-id'
+});
+
+// overview: {
+//   partner: {
+//     id: "partner-id",
+//     name: "Your Company",
+//     tier: "enterprise"
+//   },
+//   credit_balance: 150.00,
+//   usage_this_month: {
+//     ai_generations: 250,
+//     storage_gb: 12.5,
+//     api_calls: 15000
+//   },
+//   enterprise_customization: {
+//     custom_domain: true,
+//     white_label: true
+//   }
+// }
+```
+
+## Credit Consumption Rates
+
+| Feature | Cost | Notes |
+|---------|------|-------|
+| AI Widget Generation | $0.50 | Per generation attempt |
+| AI Component Edit | $0.25 | Per edit request |
+| Storage | $0.10/GB/month | First 1GB free |
+| API Calls | Free | Up to 10,000/month, then $0.001/call |
+
+<Note>
+  Rates may vary based on your partner tier. Contact sales for enterprise pricing.
+</Note>
+
+## Webhooks
+
+Set up webhooks to receive billing events:
+
+- `partner.credits.low` - Balance below threshold
+- `partner.credits.depleted` - Balance reached zero
+- `partner.credits.added` - Credits purchased successfully
+- `partner.credits.auto_reload` - Auto-reload triggered
+
+## Error Handling
+
+| Status | Code | Description |
+|--------|------|-------------|
+| 400 | `BAD_REQUEST` | Invalid amount (minimum $10) |
+| 402 | `PAYMENT_REQUIRED` | Insufficient credits |
+| 403 | `FORBIDDEN` | Not your partner account |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Set Up Auto-Reload">
+    Always configure auto-reload to prevent service interruption:
+    
+    ```typescript
+    // Recommended settings
+    await partners.configureAutoReload({
+      partnerId: 'your-partner-id',
+      autoReloadRequest: {
+        enabled: true,
+        threshold: 50,     // Early warning
+        reload_amount: 100 // Keep a comfortable buffer
+      }
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Monitor Usage">
+    Set up alerts for unusual usage patterns:
+    
+    ```typescript
+    // Check daily usage
+    const transactions = await partners.getPartnerCreditTransactions({
+      partnerId: 'your-partner-id',
+      type: 'usage'
+    });
+    
+    const todayUsage = transactions
+      .filter(t => isToday(t.created_at))
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    
+    if (todayUsage > DAILY_THRESHOLD) {
+      alertOps('Unusual credit usage detected');
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Handle Low Balance">
+    Gracefully handle low balance scenarios:
+    
+    ```typescript
+    const { balance } = await partners.getPartnerCreditBalance({
+      partnerId: 'your-partner-id'
+    });
+    
+    if (balance < 10) {
+      // Show warning to admin
+      // Potentially limit new AI generations
+      // Queue credit purchase
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Partner Overview" icon="handshake" href="/docs/partners/overview">
+    Back to partner documentation
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Find entitlement endpoints and access levels
+  </Card>
+</CardGroup>

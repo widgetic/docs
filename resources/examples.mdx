@@ -1,0 +1,291 @@
+---
+title: Code Examples
+description: Example code for common Widgetic integrations
+---
+
+# Code Examples
+
+This page provides practical code examples for common integration scenarios.
+
+## Quick Start
+
+### Initialize the SDK
+
+```typescript
+import { 
+  WidgetsApi, 
+  CompositionsApi, 
+  CanvasesApi 
+} from '@widgetic/api-sdk';
+
+// Initialize with API key
+const widgets = new WidgetsApi('YOUR_API_KEY');
+const compositions = new CompositionsApi('YOUR_API_KEY');
+const canvases = new CanvasesApi('YOUR_API_KEY');
+```
+
+### Using Async Token Provider
+
+For rotating tokens in browser applications:
+
+```typescript
+import { WidgetsApi } from '@widgetic/api-sdk';
+
+const widgets = new WidgetsApi({
+  apiKey: async () => {
+    // Fetch fresh token from your backend
+    const response = await fetch('/api/widgetic-token');
+    const { token } = await response.json();
+    return token;
+  }
+});
+```
+
+## Fetching Data
+
+### List All Widgets with Pagination
+
+```typescript
+async function getAllWidgets() {
+  const allWidgets = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, meta } = await widgets.getWidgets({
+      page,
+      size: 100,
+      sort: 'created_at:desc'
+    });
+    
+    allWidgets.push(...data);
+    hasMore = meta.hasNextPage;
+    page++;
+  }
+
+  return allWidgets;
+}
+```
+
+### Batch Fetch Multiple Widgets
+
+```typescript
+const widgetIds = [
+  '123e4567-e89b-12d3-a456-426614174000',
+  '223e4567-e89b-12d3-a456-426614174001',
+  '323e4567-e89b-12d3-a456-426614174002'
+];
+
+const { data: batchedWidgets } = await widgets.batchGetWidgets({
+  batchRequest: { ids: widgetIds }
+});
+```
+
+## Managing Canvases
+
+### Create and Update a Canvas
+
+```typescript
+// Create a new canvas
+const canvas = await canvases.createCanvas({
+  createCanvasRequest: {
+    persistence_key: `project_${projectId}_canvas_${Date.now()}`,
+    canvas_content: {
+      version: 1,
+      elements: [],
+      settings: {
+        background: '#ffffff',
+        gridSize: 10
+      }
+    }
+  }
+});
+
+console.log('Created canvas:', canvas.id);
+
+// Update the canvas
+const updated = await canvases.updateCanvas({
+  id: canvas.id,
+  updateCanvasRequest: {
+    canvas_content: {
+      version: 2,
+      elements: [
+        {
+          id: 'text-1',
+          type: 'text',
+          content: 'Hello World',
+          position: { x: 100, y: 100 }
+        }
+      ],
+      settings: {
+        background: '#f5f5f5',
+        gridSize: 10
+      }
+    }
+  }
+});
+```
+
+## Partner Integration
+
+### Create Managed Users
+
+```typescript
+import { ManagedUsersApi } from '@widgetic/api-sdk';
+
+const managedUsers = new ManagedUsersApi('wgt_prt_YOUR_PARTNER_KEY');
+
+// Create a managed user for your customer
+const user = await managedUsers.createManagedUser({
+  external_id: `myapp_user_${customerId}`,
+  manager_id: partnerAccountId,
+  metadata: {
+    firstName: customer.firstName,
+    lastName: customer.lastName,
+    email: customer.email,
+    plan: customer.subscriptionPlan
+  }
+});
+
+// Store the mapping
+await db.widgeticUsers.create({
+  customerId,
+  widgeticUserId: user.id
+});
+```
+
+### Mount UI Component
+
+```typescript
+import { UIApi } from '@widgetic/api-sdk';
+
+const ui = new UIApi('wgt_prt_YOUR_PARTNER_KEY');
+
+// List available components
+const { components } = await ui.listComponents();
+
+// Mount the widget creator
+const { instanceId, mountStatus } = await ui.mountComponent({
+  componentId: 'widget-creator',
+  mountRequest: {
+    container: 'widget-editor-container',
+    theme: {
+      mode: 'dark',
+      colors: {
+        primary: '#6366F1'
+      }
+    }
+  }
+});
+
+if (mountStatus === 'success') {
+  console.log('Editor ready:', instanceId);
+}
+
+// Clean up when done
+await ui.unmountComponent({
+  componentId: 'widget-creator',
+  instanceId
+});
+```
+
+## Error Handling
+
+### Robust API Client
+
+```typescript
+class WidgeticClient {
+  private widgets: WidgetsApi;
+  
+  constructor(apiKey: string) {
+    this.widgets = new WidgetsApi(apiKey);
+  }
+
+  async getWidget(id: string) {
+    try {
+      return await this.widgets.getWidgetById({ widgetId: id });
+    } catch (error) {
+      if (error.status === 404) {
+        return null; // Widget not found
+      }
+      if (error.status === 401) {
+        throw new Error('Invalid API key');
+      }
+      if (error.status === 429) {
+        // Implement retry with backoff
+        await this.sleep(60000);
+        return this.getWidget(id);
+      }
+      throw error;
+    }
+  }
+
+  private sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+```
+
+## Embedding Widgets
+
+### Basic Embed
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Widget Demo</title>
+</head>
+<body>
+  <div id="widget-container"></div>
+  
+  <script type="module">
+    import { embed } from '@widgetic/embed-sdk';
+    
+    embed({
+      widgetId: 'YOUR_WIDGET_ID',
+      container: '#widget-container',
+      responsive: true
+    });
+  </script>
+</body>
+</html>
+```
+
+### Embed with Custom Configuration
+
+```typescript
+import { embed } from '@widgetic/embed-sdk';
+
+embed({
+  widgetId: 'YOUR_WIDGET_ID',
+  container: '#widget-container',
+  config: {
+    // Override widget configuration
+    colors: {
+      primary: '#6366F1',
+      secondary: '#8B5CF6'
+    },
+    data: {
+      // Pass dynamic data
+      items: myDataArray
+    }
+  },
+  callbacks: {
+    onReady: () => console.log('Widget loaded'),
+    onError: (error) => console.error('Widget error:', error),
+    onInteraction: (event) => console.log('User interaction:', event)
+  }
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="SDKs" icon="cube" href="/resources/sdks">
+    Explore our SDK options
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Complete endpoint documentation
+  </Card>
+</CardGroup>

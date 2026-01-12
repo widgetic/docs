@@ -1,0 +1,84 @@
+---
+title: Rate Limits
+description: Understanding rate limits in the Widgetic API
+---
+
+# Rate Limits
+
+Rate limits protect the API from abuse and ensure fair usage across all users. This page explains how rate limits work and how to handle them.
+
+## How Rate Limits Work
+
+Each API key has a rate limit based on your plan. Limits are applied per-minute with a daily cap.
+
+| Plan | Per Minute | Per Day |
+|------|------------|---------|
+| Free | 60 | 1,000 |
+| Pro | 300 | 10,000 |
+| Partner | 600 | 50,000 |
+| Enterprise | Custom | Custom |
+
+## Reading Rate Limit Headers
+
+Every API response includes rate limit headers:
+
+```
+X-RateLimit-Limit: 300
+X-RateLimit-Remaining: 295
+X-RateLimit-Reset: 1705317600
+```
+
+Use these to track your usage and implement proactive throttling.
+
+## Handling 429 Responses
+
+When rate limited, you'll receive:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 60
+Content-Type: application/json
+
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Rate limit exceeded. Try again in 60 seconds."
+  }
+}
+```
+
+### Implementation Example
+
+```typescript
+async function makeApiCall(fn, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error.status === 429) {
+        const retryAfter = parseInt(
+          error.headers?.get('Retry-After') || '60'
+        );
+        console.log(`Rate limited. Waiting ${retryAfter}s...`);
+        await new Promise(r => setTimeout(r, retryAfter * 1000));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+```
+
+## Best Practices
+
+1. **Monitor headers proactively** - Slow down before hitting limits
+2. **Implement exponential backoff** - Don't retry immediately
+3. **Use batch endpoints** - Reduce total request count
+4. **Cache responses** - Avoid redundant requests
+5. **Spread requests** - Don't burst all at once
+
+## Need Higher Limits?
+
+Contact [support@widgetic.com](mailto:support@widgetic.com) to discuss enterprise plans with custom rate limits.

@@ -1,0 +1,148 @@
+---
+title: Authentication
+description: Learn how to authenticate with the Widgetic API
+---
+
+# Authentication
+
+The Widgetic API uses Bearer token authentication. All requests must include an `Authorization` header with your API key or JWT token.
+
+## Authentication Methods
+
+### API Keys (Recommended for Server-Side)
+
+API keys are the recommended authentication method for server-side applications. They provide persistent access without expiration.
+
+```bash
+Authorization: Bearer wgt_usr_your_api_key_here
+```
+
+### JWT Tokens (For Client-Side)
+
+For client-side applications, use short-lived JWT tokens obtained through the token exchange flow.
+
+```bash
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+## API Key Types and Access Levels
+
+Your API key prefix determines your role and what endpoints you can access:
+
+| Key Prefix | Role | Access Level | Use Case |
+|------------|------|--------------|----------|
+| `wgt_usr_` | User | `user` | Personal account access |
+| `wdg_org_` | Organization | `user` | Organization-wide access |
+| `wgt_prt_` | Partner | `partner` | White-label integrations |
+| `wgt_adm_` | Admin | `admin` | Internal administration |
+
+## Understanding Access Levels
+
+Each API endpoint specifies an `x-access-level` that determines which roles can access it:
+
+- **`public`**: Any authenticated user can access (any key type)
+- **`user`**: Requires user-level access or higher
+- **`partner`**: Requires partner-level access or higher
+- **`admin`**: Requires admin-level access only
+
+<Note>
+  The `x-access-level` is a **role gate**, not a visibility gate. All public endpoints appear in the documentation, but your access depends on your key type.
+</Note>
+
+## Token Exchange (Client-Side)
+
+For secure client-side usage, exchange your API key for a short-lived token:
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://api.widgetic.com/v1/tokens/exchange" \
+  -H "Authorization: Bearer wgt_usr_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"scopes": ["read:widgets", "write:compositions"]}'
+```
+
+```typescript TypeScript
+import { TokensApi } from '@widgetic/api-sdk';
+
+const tokens = new TokensApi('wgt_usr_your_api_key');
+const { token, expiresAt } = await tokens.exchangeToken({
+  scopes: ['read:widgets', 'write:compositions']
+});
+
+// Use the short-lived token in the browser
+```
+</CodeGroup>
+
+## Validating Tokens
+
+You can validate a token to check its status and associated permissions:
+
+```bash
+curl -X GET "https://api.widgetic.com/v1/tokens/validate" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+Response:
+```json
+{
+  "valid": true,
+  "userId": "123e4567-e89b-12d3-a456-426614174000",
+  "role": "user",
+  "expiresAt": "2024-01-15T12:00:00Z"
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Keep API Keys Secure">
+    - Never expose API keys in client-side code
+    - Use environment variables to store keys
+    - Rotate keys periodically
+    - Use the token exchange flow for browser applications
+  </Accordion>
+  
+  <Accordion title="Use Appropriate Key Types">
+    - Use `wgt_usr_` keys for personal development
+    - Use `wdg_org_` keys for organization-wide applications
+    - Use `wgt_prt_` keys for partner integrations
+  </Accordion>
+  
+  <Accordion title="Handle Token Expiration">
+    - JWT tokens expire after a set period
+    - Implement token refresh logic in your application
+    - Use the SDK's async token provider for automatic handling
+  </Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+When authentication fails, you'll receive one of these responses:
+
+| Status | Code | Description |
+|--------|------|-------------|
+| 401 | `UNAUTHORIZED` | Missing or invalid authentication token |
+| 403 | `FORBIDDEN` | Token valid but insufficient permissions |
+
+Example error response:
+```json
+{
+  "success": false,
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "Insufficient permissions for this endpoint",
+    "correlationId": "req_123e4567-e89b-12d3-a456-426614174000"
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Partner Authentication" icon="handshake" href="/docs/partners/overview">
+    Learn about partner-specific authentication flows
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Explore all available endpoints
+  </Card>
+</CardGroup>

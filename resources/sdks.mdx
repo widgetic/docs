@@ -1,0 +1,266 @@
+---
+title: SDKs
+description: Official Widgetic SDKs and libraries
+---
+
+# SDKs
+
+Widgetic provides official SDKs to simplify integration with our platform.
+
+## Official SDKs
+
+<CardGroup cols={2}>
+  <Card title="TypeScript/JavaScript SDK" icon="js">
+    Full-featured SDK for Node.js and browsers
+  </Card>
+  <Card title="Embed SDK" icon="code">
+    Lightweight SDK for embedding widgets
+  </Card>
+  <Card title="UI SDK" icon="window">
+    For partners embedding UI components
+  </Card>
+</CardGroup>
+
+## TypeScript/JavaScript SDK
+
+The primary SDK for interacting with the Widgetic API.
+
+### Installation
+
+```bash
+npm install @widgetic/api-sdk
+```
+
+### Basic Usage
+
+```typescript
+import { WidgetsApi, CompositionsApi } from '@widgetic/api-sdk';
+
+// Initialize with API key
+const widgets = new WidgetsApi('YOUR_API_KEY');
+
+// Fetch widgets
+const { data, meta } = await widgets.getWidgets({
+  page: 1,
+  size: 20
+});
+```
+
+### Authentication Options
+
+```typescript
+// Option 1: Static API key
+const api = new WidgetsApi('wgt_usr_your_api_key');
+
+// Option 2: Async token provider (for rotating tokens)
+const api = new WidgetsApi({
+  apiKey: async () => await getTokenFromServer()
+});
+
+// Option 3: Full configuration
+const api = new WidgetsApi(new Configuration({
+  apiKey: 'YOUR_API_KEY',
+  basePath: 'https://api.widgetic.com/v1'
+}));
+```
+
+### Available APIs
+
+| Class | Description |
+|-------|-------------|
+| `WidgetsApi` | Widget management |
+| `CompositionsApi` | Composition management |
+| `CanvasesApi` | Canvas operations |
+| `ComponentsApi` | Component management |
+| `TokensApi` | Token exchange and validation |
+| `EntitlementsApi` | Feature access |
+| `UsersApi` | User management |
+| `ManagedUsersApi` | Partner user management |
+| `UIApi` | UI component embedding |
+| `PartnersApi` | Partner operations |
+
+## Embed SDK
+
+Lightweight SDK for embedding widgets on your website.
+
+### Installation
+
+```bash
+npm install @widgetic/embed-sdk
+```
+
+### Usage
+
+```typescript
+import { embed, embedComposition } from '@widgetic/embed-sdk';
+
+// Embed a single widget
+embed({
+  widgetId: 'widget-uuid',
+  container: '#widget-container',
+  responsive: true
+});
+
+// Embed a composition
+embedComposition({
+  compositionId: 'composition-uuid',
+  container: '#composition-container'
+});
+```
+
+### Features
+
+- **Progressive enhancement**: Falls back gracefully
+- **Responsive**: Adapts to container size
+- **HTTP/3 support**: Optimized loading
+- **Lazy loading**: Load widgets on demand
+
+## UI SDK (Partners)
+
+For partners embedding Widgetic UI components.
+
+### Installation
+
+```bash
+npm install @widgetic/ui-sdk
+```
+
+### Usage
+
+```typescript
+import { WidgeticUI } from '@widgetic/ui-sdk';
+
+const ui = new WidgeticUI({
+  apiKey: 'wgt_prt_your_partner_key'
+});
+
+// Mount widget creator
+await ui.mount('widget-creator', {
+  container: '#editor-container',
+  theme: 'dark',
+  onSave: (widget) => console.log('Widget saved:', widget)
+});
+```
+
+## Browser Usage
+
+### ESM Import
+
+```html
+<script type="module">
+  import { WidgetsApi } from 'https://cdn.widgetic.com/sdk/api-sdk.esm.js';
+  
+  const widgets = new WidgetsApi('YOUR_API_KEY');
+  const { data } = await widgets.getWidgets();
+</script>
+```
+
+### Script Tag
+
+```html
+<script src="https://cdn.widgetic.com/sdk/embed-sdk.umd.js"></script>
+<script>
+  Widgetic.embed({
+    widgetId: 'widget-uuid',
+    container: '#widget-container'
+  });
+</script>
+```
+
+## Framework Examples
+
+### React
+
+```tsx
+import { useEffect, useState } from 'react';
+import { WidgetsApi } from '@widgetic/api-sdk';
+
+function WidgetList({ apiKey }) {
+  const [widgets, setWidgets] = useState([]);
+  
+  useEffect(() => {
+    const api = new WidgetsApi(apiKey);
+    api.getWidgets({ size: 10 }).then(({ data }) => {
+      setWidgets(data);
+    });
+  }, [apiKey]);
+  
+  return (
+    <ul>
+      {widgets.map(w => <li key={w.id}>{w.name}</li>)}
+    </ul>
+  );
+}
+```
+
+### Vue
+
+```vue
+<script setup>
+import { ref, onMounted } from 'vue';
+import { WidgetsApi } from '@widgetic/api-sdk';
+
+const widgets = ref([]);
+
+onMounted(async () => {
+  const api = new WidgetsApi('YOUR_API_KEY');
+  const { data } = await api.getWidgets({ size: 10 });
+  widgets.value = data;
+});
+</script>
+
+<template>
+  <ul>
+    <li v-for="widget in widgets" :key="widget.id">
+      {{ widget.name }}
+    </li>
+  </ul>
+</template>
+```
+
+### Svelte
+
+```svelte
+<script>
+  import { onMount } from 'svelte';
+  import { WidgetsApi } from '@widgetic/api-sdk';
+  
+  let widgets = [];
+  
+  onMount(async () => {
+    const api = new WidgetsApi('YOUR_API_KEY');
+    const { data } = await api.getWidgets({ size: 10 });
+    widgets = data;
+  });
+</script>
+
+<ul>
+  {#each widgets as widget}
+    <li>{widget.name}</li>
+  {/each}
+</ul>
+```
+
+## TypeScript Support
+
+All SDKs include full TypeScript definitions:
+
+```typescript
+import { 
+  Widget, 
+  Composition, 
+  Canvas,
+  Configuration 
+} from '@widgetic/api-sdk';
+
+// Full type safety
+const widget: Widget = await widgets.getWidgetById({ 
+  widgetId: 'uuid' 
+});
+```
+
+## Need Help?
+
+- [API Reference](/api-reference/introduction)
+- [Code Examples](/resources/examples)
+- [GitHub Issues](https://github.com/widgetic/issues)

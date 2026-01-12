@@ -1,0 +1,145 @@
+---
+title: API Reference Introduction
+description: Complete reference for the Widgetic API
+---
+
+# API Reference
+
+Welcome to the Widgetic API Reference. This documentation covers all public endpoints available to developers and partners.
+
+## Base URL
+
+All API requests should be made to:
+
+```
+https://api.widgetic.com/v1
+```
+
+## Authentication
+
+Include your API key in the Authorization header:
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+See [Authentication](/docs/authentication) for details on API key types and access levels.
+
+## Request Format
+
+- **Content-Type**: `application/json` for request bodies
+- **Accept**: `application/json` for responses
+
+## Response Format
+
+All responses follow a consistent envelope:
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "meta": {
+    "page": 1,
+    "size": 20,
+    "total": 150
+  }
+}
+```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message",
+    "correlationId": "req_unique-correlation-id"
+  }
+}
+```
+
+## Endpoint Access Levels
+
+Endpoints specify their access level via `x-access-level`:
+
+| Level | Description | Required Key |
+|-------|-------------|--------------|
+| `public` | Any authenticated user | Any key type |
+| `user` | User-level access | `wgt_usr_`, `wdg_org_`, `wgt_prt_`, or `wgt_adm_` |
+| `partner` | Partner-level access | `wgt_prt_` or `wgt_adm_` |
+| `admin` | Admin-level access | `wgt_adm_` only |
+
+## Available Tags
+
+The API is organized by these resource tags:
+
+<CardGroup cols={2}>
+  <Card title="Tokens" icon="key">
+    Token validation and exchange
+  </Card>
+  <Card title="Entitlements" icon="shield">
+    Feature access and limits
+  </Card>
+  <Card title="Widgets" icon="cube">
+    Widget management
+  </Card>
+  <Card title="Compositions" icon="layer-group">
+    Composition layouts
+  </Card>
+  <Card title="Canvases" icon="palette">
+    Widget editing canvases
+  </Card>
+  <Card title="Components" icon="puzzle-piece">
+    Canvas components
+  </Card>
+  <Card title="UI Components" icon="window">
+    Embeddable UI (partners)
+  </Card>
+  <Card title="Managed Users" icon="users">
+    End-user management (partners)
+  </Card>
+  <Card title="Partners" icon="handshake">
+    Partner billing and credits
+  </Card>
+  <Card title="Conversations" icon="comments">
+    AI conversation history
+  </Card>
+  <Card title="Messages" icon="message">
+    Conversation messages
+  </Card>
+  <Card title="Analytics" icon="chart-line">
+    Usage analytics
+  </Card>
+</CardGroup>
+
+## SDK Support
+
+Use our official TypeScript SDK for the best developer experience:
+
+```bash
+npm install @widgetic/api-sdk
+```
+
+```typescript
+import { WidgetsApi, CompositionsApi } from '@widgetic/api-sdk';
+
+const widgets = new WidgetsApi('YOUR_API_KEY');
+const compositions = new CompositionsApi('YOUR_API_KEY');
+```
+
+## Try It Out
+
+Each endpoint in this reference includes a "Try It" feature. Enter your API key to test endpoints directly from the documentation.
+
+<Warning>
+  Be careful when testing destructive operations (DELETE, PUT) on production data.
+</Warning>
+
+## Getting Help
+
+- Check [Errors](/api-reference/errors) for error code explanations
+- See [Usage Limits](/api-reference/usage-limits) for rate limits
+- Contact [support@widgetic.com](mailto:support@widgetic.com) for assistance

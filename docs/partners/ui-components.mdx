@@ -1,0 +1,229 @@
+---
+title: UI Components
+description: Embeddable UI components for partners
+---
+
+# UI Components
+
+Widgetic provides several embeddable UI components that partners can integrate into their platforms.
+
+## Available Components
+
+| Component ID | Name | Description |
+|--------------|------|-------------|
+| `widget-creator` | Widget Creator | Full widget creation experience with AI assistance |
+| `composition-editor` | Composition Editor | Edit and arrange widgets in compositions |
+| `embed-editor` | Embed Editor | Configure widget embed settings and appearance |
+
+## Widget Creator
+
+The Widget Creator is the primary component for creating widgets through AI-powered prompts or manual editing.
+
+### Features
+- AI-powered widget generation from text prompts
+- Visual editor with drag-and-drop
+- Real-time preview
+- Component library
+- Version history
+
+### Mounting
+
+```typescript
+await ui.mountComponent({
+  componentId: 'widget-creator',
+  mountRequest: {
+    container: 'creator-container',
+    theme: { mode: 'dark' }
+  }
+});
+```
+
+## Composition Editor
+
+The Composition Editor allows users to combine multiple widgets into layouts.
+
+### Features
+- Drag-and-drop widget placement
+- Responsive layout controls
+- Widget configuration panels
+- Preview modes (desktop, tablet, mobile)
+
+### Mounting
+
+```typescript
+await ui.mountComponent({
+  componentId: 'composition-editor',
+  mountRequest: {
+    container: 'editor-container',
+    theme: { mode: 'light' }
+  }
+});
+```
+
+## Embed Editor
+
+The Embed Editor configures how widgets appear when embedded on external sites.
+
+### Features
+- Embed code generation
+- Size and responsiveness settings
+- Custom styling options
+- Domain restrictions
+
+### Mounting
+
+```typescript
+await ui.mountComponent({
+  componentId: 'embed-editor',
+  mountRequest: {
+    container: 'embed-container',
+    theme: { mode: 'light' }
+  }
+});
+```
+
+## Component Manifest
+
+Each component has a manifest describing its assets and configuration:
+
+```typescript
+const manifest = await ui.getComponentManifest({ 
+  componentId: 'widget-creator' 
+});
+
+// manifest structure:
+// {
+//   version: "2.1.0",
+//   dependencies: ["fabric.js", "svelte"],
+//   assets: {
+//     js: ["https://cdn.widgetic.com/ui/widget-creator.js"],
+//     css: ["https://cdn.widgetic.com/ui/widget-creator.css"]
+//   },
+//   config: {
+//     supportedEvents: ["widgetCreated", "widgetSaved", "error"],
+//     allowedDomains: ["*"],
+//     requiredPermissions: ["canvas:write"]
+//   }
+// }
+```
+
+## Theming Reference
+
+All components support comprehensive theming:
+
+```typescript
+const theme = {
+  mode: 'dark', // 'light' | 'dark'
+  colors: {
+    primary: '#6366F1',      // Primary brand color
+    secondary: '#8B5CF6',    // Secondary color
+    background: '#1F2937',   // Main background
+    surface: '#374151',      // Card/panel backgrounds
+    text: '#F9FAFB',         // Primary text
+    textSecondary: '#9CA3AF' // Secondary text
+  },
+  typography: {
+    fontFamily: 'Inter, system-ui, sans-serif',
+    fontSize: '14px',
+    fontWeight: {
+      normal: 400,
+      medium: 500,
+      bold: 700
+    }
+  },
+  borderRadius: '8px',
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px'
+  }
+};
+```
+
+## Event Callbacks
+
+Components emit events that you can handle:
+
+```typescript
+const callbacks = {
+  // Widget Creator events
+  onWidgetCreated: (widget) => { /* New widget created */ },
+  onWidgetSaved: (widget) => { /* Widget saved */ },
+  onPromptSubmitted: (prompt) => { /* AI prompt submitted */ },
+  
+  // Composition Editor events
+  onCompositionSaved: (composition) => { /* Composition saved */ },
+  onWidgetAdded: (widgetId) => { /* Widget added to composition */ },
+  onWidgetRemoved: (widgetId) => { /* Widget removed */ },
+  
+  // Common events
+  onError: (error) => { /* Error occurred */ },
+  onReady: () => { /* Component mounted and ready */ },
+  onClose: () => { /* User requested close */ }
+};
+
+await ui.mountComponent({
+  componentId: 'widget-creator',
+  mountRequest: {
+    container: 'container',
+    callbacks
+  }
+});
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Container Sizing">
+    Ensure your container has explicit dimensions. The components will fill the available space.
+    
+    ```css
+    #widgetic-container {
+      width: 100%;
+      height: 600px; /* or 100vh */
+      min-height: 400px;
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Loading States">
+    Show loading indicators while components initialize:
+    
+    ```typescript
+    const container = document.getElementById('container');
+    container.innerHTML = '<div class="loading">Loading...</div>';
+    
+    await ui.mountComponent({ ... });
+    // Component replaces loading content
+    ```
+  </Accordion>
+  
+  <Accordion title="Error Handling">
+    Always handle mount failures gracefully:
+    
+    ```typescript
+    try {
+      const { mountStatus } = await ui.mountComponent({ ... });
+      if (mountStatus !== 'success') {
+        showFallbackUI();
+      }
+    } catch (error) {
+      console.error('Mount failed:', error);
+      showFallbackUI();
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Canvas Embedding" icon="window" href="/docs/partners/canvas-embedding">
+    Complete embedding guide
+  </Card>
+  <Card title="Managed Users" icon="users" href="/docs/partners/managed-users">
+    Associate components with users
+  </Card>
+</CardGroup>

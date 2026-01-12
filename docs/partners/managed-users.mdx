@@ -1,0 +1,211 @@
+---
+title: Managed Users
+description: Create and manage end-users for your platform
+---
+
+# Managed Users
+
+Managed users allow partners to create and control user accounts for their platform's customers. Each managed user can have their own widgets, compositions, and entitlements.
+
+## Overview
+
+When you create a managed user, Widgetic generates an internal user record that:
+
+- Is associated with your partner account
+- Can own widgets and compositions
+- Has its own entitlements and usage limits
+- Is identified by your platform's external ID
+
+## Creating Managed Users
+
+Create a managed user for each of your platform's customers:
+
+```typescript
+import { ManagedUsersApi } from '@widgetic/api-sdk';
+
+const managedUsers = new ManagedUsersApi('wgt_prt_your_partner_key');
+
+const user = await managedUsers.createManagedUser({
+  external_id: 'your-platform-user-123', // Your unique identifier
+  manager_id: 'your-partner-user-id',    // Your partner account ID
+  metadata: {
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john@example.com',
+    role: 'editor'
+  }
+});
+
+console.log('Created managed user:', user.id);
+```
+
+## Listing Managed Users
+
+Retrieve all managed users with pagination:
+
+```typescript
+const { data, page, size, total } = await managedUsers.getAllManagedUsers({
+  page: 1,
+  size: 20,
+  sort: 'created_at:desc'
+});
+
+console.log(`Found ${total} managed users`);
+```
+
+## Getting a Specific User
+
+Retrieve details for a specific managed user:
+
+```typescript
+const user = await managedUsers.getManagedUserById({
+  id: 'managed-user-uuid'
+});
+
+console.log('User:', user.external_id, user.metadata);
+```
+
+## Updating Managed Users
+
+Update a managed user's external ID or metadata:
+
+```typescript
+const updated = await managedUsers.updateManagedUser({
+  id: 'managed-user-uuid',
+  updateManagedUser: {
+    external_id: 'new-external-id',
+    metadata: {
+      firstName: 'John',
+      lastName: 'Smith', // Updated
+      role: 'admin'      // Updated
+    }
+  }
+});
+```
+
+## Deleting Managed Users
+
+Remove a managed user (this doesn't delete their widgets):
+
+```typescript
+await managedUsers.deleteManagedUser({
+  id: 'managed-user-uuid'
+});
+```
+
+## Managed User Entitlements
+
+Check what features a managed user has access to:
+
+```typescript
+import { EntitlementsApi } from '@widgetic/api-sdk';
+
+const entitlements = new EntitlementsApi('wgt_prt_your_partner_key');
+
+// Get all entitlements for a managed user
+const { entitlements: features } = await entitlements.getManagedUserEntitlements({
+  managedUserId: 'managed-user-uuid'
+});
+
+// features: [
+//   { feature: 'widgets.create', value: 'unlimited' },
+//   { feature: 'storage.limit', value: '1000' },
+//   ...
+// ]
+```
+
+## Acting on Behalf of Managed Users
+
+When making API calls that should be attributed to a managed user, you can specify them in the request context. The managed user's ownership is tracked automatically.
+
+```typescript
+// Create a canvas owned by a managed user
+const canvases = new CanvasesApi('wgt_prt_your_partner_key');
+
+const canvas = await canvases.createCanvas({
+  createCanvasRequest: {
+    persistence_key: `user-${managedUserId}-canvas-1`,
+    canvas_content: { version: 1, elements: [] }
+  }
+});
+```
+
+## User Metadata Schema
+
+The `metadata` field is flexible, but we recommend including:
+
+```typescript
+interface ManagedUserMetadata {
+  // Identity
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  avatarUrl?: string;
+  
+  // Permissions
+  role?: 'viewer' | 'editor' | 'admin';
+  permissions?: string[];
+  
+  // Your custom fields
+  teamId?: string;
+  department?: string;
+  plan?: string;
+  
+  // Any other JSON-serializable data
+  [key: string]: any;
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Meaningful External IDs">
+    Use your platform's user ID as the `external_id` for easy correlation:
+    
+    ```typescript
+    external_id: `myplatform_user_${yourUserId}`
+    ```
+  </Accordion>
+  
+  <Accordion title="Store the Mapping">
+    Keep a mapping between Widgetic managed user IDs and your platform's user IDs:
+    
+    ```typescript
+    // In your database
+    CREATE TABLE widgetic_user_mapping (
+      platform_user_id VARCHAR PRIMARY KEY,
+      widgetic_managed_user_id UUID,
+      created_at TIMESTAMP
+    );
+    ```
+  </Accordion>
+  
+  <Accordion title="Handle User Deletion">
+    When a user leaves your platform, decide whether to:
+    - Delete the managed user (keeps their widgets orphaned)
+    - Transfer their widgets to another user
+    - Archive the account
+  </Accordion>
+</AccordionGroup>
+
+## Error Handling
+
+Common errors when working with managed users:
+
+| Status | Code | Description |
+|--------|------|-------------|
+| 400 | `BAD_REQUEST` | Invalid external_id or metadata |
+| 403 | `FORBIDDEN` | Not your managed user |
+| 404 | `NOT_FOUND` | Managed user doesn't exist |
+| 409 | `CONFLICT` | External ID already exists |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Credits & Billing" icon="credit-card" href="/docs/partners/credits-billing">
+    Manage credits for your users
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Find entitlement endpoints and access levels
+  </Card>
+</CardGroup>

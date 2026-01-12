@@ -1,0 +1,213 @@
+---
+title: Canvases
+description: Work with widget editing canvases
+---
+
+# Canvases
+
+Canvases are the editing environment where widgets are designed and configured. Each canvas represents an editing session with its own state and components.
+
+## Overview
+
+With the Canvases API, you can:
+
+- Create new canvases
+- List existing canvases
+- Retrieve canvas details
+- Update canvas content
+- Delete canvases
+
+## List Canvases
+
+Retrieve all canvases with pagination and filtering:
+
+```typescript
+import { CanvasesApi } from '@widgetic/api-sdk';
+
+const canvases = new CanvasesApi('YOUR_API_KEY');
+
+const { data, meta } = await canvases.getAllCanvases({
+  page: 1,
+  size: 20,
+  sort: 'created_at:desc'
+});
+
+console.log(`Found ${meta.total} canvases`);
+```
+
+## Filtering Canvases
+
+Filter canvases by various criteria:
+
+```typescript
+const filtered = await canvases.getAllCanvases({
+  component_id: '123e4567-e89b-12d3-a456-426614174000',
+  created_after: '2024-01-01T00:00:00Z',
+  created_before: '2024-12-31T23:59:59Z',
+  updated_after: '2024-06-01T00:00:00Z'
+});
+```
+
+## Get Canvas by ID
+
+Retrieve a specific canvas:
+
+```typescript
+const canvas = await canvases.getCanvas({
+  id: '123e4567-e89b-12d3-a456-426614174000'
+});
+
+console.log('Canvas:', canvas.persistence_key);
+console.log('Content:', canvas.canvas_content);
+```
+
+## Create Canvas
+
+Create a new canvas:
+
+```typescript
+const newCanvas = await canvases.createCanvas({
+  createCanvasRequest: {
+    persistence_key: 'my-widget-canvas-001',
+    canvas_content: {
+      version: 1,
+      elements: [],
+      settings: {
+        background: '#ffffff',
+        gridSize: 10
+      }
+    },
+    widget_components: '123e4567-e89b-12d3-a456-426614174001'
+  }
+});
+
+console.log('Created canvas:', newCanvas.id);
+```
+
+## Update Canvas
+
+Update an existing canvas:
+
+```typescript
+const updated = await canvases.updateCanvas({
+  id: '123e4567-e89b-12d3-a456-426614174000',
+  updateCanvasRequest: {
+    canvas_content: {
+      version: 2,
+      elements: [
+        { id: 'elem1', type: 'text', content: 'Hello' }
+      ],
+      settings: {
+        background: '#f0f0f0',
+        gridSize: 10
+      }
+    }
+  }
+});
+```
+
+## Delete Canvas
+
+Delete a canvas:
+
+```typescript
+await canvases.deleteCanvas({
+  id: '123e4567-e89b-12d3-a456-426614174000'
+});
+```
+
+## Canvas Structure
+
+A canvas object contains:
+
+```typescript
+interface Canvas {
+  id: string;                    // Unique identifier
+  persistence_key: string;       // Your reference key
+  canvas_content: object;        // Canvas state (JSON)
+  widget_components?: string;    // Associated components ID
+  created_at: string;            // ISO timestamp
+  updated_at: string;            // ISO timestamp
+}
+```
+
+## Canvas Content Schema
+
+The `canvas_content` field stores the canvas state:
+
+```typescript
+interface CanvasContent {
+  version: number;               // Schema version
+  elements: CanvasElement[];     // Visual elements
+  settings: {
+    background: string;          // Background color
+    gridSize: number;            // Grid snap size
+    guides: Guide[];             // Alignment guides
+    zoom: number;                // Current zoom level
+  };
+}
+
+interface CanvasElement {
+  id: string;
+  type: 'shape' | 'text' | 'image' | 'component';
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  properties: object;
+}
+```
+
+## Persistence Keys
+
+Use persistence keys to maintain references between your application and Widgetic:
+
+```typescript
+// Create with a meaningful key
+const canvas = await canvases.createCanvas({
+  createCanvasRequest: {
+    persistence_key: `user_${userId}_project_${projectId}_canvas`,
+    canvas_content: { version: 1, elements: [] }
+  }
+});
+
+// Later, you can search by key pattern
+const userCanvases = await canvases.getAllCanvases({
+  // Filter by persistence_key pattern if supported
+});
+```
+
+## Related Resources
+
+Each canvas can have associated components:
+
+```typescript
+import { ComponentsApi } from '@widgetic/api-sdk';
+
+const components = new ComponentsApi('YOUR_API_KEY');
+
+// Get components for a canvas
+const { data: canvasComponents } = await components.getComponents({
+  canvasId: '123e4567-e89b-12d3-a456-426614174000'
+});
+```
+
+## Related Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /canvases` | List all canvases |
+| `GET /canvases/{id}` | Get canvas by ID |
+| `POST /canvases` | Create a new canvas |
+| `PUT /canvases/{id}` | Update a canvas |
+| `DELETE /canvases/{id}` | Delete a canvas |
+| `GET /canvases/{id}/components` | Get canvas components |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Components" icon="puzzle-piece" href="/docs/api/components">
+    Manage canvas components
+  </Card>
+  <Card title="Widgets" icon="cube" href="/docs/api/widgets">
+    Build widgets from canvases
+  </Card>
+</CardGroup>

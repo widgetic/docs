@@ -1,0 +1,109 @@
+---
+title: Idempotency
+description: Safely retry requests with idempotency keys
+---
+
+# Idempotency
+
+Idempotency allows you to safely retry requests without causing duplicate operations. This is essential for reliable integrations, especially for create and update operations.
+
+## How It Works
+
+Include an `Idempotency-Key` header with a unique value for each logical operation:
+
+```bash
+curl -X POST "https://api.widgetic.com/v1/widgets" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Idempotency-Key: create-widget-user123-1705317600" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My Widget"}'
+```
+
+## Behavior
+
+1. **First Request**: Processed normally, response cached
+2. **Retry with Same Key**: Returns cached response
+3. **Different Key**: Processed as new request
+
+## Supported Methods
+
+Idempotency is supported on:
+- `POST` requests
+- `PUT` requests
+- `DELETE` requests
+
+`GET` requests are naturally idempotent and don't need keys.
+
+## Key Requirements
+
+- **Unique per operation**: Use a combination of action + context + timestamp
+- **Client-generated**: You control the key generation
+- **Max length**: 255 characters
+- **Expiration**: Keys expire after 24 hours
+
+## Generating Good Keys
+
+```typescript
+// Include context that makes the key unique
+const idempotencyKey = [
+  'create-widget',
+  userId,
+  Date.now(),
+  randomString(8)
+].join('-');
+
+// Example: create-widget-user123-1705317600-a1b2c3d4
+```
+
+## Example Implementation
+
+```typescript
+async function createWidgetSafely(name: string, userId: string) {
+  const idempotencyKey = `create-widget-${userId}-${Date.now()}`;
+  
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await widgets.createWidget({
+        createWidgetRequest: { name }
+      }, {
+        headers: { 'Idempotency-Key': idempotencyKey }
+      });
+    } catch (error) {
+      if (error.status >= 500) {
+        // Server error - safe to retry with same key
+        await sleep(1000 * Math.pow(2, attempt));
+        continue;
+      }
+      throw error; // Client error - don't retry
+    }
+  }
+}
+```
+
+## When to Use Idempotency
+
+| Scenario | Use Idempotency? |
+|----------|------------------|
+| Creating resources | ✅ Yes |
+| Updating resources | ✅ Yes |
+| Processing payments | ✅ Yes |
+| Reading resources | ❌ No (GET is idempotent) |
+| Network retry | ✅ Yes |
+| User retry (new intent) | ❌ No (use new key) |
+
+## Common Pitfalls
+
+<Warning>
+  **Don't reuse keys across different operations**. Each unique business operation should have its own key.
+</Warning>
+
+```typescript
+// ❌ Bad - same key for different widgets
+const key = 'my-key';
+await createWidget('Widget A', key);
+await createWidget('Widget B', key); // Returns Widget A!
+
+// ✅ Good - unique key per operation
+await createWidget('Widget A', 'key-widget-a');
+await createWidget('Widget B', 'key-widget-b');
+```
