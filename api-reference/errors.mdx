@@ -3,11 +3,9 @@ title: Errors
 description: Error codes and handling in the Widgetic API
 ---
 
-The Widgetic API uses standard HTTP status codes and returns detailed error information in the response body.
+The Widgetic API uses standard HTTP status codes and returns detailed error information in the response body. All errors follow a consistent format with machine-readable codes, human-readable messages, and actionable guidance.
 
 ## Error Response Format
-
-All errors follow a standardized envelope format:
 
 ```json
 {
@@ -17,7 +15,7 @@ All errors follow a standardized envelope format:
     "message": "The authentication token has expired",
     "correlationId": "req_123e4567-e89b-12d3-a456-426614174000",
     "timestamp": "2024-01-15T10:30:00.000Z",
-    "docUrl": "https://docs.widgetic.com/docs/authentication/tokens",
+    "docUrl": "https://docs.widgetic.com/docs/authentication",
     "suggestedAction": "Refresh your authentication token"
   }
 }
@@ -25,12 +23,12 @@ All errors follow a standardized envelope format:
 
 | Field | Description |
 |-------|-------------|
-| `code` | Machine-readable error code |
+| `code` | Machine-readable error code (use this for programmatic handling) |
 | `message` | Human-readable error description |
-| `correlationId` | Unique request ID for support |
-| `timestamp` | Error timestamp (ISO 8601) |
+| `correlationId` | Unique request ID for support inquiries |
+| `timestamp` | ISO 8601 timestamp when the error occurred |
 | `docUrl` | Link to relevant documentation |
-| `suggestedAction` | Recommended action to resolve |
+| `suggestedAction` | Recommended action to resolve the error |
 
 ## HTTP Status Codes
 
@@ -39,27 +37,31 @@ All errors follow a standardized envelope format:
 | 200 | Success | Request succeeded |
 | 201 | Success | Resource created |
 | 204 | Success | No content (successful deletion) |
-| 400 | Client Error | Bad request / validation error |
+| 400 | Client Error | Bad request / Validation error |
 | 401 | Client Error | Authentication required or failed |
-| 402 | Client Error | Payment required / credits exhausted |
-| 403 | Client Error | Forbidden / insufficient permissions |
+| 402 | Client Error | Payment required (credits/subscription) |
+| 403 | Client Error | Forbidden (insufficient permissions) |
 | 404 | Client Error | Resource not found |
-| 409 | Client Error | Conflict with current state |
-| 410 | Client Error | Resource permanently removed |
-| 413 | Client Error | Payload too large / quota exceeded |
-| 422 | Client Error | Unprocessable entity |
+| 409 | Client Error | Conflict (resource already exists) |
+| 410 | Client Error | Gone (resource permanently removed) |
+| 413 | Client Error | Payload too large (quota exceeded) |
+| 422 | Client Error | Unprocessable entity (business logic error) |
 | 429 | Client Error | Rate limit exceeded |
 | 500 | Server Error | Internal server error |
-| 502 | Server Error | Bad gateway / external service error |
+| 502 | Server Error | Bad gateway (external service error) |
 | 503 | Server Error | Service unavailable |
 | 504 | Server Error | Gateway timeout |
 
-## Error Codes by Category
+---
+
+## Error Code Reference
 
 ### Authentication Errors (401)
 
-| Code | Description | Suggested Action |
-|------|-------------|------------------|
+Errors related to verifying your identity.
+
+| Code | Message | Suggested Action |
+|------|---------|------------------|
 | `AUTH_REQUIRED` | Authentication required to access this resource | Provide valid authentication credentials |
 | `AUTH_TOKEN_INVALID` | The provided authentication token is invalid | Provide a valid authentication token |
 | `AUTH_TOKEN_EXPIRED` | The authentication token has expired | Refresh your authentication token |
@@ -70,8 +72,10 @@ All errors follow a standardized envelope format:
 
 ### Authorization Errors (403)
 
-| Code | Description | Suggested Action |
-|------|-------------|------------------|
+Errors related to permissions and access control.
+
+| Code | Message | Suggested Action |
+|------|---------|------------------|
 | `AUTHZ_INSUFFICIENT_PERMISSIONS` | You do not have permission to perform this action | Contact your administrator to request the necessary permissions |
 | `AUTHZ_RESOURCE_ACCESS_DENIED` | You do not have permission to access this resource | Ensure you have the correct permissions for this resource |
 | `AUTHZ_ORGANIZATION_ACCESS_DENIED` | You do not have permission to access this organization | Contact the organization owner for access |
@@ -79,8 +83,10 @@ All errors follow a standardized envelope format:
 
 ### Validation Errors (400)
 
-| Code | Description | Suggested Action |
-|------|-------------|------------------|
+Errors related to request format and data validation.
+
+| Code | Message | Suggested Action |
+|------|---------|------------------|
 | `VALIDATION_FIELD_REQUIRED` | A required field is missing | Provide all required fields in your request |
 | `VALIDATION_FIELD_INVALID` | A field contains an invalid value | Check the field format and try again |
 | `VALIDATION_FIELD_TYPE_MISMATCH` | A field has an incorrect data type | Ensure the field matches the expected data type |
@@ -90,8 +96,10 @@ All errors follow a standardized envelope format:
 
 ### Resource Errors (404, 409, 410)
 
-| Code | Status | Description | Suggested Action |
-|------|--------|-------------|------------------|
+Errors related to resource existence and conflicts.
+
+| Code | Status | Message | Suggested Action |
+|------|--------|---------|------------------|
 | `RESOURCE_NOT_FOUND` | 404 | The requested resource was not found | Verify the resource ID and try again |
 | `RESOURCE_WIDGET_NOT_FOUND` | 404 | The specified widget was not found | Check the widget ID and ensure it exists |
 | `RESOURCE_COMPOSITION_NOT_FOUND` | 404 | The specified composition was not found | Check the composition ID and ensure it exists |
@@ -102,25 +110,35 @@ All errors follow a standardized envelope format:
 
 ### Rate Limiting Errors (429)
 
-| Code | Description | Suggested Action | Supports Retry-After |
-|------|-------------|------------------|----------------------|
-| `RATE_LIMIT_EXCEEDED` | Rate limit exceeded | Wait before making more requests | ✓ (default: 60s) |
-| `RATE_LIMIT_API_KEY_EXCEEDED` | API key rate limit exceeded | Wait before making more requests or upgrade your plan | ✓ (default: 60s) |
-| `RATE_LIMIT_USER_EXCEEDED` | User rate limit exceeded | Wait before making more requests | ✓ (default: 60s) |
-| `RATE_LIMIT_WEBHOOK_EXCEEDED` | Webhook rate limit exceeded | Check your webhook configuration and reduce frequency | ✓ (default: 60s) |
+Errors related to request frequency limits.
+
+| Code | Message | Suggested Action | Retry-After |
+|------|---------|------------------|-------------|
+| `RATE_LIMIT_EXCEEDED` | Rate limit exceeded | Wait before making more requests | 60s |
+| `RATE_LIMIT_API_KEY_EXCEEDED` | API key rate limit exceeded | Wait before making more requests or upgrade your plan | 60s |
+| `RATE_LIMIT_USER_EXCEEDED` | User rate limit exceeded | Wait before making more requests | 60s |
+| `RATE_LIMIT_WEBHOOK_EXCEEDED` | Webhook rate limit exceeded | Check your webhook configuration and reduce frequency | 60s |
+
+<Tip>
+  When you receive a 429 response, check the `Retry-After` header for the number of seconds to wait before retrying.
+</Tip>
 
 ### Quota Errors (402, 413, 429)
 
-| Code | Status | Description | Suggested Action |
-|------|--------|-------------|------------------|
+Errors related to usage limits and billing.
+
+| Code | Status | Message | Suggested Action |
+|------|--------|---------|------------------|
 | `QUOTA_CREDITS_EXHAUSTED` | 402 | Your credit quota has been exhausted | Purchase additional credits or upgrade your plan |
 | `QUOTA_STORAGE_EXCEEDED` | 413 | Storage quota exceeded | Delete some files or upgrade your storage plan |
 | `QUOTA_API_CALLS_EXCEEDED` | 429 | Monthly API call quota exceeded | Upgrade your plan or wait for quota reset |
 
 ### Business Logic Errors (409, 422)
 
-| Code | Status | Description | Suggested Action |
-|------|--------|-------------|------------------|
+Errors related to business rules and state conflicts.
+
+| Code | Status | Message | Suggested Action |
+|------|--------|---------|------------------|
 | `BUSINESS_OPERATION_INVALID` | 422 | The requested operation is not valid in the current context | Review the operation requirements and current state |
 | `BUSINESS_STATE_CONFLICT` | 409 | The operation conflicts with the current resource state | Refresh the resource state and try again |
 | `BUSINESS_WIDGET_ALREADY_PUBLISHED` | 409 | The widget is already published | Unpublish the widget first or create a new version |
@@ -128,27 +146,25 @@ All errors follow a standardized envelope format:
 
 ### External Service Errors (502, 503, 504)
 
-| Code | Status | Description | Suggested Action |
-|------|--------|-------------|------------------|
-| `EXTERNAL_SERVICE_UNAVAILABLE` | 503 | An external service is temporarily unavailable | Try again later |
-| `EXTERNAL_SERVICE_TIMEOUT` | 504 | An external service request timed out | Try again later |
-| `EXTERNAL_SERVICE_ERROR` | 502 | An external service returned an error | Try again later |
+Errors related to third-party dependencies.
+
+| Code | Status | Message | Retry-After |
+|------|--------|---------|-------------|
+| `EXTERNAL_SERVICE_UNAVAILABLE` | 503 | An external service is temporarily unavailable | 300s |
+| `EXTERNAL_SERVICE_TIMEOUT` | 504 | An external service request timed out | 60s |
 
 ### System Errors (500, 503)
 
-| Code | Status | Description | Suggested Action |
-|------|--------|-------------|------------------|
+Internal system errors.
+
+| Code | Status | Message | Suggested Action |
+|------|--------|---------|------------------|
 | `SYSTEM_INTERNAL_ERROR` | 500 | An internal server error occurred | Contact support if the problem persists |
 | `SYSTEM_MAINTENANCE` | 503 | The system is temporarily under maintenance | Try again later |
 | `SERVICE_UNAVAILABLE` | 503 | The service is temporarily unavailable | Try again later |
 | `SERVICE_DEGRADED` | 503 | The service is experiencing degraded performance | Some features may be slower than usual |
 
-### Infrastructure Errors (503)
-
-| Code | Description | Suggested Action |
-|------|-------------|------------------|
-| `INFRASTRUCTURE_OVERLOAD` | The system is experiencing high load | Try again later |
-| `INFRASTRUCTURE_CAPACITY_EXCEEDED` | System capacity exceeded | Try again later |
+---
 
 ## Handling Errors
 
@@ -162,14 +178,15 @@ const widgets = new WidgetsApi('YOUR_API_KEY');
 try {
   const widget = await widgets.getWidgetById({ widgetId: 'invalid-id' });
 } catch (error) {
-  const { code, message, correlationId, suggestedAction } = error.body?.error || {};
+  const errorBody = error.body?.error;
   
   switch (error.status) {
     case 401:
-      console.log('Authentication failed:', message);
+      console.log('Authentication failed:', errorBody?.code);
+      // Re-authenticate or refresh token
       break;
     case 403:
-      console.log('Access denied:', suggestedAction);
+      console.log('Access denied:', errorBody?.suggestedAction);
       break;
     case 404:
       console.log('Resource not found');
@@ -179,29 +196,37 @@ try {
       console.log(`Rate limited. Retry after ${retryAfter} seconds`);
       break;
     default:
-      console.error('Error:', code, message);
-      console.error('Correlation ID:', correlationId);
+      console.error('Error:', errorBody?.message);
+      console.error('Correlation ID:', errorBody?.correlationId);
   }
 }
 ```
 
-### Correlation ID
+### Using Correlation IDs
 
 Every error response includes a `correlationId`. Include this when contacting support:
 
 ```javascript
 catch (error) {
   const correlationId = error.body?.error?.correlationId;
-  console.error('Error correlationId:', correlationId);
-  // Report to support with correlationId for faster resolution
+  console.error(`Error [${correlationId}]:`, error.body?.error?.message);
+  
+  // Log for support requests
+  logger.error('API Error', {
+    correlationId,
+    code: error.body?.error?.code,
+    status: error.status
+  });
 }
 ```
 
+---
+
 ## Retry Strategies
 
-### Automatic Retry with Exponential Backoff
+### Exponential Backoff
 
-For transient errors (429, 503), implement exponential backoff:
+For transient errors (429, 503, 504), implement exponential backoff:
 
 ```javascript
 async function withRetry(fn, maxRetries = 3) {
@@ -217,6 +242,7 @@ async function withRetry(fn, maxRetries = 3) {
           ? parseInt(retryAfter) * 1000 
           : Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
         
+        console.log(`Retrying in ${delay}ms (attempt ${attempt + 1})`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
@@ -248,41 +274,32 @@ const widget = await withRetry(() =>
 );
 ```
 
-## Rate Limit Headers
+<Info>
+  See [Idempotency](/docs/reference/idempotency) for more details on safe retries.
+</Info>
 
-When rate limited, the response includes helpful headers:
-
-| Header | Description |
-|--------|-------------|
-| `X-RateLimit-Limit` | Maximum requests allowed per window |
-| `X-RateLimit-Remaining` | Requests remaining in current window |
-| `X-RateLimit-Reset` | Unix timestamp when the limit resets |
-| `Retry-After` | Seconds to wait before retrying |
+---
 
 ## Best Practices
 
 <AccordionGroup>
   <Accordion title="Always Handle Errors">
-    Never assume API calls will succeed. Always wrap calls in try/catch.
+    Never assume API calls will succeed. Always wrap calls in try/catch and handle specific error codes.
   </Accordion>
   
   <Accordion title="Log Correlation IDs">
-    Store correlation IDs in your logs for debugging and support requests.
+    Store correlation IDs in your logs for debugging and include them in support requests for faster resolution.
   </Accordion>
   
-  <Accordion title="Implement Backoff">
-    For rate limiting (429), use exponential backoff with jitter.
-  </Accordion>
-  
-  <Accordion title="Use Idempotency Keys">
-    For mutating operations, always include an idempotency key to safely retry.
-  </Accordion>
-  
-  <Accordion title="Check Suggested Actions">
-    Error responses include `suggestedAction` with guidance on how to resolve.
+  <Accordion title="Implement Backoff for Rate Limits">
+    For rate limiting (429), use exponential backoff with jitter. Always check the `Retry-After` header.
   </Accordion>
   
   <Accordion title="Validate Before Sending">
-    Validate data client-side before making API calls to catch errors early.
+    Validate data client-side before making API calls to catch validation errors early and reduce unnecessary requests.
+  </Accordion>
+  
+  <Accordion title="Handle Plan Restrictions Gracefully">
+    When you receive `AUTHZ_PLAN_RESTRICTION` or `QUOTA_*` errors, provide users with clear upgrade paths or alternatives.
   </Accordion>
 </AccordionGroup>
