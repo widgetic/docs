@@ -128,6 +128,114 @@
     {
       "source": "/start-here/authentication",
       "destination": "/docs/authentication"
+    },
+    {
+      "source": "/api/errors",
+      "destination": "/api-reference/errors"
+    },
+    {
+      "source": "/docs/authentication/tokens",
+      "destination": "/docs/authentication"
+    },
+    {
+      "source": "/docs/authentication/api-keys",
+      "destination": "/docs/authentication"
+    },
+    {
+      "source": "/docs/authorization",
+      "destination": "/docs/authentication"
+    },
+    {
+      "source": "/docs/organizations/permissions",
+      "destination": "/docs/authentication"
+    },
+    {
+      "source": "/docs/plans-and-billing",
+      "destination": "/docs/partners/credits-billing"
+    },
+    {
+      "source": "/docs/api/validation",
+      "destination": "/docs/api/overview"
+    },
+    {
+      "source": "/docs/api/request-format",
+      "destination": "/docs/api/overview"
+    },
+    {
+      "source": "/docs/api/schemas",
+      "destination": "/docs/api/overview"
+    },
+    {
+      "source": "/docs/api/resources",
+      "destination": "/docs/api/overview"
+    },
+    {
+      "source": "/docs/api/conflicts",
+      "destination": "/docs/api/overview"
+    },
+    {
+      "source": "/docs/api/quotas",
+      "destination": "/api-reference/usage-limits"
+    },
+    {
+      "source": "/docs/rate-limits",
+      "destination": "/docs/reference/rate-limits"
+    },
+    {
+      "source": "/docs/api-keys/rate-limits",
+      "destination": "/docs/reference/rate-limits"
+    },
+    {
+      "source": "/docs/webhooks/rate-limits",
+      "destination": "/docs/reference/rate-limits"
+    },
+    {
+      "source": "/docs/billing/credits",
+      "destination": "/docs/partners/credits-billing"
+    },
+    {
+      "source": "/docs/storage/quotas",
+      "destination": "/api-reference/usage-limits"
+    },
+    {
+      "source": "/docs/widgets",
+      "destination": "/docs/api/widgets"
+    },
+    {
+      "source": "/docs/compositions",
+      "destination": "/docs/api/compositions"
+    },
+    {
+      "source": "/docs/organizations",
+      "destination": "/docs/api/overview"
+    },
+    {
+      "source": "/docs/users",
+      "destination": "/docs/api/overview"
+    },
+    {
+      "source": "/docs/widgets/publishing",
+      "destination": "/docs/api/widgets"
+    },
+    {
+      "source": "/docs/subscriptions",
+      "destination": "/docs/partners/credits-billing"
+    },
+    {
+      "source": "/docs/vm-service",
+      "destination": "/docs/introduction"
+    },
+    {
+      "source": "/docs/support",
+      "destination": "/docs/introduction"
+    },
+    {
+      "source": "/docs/maintenance",
+      "destination": "/docs/introduction"
+    },
+    {
+      "source": "/docs/service-status",
+      "destination": "/api-reference/introduction"
     }
   ],
   "footer": {
