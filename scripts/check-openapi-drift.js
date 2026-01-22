@@ -15,7 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const sourcePath = path.resolve(
+const localSourcePath = path.resolve(
   __dirname,
   '../../../Services/api-gateway-service/client-sdk/openapi-spec-public.json'
 );
@@ -32,13 +32,32 @@ function readFileOrThrow(filePath) {
   return fs.readFileSync(filePath, 'utf8');
 }
 
+async function readSourceOrThrow() {
+  const remoteUrl = process.env.OPENAPI_SOURCE_URL;
+
+  if (remoteUrl) {
+    if (typeof fetch !== 'function') {
+      throw new Error('Global fetch is not available in this Node runtime. Use Node 18+ or remove OPENAPI_SOURCE_URL.');
+    }
+
+    const response = await fetch(remoteUrl, { method: 'GET' });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch OpenAPI spec: HTTP ${response.status}`);
+    }
+
+    return await response.text();
+  }
+
+  return readFileOrThrow(localSourcePath);
+}
+
 function normalizeJson(text) {
   // Normalize formatting only; preserves content semantics
   return JSON.stringify(JSON.parse(text));
 }
 
-function main() {
-  const sourceRaw = readFileOrThrow(sourcePath);
+async function main() {
+  const sourceRaw = await readSourceOrThrow();
   const targetRaw = readFileOrThrow(targetPath);
 
   const source = normalizeJson(sourceRaw);
@@ -57,7 +76,10 @@ function main() {
 }
 
 try {
-  main();
+  main().catch((error) => {
+    console.error('OpenAPI drift check failed:', error && error.message ? error.message : String(error));
+    process.exit(1);
+  });
 } catch (error) {
   console.error('OpenAPI drift check failed:', error.message);
   process.exit(1);
