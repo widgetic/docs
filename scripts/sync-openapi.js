@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Paths
-const SOURCE_PATH = path.resolve(
+const LOCAL_SOURCE_PATH = path.resolve(
   __dirname,
   '../../../Services/api-gateway-service/client-sdk/openapi-spec-public.json'
 );
@@ -24,17 +24,39 @@ const TARGET_PATH = path.resolve(
   '../openapi/widgetic-api-public.json'
 );
 
-function syncOpenApiSpec() {
-  console.log('🔄 Syncing OpenAPI spec...\n');
+async function readSourceSpec() {
+  const remoteUrl = process.env.OPENAPI_SOURCE_URL;
 
-  // Check if source exists
-  if (!fs.existsSync(SOURCE_PATH)) {
-    console.error('❌ Source file not found:', SOURCE_PATH);
+  // Preferred for CI in separate repos: fetch from deployed API or raw file URL.
+  if (remoteUrl) {
+    console.log('🌐 Fetching OpenAPI spec from:', remoteUrl);
+
+    if (typeof fetch !== 'function') {
+      throw new Error('Global fetch is not available in this Node runtime. Use Node 18+ or remove OPENAPI_SOURCE_URL.');
+    }
+
+    const response = await fetch(remoteUrl, { method: 'GET' });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch OpenAPI spec: HTTP ${response.status}`);
+    }
+
+    return await response.text();
+  }
+
+  // Local dev / monorepo-style fallback.
+  if (!fs.existsSync(LOCAL_SOURCE_PATH)) {
+    console.error('❌ Source file not found:', LOCAL_SOURCE_PATH);
     console.error('\nMake sure to generate the public spec first:');
     console.error('  cd Services/api-gateway-service');
     console.error('  npm run generate-schema-docs');
     process.exit(1);
   }
+
+  return fs.readFileSync(LOCAL_SOURCE_PATH, 'utf8');
+}
+
+async function syncOpenApiSpecAsync() {
+  console.log('🔄 Syncing OpenAPI spec...\n');
 
   // Ensure target directory exists
   const targetDir = path.dirname(TARGET_PATH);
@@ -43,8 +65,7 @@ function syncOpenApiSpec() {
     console.log('📁 Created directory:', targetDir);
   }
 
-  // Read source spec
-  const sourceSpec = fs.readFileSync(SOURCE_PATH, 'utf8');
+  const sourceSpec = await readSourceSpec();
   const spec = JSON.parse(sourceSpec);
 
   // Log spec info
@@ -102,9 +123,7 @@ function syncOpenApiSpec() {
 }
 
 // Run
-try {
-  syncOpenApiSpec();
-} catch (error) {
-  console.error('❌ Error syncing spec:', error.message);
+syncOpenApiSpecAsync().catch((error) => {
+  console.error('❌ Error syncing spec:', error && error.message ? error.message : String(error));
   process.exit(1);
-}
+});
