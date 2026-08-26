@@ -6998,7 +6998,7 @@
       "get": {
         "operationId": "getPartnerBillingOverview",
         "summary": "Get comprehensive partner billing overview",
-        "description": "Retrieves operational credits, enterprise customization, and billing integration status",
+        "description": "Retrieves operational credits, partner customization, and billing integration status",
         "tags": [
           "Partners"
         ],
@@ -11765,9 +11765,9 @@
           }
         }
       },
-      "EnterpriseCustomization": {
+      "PartnerCustomization": {
         "type": "object",
-        "description": "Enterprise plan customization for a partner",
+        "description": "Partner contract customization",
         "properties": {
           "id": {
             "type": "string",
@@ -11799,7 +11799,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Additional features beyond base enterprise plan",
+            "description": "Additional features beyond base partner plan",
             "example": [
               "Advanced analytics",
               "White-label branding"

@@ -12,9 +12,9 @@ The Widgetic API implements rate limits and usage quotas to ensure fair usage an
 | Plan | Requests/Minute | Requests/Day | Burst |
 |------|-----------------|--------------|-------|
 | Free | 60 | 1,000 | 10 |
-| Pro | 300 | 10,000 | 50 |
-| Partner | 600 | 50,000 | 100 |
-| Enterprise | Custom | Custom | Custom |
+| Solo | 300 | 10,000 | 50 |
+| Teams | 600 | 30,000 | 100 |
+| Partner | Custom | Custom | Custom |
 
 ### Rate Limit Headers
 
@@ -67,13 +67,13 @@ Some endpoints have additional limits:
 
 ### Monthly Quotas by Plan
 
-| Resource | Free | Pro | Partner |
-|----------|------|-----|---------|
-| AI Generations | 50 | 500 | 5,000 |
-| Storage | 100 MB | 5 GB | 50 GB |
-| API Calls | 1,000 | 50,000 | 500,000 |
-| Widgets | 10 | 100 | Unlimited |
-| Compositions | 5 | 50 | Unlimited |
+| Resource | Free | Solo | Teams | Partner |
+|----------|------|------|-------|---------|
+| AI Generations | 50 | 500 | 2,000 | Custom |
+| Storage | 100 MB | 5 GB | 50 GB | Custom |
+| API Calls | 1,000 | 50,000 | 200,000 | Custom |
+| Widgets | 10 | 100 | Unlimited | Unlimited |
+| Compositions | 5 | 50 | Unlimited | Unlimited |
 
 ### Checking Your Quota
 
@@ -156,7 +156,7 @@ async function getCachedWidget(id) {
 If you need higher limits:
 
 1. **Upgrade your plan** via the dashboard
-2. **Contact sales** for enterprise plans
+2. **Contact sales** for partner plans with custom limits
 3. **Provide use case** details for custom limits
 
 Contact [support@widgetic.com](mailto:support@widgetic.com) with your requirements.
