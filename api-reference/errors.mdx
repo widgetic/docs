@@ -81,6 +81,30 @@ Errors related to permissions and access control.
 | `AUTHZ_ORGANIZATION_ACCESS_DENIED` | You do not have permission to access this organization | Contact the organization owner for access |
 | `AUTHZ_PLAN_RESTRICTION` | This feature is not available on your current plan | Upgrade your plan to access this feature |
 
+#### Plan restrictions
+
+Advanced analytics, A/B testing, translations and inviting teammates are part of the Teams plan. A request for one of them from an account on another plan fails with `AUTHZ_PLAN_RESTRICTION`, and the response says which capability was needed and what would unlock it:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTHZ_PLAN_RESTRICTION",
+    "message": "A/B testing is part of the Teams plan. Upgrade to Teams to use it.",
+    "details": {
+      "feature": "experiments.ab_testing",
+      "upgradeTo": "teams"
+    },
+    "correlationId": "req_123e4567-e89b-12d3-a456-426614174000"
+  }
+}
+```
+
+| `details` field | Description |
+|-----------------|-------------|
+| `feature` | The capability the request needed: `analytics.advanced`, `experiments.ab_testing`, `experiments.translations` or `team.collaboration` |
+| `upgradeTo` | The plan that includes it (`"teams"`), or `null` when buying a plan would not help. `null` is what a member of a team whose subscription has lapsed receives: the team's owner has to update billing |
+
 ### Validation Errors (400)
 
 Errors related to request format and data validation.
@@ -141,6 +165,7 @@ Errors related to business rules and state conflicts.
 |------|--------|---------|------------------|
 | `BUSINESS_OPERATION_INVALID` | 422 | The requested operation is not valid in the current context | Review the operation requirements and current state |
 | `BUSINESS_STATE_CONFLICT` | 409 | The operation conflicts with the current resource state | Refresh the resource state and try again |
+| `CONFLICT_IDEMPOTENCY_IN_PROGRESS` | 409 | A request with this idempotency key is still being processed | Wait for the `Retry-After` seconds, then retry with the **same** `Idempotency-Key` |
 | `BUSINESS_WIDGET_ALREADY_PUBLISHED` | 409 | The widget is already published | Unpublish the widget first or create a new version |
 | `BUSINESS_SUBSCRIPTION_REQUIRED` | 402 | A subscription is required to perform this action | Subscribe to a plan to access this feature |
 
@@ -277,6 +302,10 @@ const widget = await withRetry(() =>
 <Info>
   See [Idempotency](/docs/reference/idempotency) for more details on safe retries.
 </Info>
+
+<Note>
+  A `409` with the code `CONFLICT_IDEMPOTENCY_IN_PROGRESS` means your earlier request with the same key is still running. It is safe to retry: wait for the `Retry-After` header and resend with the **same** key. Any other `409` is not retryable as-is.
+</Note>
 
 ---
 
