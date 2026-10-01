@@ -19,16 +19,26 @@ curl -X POST "https://api.widgetic.com/v1/widgets" \
 
 ## Behavior
 
-1. **First Request**: Processed normally, response cached
-2. **Retry with Same Key**: Returns cached response
-3. **Different Key**: Processed as new request
+1. **First Request**: Processed normally. A successful (`2xx`) response is stored for 24 hours
+2. **Retry with Same Key**: Returns the stored response with an `X-Idempotency-Cached: true` header. The operation is **not** run again
+3. **Retry While the First Is Still Running**: Returns `409 Conflict` with a `Retry-After` header. The operation is not run a second time; wait, then retry with the **same** key (see [Retrying a request that is still running](#retrying-a-request-that-is-still-running))
+4. **Retry After a Failure**: Only successful responses are stored. If the first attempt failed (any non-`2xx` response), retrying with the same key runs the operation again
+5. **Same Key, Different Body**: Returns `422`. A key names exactly one request
+6. **Different Key**: Processed as new request
+
+## What Counts as the Same Request
+
+A key only matches a request with the same:
+
+- **Account** (or organization, for organization API keys)
+- **HTTP method**
+- **URL**, including path parameters and query string
+
+The same key sent to a different endpoint, or by a different account, is a different request. Your keys can never collide with another customer's, so you don't need to add a namespace of your own.
 
 ## Supported Methods
 
-Idempotency is supported on:
-- `POST` requests
-- `PUT` requests
-- `DELETE` requests
+Idempotency is supported on state-changing requests: `POST` and `PATCH` requests, and `PUT` requests on the endpoints that document it. Where an endpoint requires a key, omitting the header returns `400`.
 
 `GET` requests are naturally idempotent and don't need keys.
 
@@ -36,8 +46,8 @@ Idempotency is supported on:
 
 - **Unique per operation**: Use a combination of action + context + timestamp
 - **Client-generated**: You control the key generation
-- **Max length**: 255 characters
-- **Expiration**: Keys expire after 24 hours
+- **Format**: 8 to 50 characters — letters, digits, dashes and underscores (a UUID works well)
+- **Expiration**: Stored responses expire after 24 hours
 
 ## Generating Good Keys
 
@@ -78,6 +88,59 @@ async function createWidgetSafely(name: string, userId: string) {
 }
 ```
 
+## Retrying a Request That Is Still Running
+
+If your client times out and retries while the first request is still being processed, the retry is refused instead of running the operation twice:
+
+```http
+HTTP/1.1 409 Conflict
+Retry-After: 2
+```
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "CONFLICT_IDEMPOTENCY_IN_PROGRESS",
+    "message": "A request with this idempotency key is still being processed; retry once it has finished",
+    "retryAfter": 2
+  }
+}
+```
+
+Wait for `Retry-After` seconds and send the request again with the **same** key. You will receive either the stored response (the first request succeeded) or a fresh run (the first request failed and released the key). Do not generate a new key: that would run the operation twice.
+
+```typescript
+async function postWithRetry(url: string, body: unknown, idempotencyKey: string) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': idempotencyKey, // same key on every attempt
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (response.status === 409) {
+      const { error } = await response.clone().json();
+      if (error?.code === 'CONFLICT_IDEMPOTENCY_IN_PROGRESS') {
+        const waitSeconds = Number(response.headers.get('Retry-After') ?? 2);
+        await sleep(waitSeconds * 1000);
+        continue;
+      }
+    }
+    return response;
+  }
+  throw new Error('The original request is taking longer than expected');
+}
+```
+
+<Note>
+  A request that is interrupted (for example, the server restarts mid-request) frees its key within about a minute, so a retry is never blocked for long.
+</Note>
+
 ## When to Use Idempotency
 
 | Scenario | Use Idempotency? |
@@ -97,11 +160,15 @@ async function createWidgetSafely(name: string, userId: string) {
 
 ```typescript
 // ❌ Bad - same key for different widgets
-const key = 'my-key';
+const key = 'my-key-0001';
 await createWidget('Widget A', key);
-await createWidget('Widget B', key); // Returns Widget A!
+await createWidget('Widget B', key); // Rejected (422): key already used with a different body
 
 // ✅ Good - unique key per operation
 await createWidget('Widget A', 'key-widget-a');
 await createWidget('Widget B', 'key-widget-b');
 ```
+
+<Warning>
+  If the request body is identical as well, a reused key returns the **first** response again and nothing new is created. A key that is easy to repeat, such as a counter or a bare timestamp, can therefore silently turn a second, separate operation into a replay. Use a UUID.
+</Warning>

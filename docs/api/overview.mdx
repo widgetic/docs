@@ -142,7 +142,7 @@ See [Rate Limits](/docs/reference/rate-limits) for more details.
 
 ## Idempotency
 
-For POST, PUT, and DELETE requests, you can provide an idempotency key:
+For state-changing requests (`POST`, `PATCH`, and `PUT` on the endpoints that document it), provide an idempotency key so a retry never runs the operation twice:
 
 ```bash
 curl -X POST "https://api.widgetic.com/v1/widgets" \
