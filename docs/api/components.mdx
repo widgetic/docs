@@ -17,34 +17,20 @@ With the Components API, you can:
 
 ## List Components
 
-Retrieve all components for a canvas:
+Retrieve all components for a canvas. In version 1.0.22 of the SDK, `getComponents` is typed to return nothing, so read the list with plain HTTP:
 
-```typescript
-import { ComponentsApi } from '@widgetic/api-sdk';
-
-const components = new ComponentsApi('YOUR_API_KEY');
-
-const { data, meta } = await components.getComponents({
-  canvasId: '123e4567-e89b-12d3-a456-426614174000',
-  page: 1,
-  size: 20
-});
-
-console.log(`Found ${meta.total} components`);
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  "https://api.widgetic.com/v1/canvases/$CANVAS_ID/components?page=1&size=20"
 ```
 
 ## Get Component by ID
 
-Retrieve a specific component within a canvas:
+Retrieve a specific component within a canvas. `getComponent` is typed to return nothing in version 1.0.22 of the SDK too, so use plain HTTP here, or [read the component directly](#get-component-directly):
 
-```typescript
-const component = await components.getComponent({
-  canvasId: '123e4567-e89b-12d3-a456-426614174000',
-  componentId: '223e4567-e89b-12d3-a456-426614174001'
-});
-
-console.log('Component:', component.name);
-console.log('Widget ID:', component.widget_id);
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  "https://api.widgetic.com/v1/canvases/$CANVAS_ID/components/$COMPONENT_ID"
 ```
 
 ## Create Component
@@ -56,8 +42,6 @@ const newComponent = await components.createComponent({
   canvasId: '123e4567-e89b-12d3-a456-426614174000',
   createComponentRequest: {
     name: 'Chart Component',
-    widget_id: '323e4567-e89b-12d3-a456-426614174002',
-    is_widget: true,
     description: 'A data visualization component',
     category: 'visualization',
     tags: ['chart', 'data'],
@@ -138,50 +122,9 @@ interface Component {
 }
 ```
 
-## Component Categories
+## Categories and Tags
 
-Organize components by category:
-
-| Category | Description |
-|----------|-------------|
-| `visualization` | Charts, graphs, data displays |
-| `media` | Images, videos, audio |
-| `form` | Input fields, buttons, forms |
-| `layout` | Containers, grids, panels |
-| `navigation` | Menus, tabs, breadcrumbs |
-| `content` | Text, cards, lists |
-
-## Component Versions
-
-Components track versions through the publish workflow:
-
-```mermaid
-flowchart LR
-    Edit[Edit Component] --> Save[Save Draft]
-    Save --> Build[Build & Publish]
-    Build --> V1[Version 1]
-    V1 --> Edit2[Edit Again]
-    Edit2 --> Build2[Build & Publish]
-    Build2 --> V2[Version 2]
-```
-
-## Publishing Components
-
-Publish a component to create a new version:
-
-```typescript
-// This triggers the build workflow
-const result = await components.publishComponent({
-  canvasId: '123e4567-e89b-12d3-a456-426614174000',
-  componentId: '223e4567-e89b-12d3-a456-426614174001',
-  publishRequest: {
-    vmSessionId: 'vm-session-uuid',
-    repositoryId: 'repository-uuid'
-  }
-});
-
-console.log('Build triggered:', result.eventId);
-```
+`category` is free text that you choose, and `tags` is a list of strings. Use them to organize your own components.
 
 ## Related Endpoints
 

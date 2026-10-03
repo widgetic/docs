@@ -1,17 +1,32 @@
 ---
 title: UI Components
 description: Embeddable UI components for partners
+tag: "Planned"
 ---
 
-Widgetic provides several embeddable UI components that partners can integrate into their platforms.
+Widgetic plans to provide several embeddable UI components that partners can integrate into their platforms.
+
+<Warning>
+  **Planned. Not available yet.** None of these components can be mounted in your own page today. The UI SDK (`@widgetic/ui-sdk`) is not published, and the `/ui/components` calls only keep a record of a mount: they show nothing in your page. This page describes the design we plan to ship, and it can change, so do not build on it yet. See [Canvas Embedding](/docs/partners/canvas-embedding) for what to use today.
+</Warning>
 
 ## Available Components
+
+These are the three component ids the API knows:
 
 | Component ID | Name | Description |
 |--------------|------|-------------|
 | `widget-creator` | Widget Creator | Full widget creation experience with AI assistance |
 | `composition-editor` | Composition Editor | Edit and arrange widgets in compositions |
 | `embed-editor` | Embed Editor | Configure widget embed settings and appearance |
+
+The examples on this page use `ui`, an instance of `UIComponentsApi` from the API SDK, set up with a short-lived token from your server (see [Security Considerations](/docs/partners/canvas-embedding#security-considerations)):
+
+```typescript
+import { UIComponentsApi } from '@widgetic/api-sdk';
+
+const ui = new UIComponentsApi(tokenFromYourServer);
+```
 
 ## Widget Creator
 
@@ -82,7 +97,7 @@ await ui.mountComponent({
 
 ## Component Manifest
 
-Each component has a manifest describing its assets and configuration:
+Each component is planned to have a manifest describing its assets and configuration. This is the shape the API declares; the values are an example:
 
 ```typescript
 const manifest = await ui.getComponentManifest({ 
@@ -94,8 +109,8 @@ const manifest = await ui.getComponentManifest({
 //   version: "2.1.0",
 //   dependencies: ["fabric.js", "svelte"],
 //   assets: {
-//     js: ["https://cdn.widgetic.com/ui/widget-creator.js"],
-//     css: ["https://cdn.widgetic.com/ui/widget-creator.css"]
+//     js: ["https://example.com/ui/widget-creator.js"],
+//     css: ["https://example.com/ui/widget-creator.css"]
 //   },
 //   config: {
 //     supportedEvents: ["widgetCreated", "widgetSaved", "error"],
@@ -107,7 +122,7 @@ const manifest = await ui.getComponentManifest({
 
 ## Theming Reference
 
-All components support comprehensive theming:
+The components are planned to support comprehensive theming. Today the API accepts only `mode`, `colors.primary`, `colors.secondary`, `colors.background`, `colors.text`, `typography.fontFamily` and `typography.fontSize`; the other values below are part of the plan:
 
 ```typescript
 const theme = {
@@ -142,7 +157,7 @@ const theme = {
 
 ## Event Callbacks
 
-Components emit events that you can handle:
+Components are planned to emit events that you can handle. The callbacks are functions that live in the browser, so they belong to the planned UI SDK: the API call takes JSON and cannot carry a function.
 
 ```typescript
 const callbacks = {

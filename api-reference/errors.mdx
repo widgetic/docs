@@ -195,17 +195,25 @@ Internal system errors.
 
 ### JavaScript/TypeScript
 
-```javascript
-import { WidgetsApi } from '@widgetic/api-sdk';
+The SDK throws a `ResponseError` for every answer that is not a success. The HTTP status is `error.response.status`, the response headers are `error.response.headers`, and the body is the error format shown above: read it with `await error.response.json()`. `error.code` holds the machine-readable `code` from that body.
 
-const widgets = new WidgetsApi('YOUR_API_KEY');
+```javascript
+import { CompositionsApi, ResponseError } from '@widgetic/api-sdk';
+
+const compositions = new CompositionsApi('YOUR_API_KEY');
 
 try {
-  const widget = await widgets.getWidgetById({ widgetId: 'invalid-id' });
+  const composition = await compositions.getCompositionById({
+    id: '123e4567-e89b-12d3-a456-426614174000'
+  });
 } catch (error) {
-  const errorBody = error.body?.error;
-  
-  switch (error.status) {
+  // Anything that is not a ResponseError is not an answer from the API (for example, a network failure)
+  if (!(error instanceof ResponseError)) throw error;
+
+  // The body is the error format above. It may be missing if something in front of the API answered
+  const errorBody = (await error.response.json().catch(() => null))?.error;
+
+  switch (error.response.status) {
     case 401:
       console.log('Authentication failed:', errorBody?.code);
       // Re-authenticate or refresh token
@@ -216,10 +224,11 @@ try {
     case 404:
       console.log('Resource not found');
       break;
-    case 429:
-      const retryAfter = error.headers?.get('Retry-After') || 60;
+    case 429: {
+      const retryAfter = error.response.headers.get('Retry-After') ?? 60;
       console.log(`Rate limited. Retry after ${retryAfter} seconds`);
       break;
+    }
     default:
       console.error('Error:', errorBody?.message);
       console.error('Correlation ID:', errorBody?.correlationId);
@@ -233,14 +242,17 @@ Every error response includes a `correlationId`. Include this when contacting su
 
 ```javascript
 catch (error) {
-  const correlationId = error.body?.error?.correlationId;
-  console.error(`Error [${correlationId}]:`, error.body?.error?.message);
+  if (!(error instanceof ResponseError)) throw error;
+
+  const errorBody = (await error.response.json().catch(() => null))?.error;
+  const correlationId = errorBody?.correlationId;
+  console.error(`Error [${correlationId}]:`, errorBody?.message);
   
   // Log for support requests
   logger.error('API Error', {
     correlationId,
-    code: error.body?.error?.code,
-    status: error.status
+    code: errorBody?.code,
+    status: error.response.status
   });
 }
 ```
@@ -254,17 +266,22 @@ catch (error) {
 For transient errors (429, 503, 504), implement exponential backoff:
 
 ```javascript
+import { ResponseError } from '@widgetic/api-sdk';
+
 async function withRetry(fn, maxRetries = 3) {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
-      const isRetryable = [429, 503, 504].includes(error.status);
+      // Only an answer from the API carries a status; anything else is thrown as it is
+      if (!(error instanceof ResponseError)) throw error;
+
+      const isRetryable = [429, 503, 504].includes(error.response.status);
       
       if (isRetryable && attempt < maxRetries - 1) {
-        const retryAfter = error.headers?.get('Retry-After');
+        const retryAfter = error.response.headers.get('Retry-After');
         const delay = retryAfter 
-          ? parseInt(retryAfter) * 1000 
+          ? parseInt(retryAfter, 10) * 1000 
           : Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
         
         console.log(`Retrying in ${delay}ms (attempt ${attempt + 1})`);
@@ -276,8 +293,8 @@ async function withRetry(fn, maxRetries = 3) {
   }
 }
 
-const widget = await withRetry(() => 
-  widgets.getWidgetById({ widgetId: 'widget-id' })
+const composition = await withRetry(() => 
+  compositions.getCompositionById({ id: 'composition-id' })
 );
 ```
 
@@ -286,13 +303,17 @@ const widget = await withRetry(() =>
 For POST/PUT operations, use idempotency keys to safely retry:
 
 ```javascript
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
+import { WidgetsApi } from '@widgetic/api-sdk';
 
-const idempotencyKey = uuidv4();
+const widgets = new WidgetsApi('YOUR_API_KEY');
+
+// One key for the operation: every retry sends the same one
+const idempotencyKey = randomUUID();
 
 const widget = await withRetry(() => 
   widgets.createWidget({
-    createWidgetRequest: { name: 'My Widget' }
+    newWidget: { name: 'My Widget', type: 'chart', content: {} }
   }, {
     headers: { 'Idempotency-Key': idempotencyKey }
   })

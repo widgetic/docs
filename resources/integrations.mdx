@@ -3,103 +3,69 @@ title: Integrations
 description: Integrate Widgetic with other platforms
 ---
 
-Widgetic can be integrated with various platforms and services to enhance your workflow.
+Widgetic can be integrated with various platforms and services to enhance your workflow. A widget is shown on a page through a composition, and the page needs only the composition id: there is no key in the page.
+
+## Embed Code
+
+This is the code that every example below uses. Put your own composition id in it:
+
+```html
+<script src="https://cdn.widgetic.com/sdks/browser/embed-sdk.js?v=6"></script>
+<widgetic composition-id="YOUR_COMPOSITION_ID" resize="fill-width" width="800" height="450" autoscale="on" adaptive="480" embed-target="site"></widgetic>
+```
+
+The Embed tab writes the same code from the composition's saved settings. See [Embed Script](/resources/sdks#embed-script) for what each attribute does.
+
+<Note>
+  If you limit the websites that may show your widgets, add every address that will show one, including preview and staging addresses. A page on an address that is not on the list shows nothing. See [Security](/resources/security).
+</Note>
 
 ## CMS Integrations
 
+Paste the embed code wherever the platform lets you add custom HTML.
+
 ### WordPress
 
-Embed widgets in WordPress using shortcodes or the block editor:
-
-```
-[widgetic id="widget-uuid" responsive="true"]
-```
-
-Or use the Gutenberg block:
 1. Add a "Custom HTML" block
-2. Paste the embed code from your widget
+2. Paste the embed code
+3. Update the page
 
 ### Webflow
 
 1. Add an Embed element
-2. Paste the Widgetic embed code
+2. Paste the embed code
 3. Publish your site
 
 ### Shopify
 
-Add widgets to your Shopify store:
-
-```liquid
-{% comment %} In your theme template {% endcomment %}
-<div id="widgetic-widget"></div>
-<script src="https://cdn.widgetic.com/embed.js"></script>
-<script>
-  Widgetic.embed({
-    widgetId: '{{ widget_id }}',
-    container: '#widgetic-widget'
-  });
-</script>
-```
+1. Open the theme editor and add a "Custom Liquid" section where the widget should go
+2. Paste the embed code
+3. Save the theme
 
 ## E-commerce
 
 ### Product Configurators
 
-Use widgets as interactive product configurators:
-
-```typescript
-// Pass product data to widget
-embed({
-  widgetId: 'configurator-widget',
-  container: '#configurator',
-  config: {
-    product: {
-      id: 'product-123',
-      name: 'Custom T-Shirt',
-      variants: productVariants
-    }
-  },
-  callbacks: {
-    onConfiguration: (config) => {
-      // Add configured product to cart
-      addToCart(config);
-    }
-  }
-});
-```
+Use widgets as interactive product configurators. The embed shows what its composition holds, so keep the widget up to date by saving your product data to the composition from your server whenever your catalogue changes. See [Compositions](/docs/api/compositions) for how to save a composition.
 
 ### Pricing Calculators
 
-Build interactive pricing calculators:
+The same applies to pricing calculators: save your plans and prices to the composition, and every page that embeds it shows them.
 
-```typescript
-embed({
-  widgetId: 'pricing-calculator',
-  container: '#pricing',
-  config: {
-    plans: [
-      { name: 'Starter', price: 9, features: [...] },
-      { name: 'Pro', price: 29, features: [...] }
-    ]
-  },
-  callbacks: {
-    onPlanSelected: (plan) => {
-      window.location.href = `/checkout?plan=${plan.id}`;
-    }
-  }
-});
-```
+<Note>
+  This page does not document a way for the `<widgetic>` tag to hand a visitor's choice back to your page, for example to add a configured product to a cart. Build that step on your own page, around the embed.
+</Note>
 
 ## Marketing Tools
 
 ### Email Marketing
 
-Embed widgets in email campaigns (static preview with click-through):
+Email programs do not run scripts or embedded frames, so a widget cannot run inside an email. Send a static image of your own (a screenshot of the widget) that links to a page where the widget is embedded:
 
 ```html
 <!-- Email template -->
 <a href="https://your-site.com/interactive-widget">
-  <img src="https://api.widgetic.com/v1/widgets/{id}/preview.png" 
+  <img src="https://your-site.com/images/widget-preview.png" 
        alt="Interactive Widget" />
 </a>
 ```
@@ -117,42 +83,52 @@ Use widgets for interactive landing page elements:
 
 ### Google Analytics
 
-Track widget interactions:
+Count how many visitors actually see the widget, by sending an event once it scrolls into view:
 
 ```typescript
-embed({
-  widgetId: 'widget-uuid',
-  container: '#widget',
-  callbacks: {
-    onInteraction: (event) => {
-      gtag('event', event.type, {
+const widgetElement = document.querySelector('widgetic[composition-id="YOUR_COMPOSITION_ID"]');
+
+if (widgetElement) {
+  const viewObserver = new IntersectionObserver((entries) => {
+    if (entries.some((entry) => entry.isIntersecting)) {
+      gtag('event', 'widget_viewed', {
         event_category: 'Widget',
-        event_label: event.detail
+        event_label: 'YOUR_COMPOSITION_ID'
       });
+      viewObserver.disconnect(); // Count each page view once
     }
-  }
-});
+  }, { threshold: 0.5 });
+
+  viewObserver.observe(widgetElement);
+}
 ```
 
 ### Mixpanel
 
 ```typescript
-callbacks: {
-  onInteraction: (event) => {
-    mixpanel.track('Widget Interaction', {
-      widget_id: 'widget-uuid',
-      event_type: event.type,
-      ...event.detail
-    });
-  }
+const widgetElement = document.querySelector('widgetic[composition-id="YOUR_COMPOSITION_ID"]');
+
+if (widgetElement) {
+  const viewObserver = new IntersectionObserver((entries) => {
+    if (entries.some((entry) => entry.isIntersecting)) {
+      mixpanel.track('Widget Viewed', {
+        composition_id: 'YOUR_COMPOSITION_ID'
+      });
+      viewObserver.disconnect();
+    }
+  }, { threshold: 0.5 });
+
+  viewObserver.observe(widgetElement);
 }
 ```
 
 ## Webhooks
 
-Receive real-time updates via webhooks:
+<Warning>
+  **Not available yet.** Widgetic does not send these events to your server today, and there is no Webhooks page in the dashboard. The design below is a sketch and may change.
+</Warning>
 
-### Available Events
+### Events in the Sketch
 
 | Event | Description |
 |-------|-------------|
@@ -161,7 +137,7 @@ Receive real-time updates via webhooks:
 | `widget.published` | Widget published |
 | `composition.saved` | Composition saved |
 
-### Setup
+### Setup in the Sketch
 
 1. Go to Dashboard → Settings → Webhooks
 2. Add your endpoint URL
@@ -196,41 +172,39 @@ app.post('/webhooks/widgetic', (req, res) => {
 
 ## Zapier
 
-Connect Widgetic to 5000+ apps via Zapier:
-
-1. Search for "Widgetic" in Zapier
-2. Connect your account
-3. Create Zaps with triggers and actions
-
-### Example Zaps
-
-- **Widget Created → Slack**: Notify team of new widgets
-- **Form Submission → CRM**: Add leads to HubSpot/Salesforce
-- **Widget Published → Email**: Send notification emails
-
-## API Wrappers
-
-### Python (Community)
-
-```python
-from widgetic import Widgetic
-
-client = Widgetic(api_key='YOUR_API_KEY')
-widgets = client.widgets.list(page=1, size=20)
-```
-
-### PHP (Community)
-
-```php
-use Widgetic\Client;
-
-$client = new Client('YOUR_API_KEY');
-$widgets = $client->widgets()->list(['page' => 1, 'size' => 20]);
-```
+Zapier connects Widgetic to other apps. The Zapier page in your Widgetic account (Integrations → Zapier) shows the current setup steps and the link to the Widgetic app in Zapier.
 
 <Note>
-  Community SDKs are maintained by third parties. For official support, use the TypeScript SDK.
+  The Widgetic app is not listed in Zapier's public app directory yet. The account behind the key needs a paid plan: a key from a trial or free account is refused with `403` and the code `AUTHZ_PLAN_RESTRICTION`.
 </Note>
+
+### Setup
+
+1. Copy your API key from the API Keys page of your Widgetic account (create one there if you need a new one)
+2. In Zapier, choose "Connect Widgetic Account" and enter the key when asked
+3. Create a Zap with a trigger and an action, test it, and turn it on
+
+### Triggers
+
+- **Widget Interaction**: when users interact with a widget
+- **Milestone Reached**: when widgets reach completion thresholds
+- **Engagement Threshold**: when user engagement exceeds a level
+- **Content Updated**: when widget content is modified
+
+### Actions
+
+- **Update Widget Content**: change the content of a widget
+- **Trigger Widget Actions**: run a widget-specific function
+- **Broadcast Messages**: send a message to several widgets
+- **Trigger Overlays**: show an overlay with custom content
+
+<Note>
+  Widgetic sends at most 60 events a minute to one Zap. Events over that are not sent.
+</Note>
+
+## Other Languages
+
+Widgetic does not publish a Python or PHP package. Any language that can send HTTPS requests can call the REST API, and every endpoint in the [API Reference](/api-reference/introduction) has request samples in several languages. For TypeScript, use the [API SDK](/resources/sdks).
 
 ## Need a Custom Integration?
 

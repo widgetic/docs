@@ -3,30 +3,29 @@ title: SDKs
 description: Official Widgetic SDKs and libraries
 ---
 
-Widgetic provides SDKs to simplify integration with our platform.
+Widgetic provides an SDK for calling the API from your server, and an embed script for showing widgets on your pages.
 
 ## Official SDKs
 
 <CardGroup cols={2}>
   <Card title="JavaScript / TypeScript API SDK" icon="js">
-    Primary SDK for Node.js and modern browsers
+    The `@widgetic/api-sdk` package on npm, for your server
   </Card>
-  <Card title="Embed SDK" icon="code">
-    Lightweight SDK for embedding widgets
+  <Card title="Embed Script" icon="code">
+    One script tag from the Widgetic CDN that shows published widgets. It is not an npm package
   </Card>
-  <Card title="UI SDK" icon="window">
-    For partners embedding UI components
+  <Card title="UI SDK (planned)" icon="window">
+    For partners embedding UI components. Not published yet
   </Card>
 </CardGroup>
 
 <Tip>
-  We currently publish official SDK packages for **JavaScript/TypeScript**, **Embed**, and **UI**.
-  For other languages, use the multi-language code samples in the API Reference (or cURL).
+  Only the API SDK is published on npm today. For other languages, use the multi-language code samples in the API Reference (or cURL).
 </Tip>
 
 ## JavaScript / TypeScript API SDK
 
-The primary SDK for interacting with the Widgetic API.
+The primary SDK for interacting with the Widgetic API from your server.
 
 ### Installation
 
@@ -52,17 +51,23 @@ pnpm add @widgetic/api-sdk
 import { WidgetsApi } from '@widgetic/api-sdk';
 
 // Initialize with API key
-const widgets = new WidgetsApi('YOUR_API_KEY');
+const widgets = new WidgetsApi(process.env.WIDGETIC_API_KEY);
 
 // Fetch widgets
-const result = await widgets.getAllWidgets({ page: 1, size: 20 });
+const result = await widgets.getWidgets({ page: 1, size: 20 });
 console.log(result);
 ```
+
+Every method takes one request object, for example `getWidgets({ page: 1, size: 20 })`, and the body of a create call sits under a named key, for example `createManagedUser({ newManagedUser: { ... } })`.
 
 <Tip>
   You can use either API keys (recommended for server-side) or JWTs depending on your integration.
   See [Authentication](/docs/authentication) for details.
 </Tip>
+
+<Warning>
+  Call the SDK from your server, never from a browser page: a key in a page can be read by every visitor.
+</Warning>
 
 ### Available APIs
 
@@ -76,121 +81,68 @@ console.log(result);
 | `EntitlementsApi` | Feature access |
 | `UsersApi` | User management |
 | `ManagedUsersApi` | Partner user management |
-| `UIApi` | UI component embedding |
+| `UIComponentsApi` | UI component records (the mountable editor is planned) |
 | `PartnersApi` | Partner operations |
+| `CreditsApi` | Account credit balance and ledger |
+| `InvoicesApi` | Invoices |
 
-## Embed SDK
+### Sending an Idempotency-Key
 
-Lightweight SDK for embedding widgets on your website.
-
-### Installation
-
-<CodeGroup>
-
-```bash npm
-npm install @widgetic/embed-sdk
-```
-
-```bash yarn
-yarn add @widgetic/embed-sdk
-```
-
-```bash pnpm
-pnpm add @widgetic/embed-sdk
-```
-
-</CodeGroup>
-
-### Usage
+Some calls need an `Idempotency-Key` header, such as creating a composition, a widget or a managed user (see [Idempotency](/docs/reference/idempotency)). The SDK's create methods do not send one for you, so add it through the second argument:
 
 ```javascript
-import { embed, embedComposition } from '@widgetic/embed-sdk';
+import { randomUUID } from 'node:crypto';
+import { CompositionsApi } from '@widgetic/api-sdk';
 
-// Embed a single widget
-embed({
-  widgetId: 'widget-uuid',
-  container: '#widget-container',
-  responsive: true
-});
+const compositions = new CompositionsApi(process.env.WIDGETIC_API_KEY);
 
-// Embed a composition
-embedComposition({
-  compositionId: 'composition-uuid',
-  container: '#composition-container'
-});
+const composition = await compositions.createComposition(
+  { newComposition },
+  // Keep the headers the SDK already set, and add the key. Reuse the same key when you retry this call
+  async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': randomUUID() } })
+);
 ```
 
-### Features
+### Known Gaps in Version 1.0.22
 
-- **Progressive enhancement**: Falls back gracefully
-- **Responsive**: Adapts to container size
-- **HTTP/3 support**: Optimized loading
-- **Lazy loading**: Load widgets on demand
+The version on npm today was generated before some changes to the API. When a call fails or a field is `undefined`, compare it with the [API Reference](/api-reference/introduction):
+
+- A few calls use older addresses, which the API does not serve: the account credit calls (`getUserCreditBalance`, `getUserCreditTransactions`), the entitlement calls (`getManagedUserEntitlements`, `getPartnerEntitlements`) and the invoice calls for one partner or one user (`getInvoicesByPartnerId`, `getInvoicesByUserId`). Use plain HTTP for them, as the [Credits & Billing](/docs/partners/credits-billing) and [Managed Users](/docs/partners/managed-users) pages show.
+- Response types name some fields in snake_case (`external_id`), where the API answers in camelCase (`externalId`). Read the camelCase name at run time.
+- The newer partner calls, such as reading your contract and the billing overview, are not in it. Use plain HTTP.
+- Two calls are typed to return nothing, so the SDK gives you no data from them: `getComponents` and `getComponent`. Use plain HTTP, as the [Components](/docs/api/components) page shows.
+
+These come from the SDK build, not from the API. When a newer version is published, check this list again.
+
+## Embed Script
+
+To show a published widget on your pages, load the embed script from the Widgetic CDN and put a `<widgetic>` element where the widget should appear. There is nothing to install and no key in the page: showing a widget needs only the composition id.
+
+```html
+<script src="https://cdn.widgetic.com/sdks/browser/embed-sdk.js?v=6"></script>
+<widgetic composition-id="COMPOSITION_ID" resize="fill-width" width="800" height="450" autoscale="on" adaptive="480" embed-target="site"></widgetic>
+```
+
+- **Several widgets on one page** work with one script tag.
+- **Responsive**: `resize` and `adaptive` control how the widget fits its container.
+- **`embed-target`** is `site` to put the widget inside the page, `overlay` to show it as a pop-up, or `mixed` for both. Overlay is the default, so use `site` for an ordinary embed.
+- **Allowed websites**: if you limited the websites that may show your widgets, the script shows nothing on other websites. See [Security](/resources/security).
+
+When you cannot load a script, use the frame instead:
+
+```html
+<iframe src="https://api.widgetic.com/embed/compositions/COMPOSITION_ID/frame" width="800" height="450" frameborder="0" allowfullscreen></iframe>
+```
+
+<Note>
+  The embed script is not on npm: `npm install @widgetic/embed-sdk` finds nothing today.
+</Note>
 
 ## UI SDK (Partners)
 
-For partners embedding Widgetic UI components.
-
-### Installation
-
-<CodeGroup>
-
-```bash npm
-npm install @widgetic/ui-sdk
-```
-
-```bash yarn
-yarn add @widgetic/ui-sdk
-```
-
-```bash pnpm
-pnpm add @widgetic/ui-sdk
-```
-
-</CodeGroup>
-
-### Usage
-
-```javascript
-import { WidgeticUI } from '@widgetic/ui-sdk';
-
-const ui = new WidgeticUI({
-  apiKey: 'wgt_prt_your_partner_key'
-});
-
-// Mount widget creator
-await ui.mount('widget-creator', {
-  container: '#editor-container',
-  theme: 'dark',
-  onSave: (widget) => console.log('Widget saved:', widget)
-});
-```
-
-## Browser Usage
-
-### ESM Import
-
-```html
-<script type="module">
-  import { WidgetsApi } from 'https://cdn.widgetic.com/sdk/api-sdk.esm.js';
-  
-  const widgets = new WidgetsApi('YOUR_API_KEY');
-  const result = await widgets.getAllWidgets();
-  console.log(result);
-</script>
-```
-
-### Script Tag
-
-```html
-<script src="https://cdn.widgetic.com/sdk/embed-sdk.umd.js"></script>
-<script>
-  Widgetic.embed({
-    widgetId: 'widget-uuid',
-    container: '#widget-container'
-  });
-</script>
-```
+<Warning>
+  **Planned. Not available yet.** The UI SDK (`@widgetic/ui-sdk`) is not published, so `npm install @widgetic/ui-sdk` finds nothing today, and the editor it would mount does not exist for partners yet. See [UI Components](/docs/partners/ui-components) for the plan.
+</Warning>
 
 ## Multi-Language Code Samples (API Reference)
 

@@ -56,7 +56,7 @@ For secure client-side usage, exchange your API key for a short-lived token:
 curl -X POST "https://api.widgetic.com/v1/tokens/exchange" \
   -H "Authorization: Bearer wgt_usr_your_api_key" \
   -H "Content-Type: application/json" \
-  -d '{"scopes": ["read:widgets", "write:compositions"]}'
+  -d '{"scopes": ["widgets:read", "compositions:write"], "expiresIn": 1800}'
 ```
 
 ```typescript TypeScript
@@ -64,12 +64,20 @@ import { TokensApi } from '@widgetic/api-sdk';
 
 const tokens = new TokensApi('wgt_usr_your_api_key');
 const { token, expiresAt } = await tokens.exchangeToken({
-  scopes: ['read:widgets', 'write:compositions']
+  exchangeTokenRequest: {
+    scopes: ['widgets:read', 'compositions:write'],
+    expiresIn: 1800
+  }
 });
 
 // Use the short-lived token in the browser
 ```
 </CodeGroup>
+
+- **Scopes** are written `resource:action`. The ones you can ask for are `compositions:read`, `compositions:write`, `widgets:read`, `widgets:write`, `projects:read`, `projects:write`, `organizations:read`, `organizations:write`, `analytics:read`, `webhooks:read` and `webhooks:write`. Any other scope is answered with 400 `INVALID_SCOPES`.
+- **`expiresIn`** is the lifetime in seconds, from 60 to 3600. It is 1800 (30 minutes) when you leave it out.
+- **Only an API key can be exchanged.** A token cannot be exchanged for another token.
+- **The scopes are recorded in the token, but the API does not check them on each call yet.** Treat the token as having the access of the key that made it until it expires.
 
 ## Validating Tokens
 
@@ -84,8 +92,9 @@ Response:
 ```json
 {
   "valid": true,
+  "tokenType": "jwt_token",
+  "scopes": ["widgets:read", "compositions:write"],
   "userId": "123e4567-e89b-12d3-a456-426614174000",
-  "role": "user",
   "expiresAt": "2024-01-15T12:00:00Z"
 }
 ```

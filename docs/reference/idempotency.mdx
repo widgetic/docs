@@ -66,18 +66,23 @@ const idempotencyKey = [
 ## Example Implementation
 
 ```typescript
+import { WidgetsApi, ResponseError } from '@widgetic/api-sdk';
+
+const widgets = new WidgetsApi('YOUR_API_KEY');
+
 async function createWidgetSafely(name: string, userId: string) {
   const idempotencyKey = `create-widget-${userId}-${Date.now()}`;
   
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       return await widgets.createWidget({
-        createWidgetRequest: { name }
+        newWidget: { name, type: 'chart', content: {} }
       }, {
         headers: { 'Idempotency-Key': idempotencyKey }
       });
     } catch (error) {
-      if (error.status >= 500) {
+      // The SDK throws a ResponseError for an answer that is not a success; the status is on its response
+      if (error instanceof ResponseError && error.response.status >= 500) {
         // Server error - safe to retry with same key
         await sleep(1000 * Math.pow(2, attempt));
         continue;

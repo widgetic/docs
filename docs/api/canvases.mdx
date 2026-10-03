@@ -24,13 +24,13 @@ import { CanvasesApi } from '@widgetic/api-sdk';
 
 const canvases = new CanvasesApi('YOUR_API_KEY');
 
-const { data, meta } = await canvases.getAllCanvases({
+const { data, total } = await canvases.getAllCanvases({
   page: 1,
   size: 20,
   sort: 'created_at:desc'
 });
 
-console.log(`Found ${meta.total} canvases`);
+console.log(`Found ${total} canvases, showing ${data?.length ?? 0}`);
 ```
 
 ## Filtering Canvases
@@ -39,12 +39,14 @@ Filter canvases by various criteria:
 
 ```typescript
 const filtered = await canvases.getAllCanvases({
-  component_id: '123e4567-e89b-12d3-a456-426614174000',
-  created_after: '2024-01-01T00:00:00Z',
-  created_before: '2024-12-31T23:59:59Z',
-  updated_after: '2024-06-01T00:00:00Z'
+  componentId: '123e4567-e89b-12d3-a456-426614174000',
+  createdAfter: new Date('2024-01-01T00:00:00Z'),
+  createdBefore: new Date('2024-12-31T23:59:59Z'),
+  updatedAfter: new Date('2024-06-01T00:00:00Z')
 });
 ```
+
+You can also filter by `widgetComponents` and `updatedBefore`. The list cannot be filtered by persistence key.
 
 ## Get Canvas by ID
 
@@ -55,8 +57,8 @@ const canvas = await canvases.getCanvas({
   id: '123e4567-e89b-12d3-a456-426614174000'
 });
 
-console.log('Canvas:', canvas.persistence_key);
-console.log('Content:', canvas.canvas_content);
+console.log('Canvas:', canvas.persistenceKey);
+console.log('Content:', canvas.canvasContent);
 ```
 
 ## Create Canvas
@@ -66,8 +68,8 @@ Create a new canvas:
 ```typescript
 const newCanvas = await canvases.createCanvas({
   createCanvasRequest: {
-    persistence_key: 'my-widget-canvas-001',
-    canvas_content: {
+    persistenceKey: 'my-widget-canvas-001',
+    canvasContent: {
       version: 1,
       elements: [],
       settings: {
@@ -75,7 +77,7 @@ const newCanvas = await canvases.createCanvas({
         gridSize: 10
       }
     },
-    widget_components: '123e4567-e89b-12d3-a456-426614174001'
+    widgetComponents: '123e4567-e89b-12d3-a456-426614174001'
   }
 });
 
@@ -90,7 +92,7 @@ Update an existing canvas:
 const updated = await canvases.updateCanvas({
   id: '123e4567-e89b-12d3-a456-426614174000',
   updateCanvasRequest: {
-    canvas_content: {
+    canvasContent: {
       version: 2,
       elements: [
         { id: 'elem1', type: 'text', content: 'Hello' }
@@ -121,38 +123,31 @@ A canvas object contains:
 ```typescript
 interface Canvas {
   id: string;                    // Unique identifier
-  persistence_key: string;       // Your reference key
-  canvas_content: object;        // Canvas state (JSON)
-  widget_components?: string;    // Associated components ID
-  created_at: string;            // ISO timestamp
-  updated_at: string;            // ISO timestamp
+  persistenceKey: string;        // Your reference key
+  canvasContent?: object;        // Canvas state (JSON)
+  widgetComponents?: string;     // Associated components ID
+  primaryWidgetId?: string | null; // The widget this canvas is mainly for
+  creatorId?: string;            // Who made it
+  createdAt: Date;               // Sent as an ISO timestamp
+  updatedAt: Date;               // Sent as an ISO timestamp
 }
 ```
 
-## Canvas Content Schema
+## Canvas Content
 
-The `canvas_content` field stores the canvas state:
+The `canvasContent` field stores the canvas state. It holds JSON of your choosing: the API saves what you send and does not check its shape. The examples above use this shape:
 
-```typescript
-interface CanvasContent {
-  version: number;               // Schema version
-  elements: CanvasElement[];     // Visual elements
-  settings: {
-    background: string;          // Background color
-    gridSize: number;            // Grid snap size
-    guides: Guide[];             // Alignment guides
-    zoom: number;                // Current zoom level
-  };
-}
-
-interface CanvasElement {
-  id: string;
-  type: 'shape' | 'text' | 'image' | 'component';
-  position: { x: number; y: number };
-  size: { width: number; height: number };
-  properties: object;
+```json
+{
+  "version": 1,
+  "elements": [
+    { "id": "elem1", "type": "text", "content": "Hello" }
+  ],
+  "settings": { "background": "#ffffff", "gridSize": 10 }
 }
 ```
+
+An update replaces `canvasContent` as a whole, so send all of it.
 
 ## Persistence Keys
 
@@ -162,30 +157,24 @@ Use persistence keys to maintain references between your application and Widgeti
 // Create with a meaningful key
 const canvas = await canvases.createCanvas({
   createCanvasRequest: {
-    persistence_key: `user_${userId}_project_${projectId}_canvas`,
-    canvas_content: { version: 1, elements: [] }
+    persistenceKey: `user_${userId}_project_${projectId}_canvas`,
+    canvasContent: { version: 1, elements: [] }
   }
 });
 
-// Later, you can search by key pattern
-const userCanvases = await canvases.getAllCanvases({
-  // Filter by persistence_key pattern if supported
-});
+// Keep the id the API returns next to your own record (saveProjectRecord stands for your own storage code)
+await saveProjectRecord({ projectId, widgeticCanvasId: canvas.id });
 ```
+
+The list cannot be filtered by persistence key, so keep the `id` that creation returns in your own records.
 
 ## Related Resources
 
-Each canvas can have associated components:
+Each canvas can have associated components. Read them with plain HTTP: in version 1.0.22 of the SDK, `ComponentsApi.getComponents` is typed to return nothing.
 
-```typescript
-import { ComponentsApi } from '@widgetic/api-sdk';
-
-const components = new ComponentsApi('YOUR_API_KEY');
-
-// Get components for a canvas
-const { data: canvasComponents } = await components.getComponents({
-  canvasId: '123e4567-e89b-12d3-a456-426614174000'
-});
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  "https://api.widgetic.com/v1/canvases/$CANVAS_ID/components"
 ```
 
 ## Related Endpoints

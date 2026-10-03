@@ -1,68 +1,19 @@
 ---
 title: Compositions
-description: Combine widgets into layouts
+description: A widget set up for one place, with its content, design and embed settings
 ---
 
-Compositions allow you to combine multiple widgets into a single, cohesive layout. Think of them as templates that arrange widgets together.
+A composition is one widget, set up for one place: it holds the widget's content, its design and its embed settings. You create a composition on a widget, fill in its values, and show it on a page with the embed code.
 
 ## Overview
 
 With the Compositions API, you can:
 
-- List all compositions
-- Get composition details
+- Create a composition on a widget
+- List compositions and get their details
+- Read and save the content, the design and the embed settings
+- Read the schemas that describe those three parts
 - Batch fetch compositions
-- Manage composition layouts
-
-## List Compositions
-
-Retrieve all compositions with pagination:
-
-```typescript
-import { CompositionsApi } from '@widgetic/api-sdk';
-
-const compositions = new CompositionsApi('YOUR_API_KEY');
-
-const { data, meta } = await compositions.getCompositions({
-  page: 1,
-  size: 20,
-  sort: 'updated_at:desc'
-});
-
-console.log(`Found ${meta.total} compositions`);
-```
-
-## Get Composition by ID
-
-Retrieve a specific composition:
-
-```typescript
-const composition = await compositions.getCompositionById({
-  compositionId: '123e4567-e89b-12d3-a456-426614174000'
-});
-
-console.log('Composition:', composition.name);
-console.log('Widgets:', composition.widgets?.length);
-```
-
-## Batch Fetch Compositions
-
-Retrieve multiple compositions in a single request (optimized for embed SDK):
-
-```typescript
-const { data: batchCompositions } = await compositions.batchGetCompositions({
-  batchRequest: {
-    ids: [
-      '123e4567-e89b-12d3-a456-426614174000',
-      '223e4567-e89b-12d3-a456-426614174001'
-    ]
-  }
-});
-```
-
-<Note>
-  The batch endpoint is designed for use by the embed SDK and includes domain validation. If a composition's owner has listed the websites it may appear on and the request comes from another website, that composition is left out of `compositions` and reported in `errors` as `Domain access denied: <reason>`; the others are still returned.
-</Note>
 
 ## Composition Structure
 
@@ -71,59 +22,150 @@ A composition object contains:
 ```typescript
 interface Composition {
   id: string;                    // Unique identifier
+  creatorId: string;             // The account that owns it
+  widgetId: string;              // The widget it is built on
   name: string;                  // Display name
-  description?: string;          // Optional description
-  creator_id: string;            // Owner's user ID
-  layout: CompositionLayout;     // Layout configuration
-  widgets: WidgetReference[];    // Included widgets
-  settings: CompositionSettings; // Display settings
-  created_at: string;            // ISO timestamp
-  updated_at: string;            // ISO timestamp
-}
-
-interface WidgetReference {
-  widget_id: string;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
-  config?: object;
+  status: 'draft' | 'published' | 'archived';
+  content: object;               // Content and design values (see below)
+  embedSettings?: object;        // The Embed tab's values
+  design?: object;               // Older compositions may keep design values here
+  databaseId?: string;
+  projectId?: string;
+  createdAt: string;             // ISO timestamp
+  updatedAt: string;             // ISO timestamp
 }
 ```
 
-## Layout Types
+Everything the API sends back is camelCase, including the keys inside `content`, `design` and `embedSettings`.
 
-Compositions support various layout types:
+## List Compositions
 
-| Layout | Description |
-|--------|-------------|
-| `grid` | CSS Grid-based responsive layout |
-| `flex` | Flexbox-based layout |
-| `absolute` | Absolute positioning |
-| `stack` | Vertical or horizontal stack |
+Retrieve compositions with pagination:
+
+```typescript
+import { CompositionsApi } from '@widgetic/api-sdk';
+
+const compositions = new CompositionsApi(process.env.WIDGETIC_API_KEY);
+
+const { data, meta } = await compositions.getAllCompositions({
+  page: 1,
+  size: 20,
+  sort: 'createdAt:desc'
+});
+
+console.log(`Found ${meta?.total} compositions`);
+```
+
+You can also filter by widget (`widgetId` in the SDK) and by `status`.
+
+## Get Composition by ID
+
+Retrieve a specific composition. `GET /compositions/{id}` returns everything saved on it, so prefer it to the narrower calls for the content, the design and the embed settings, which answer `404` for a part that has never been saved:
+
+```typescript
+const { data: composition } = await compositions.getCompositionById({
+  id: '123e4567-e89b-12d3-a456-426614174000'
+});
+
+console.log('Composition:', composition?.name, composition?.status);
+```
+
+## Create and Update
+
+Creating and updating need an `Idempotency-Key` header (see [Idempotency](/docs/reference/idempotency)). Create a composition on a widget, as a draft:
+
+```bash
+curl -sS -X POST "https://api.widgetic.com/v1/compositions" \
+  -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{ "name": "Homepage slider", "widgetId": "WIDGET_ID" }'
+```
+
+Save the values with `PUT /compositions/{id}`. It accepts `name`, `widgetId`, `content`, `design`, `embedSettings`, `status` and `projectId`. Send only what changes, but note that `content` is **replaced as a whole**:
+
+```bash
+curl -sS -X PUT "https://api.widgetic.com/v1/compositions/$COMPOSITION_ID" \
+  -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "content": { "design": { "primaryColor": "#e11d48" }, "content": {}, "contentItems": [] },
+    "embedSettings": { "embedTarget": "site", "resizeMode": "fillWidth", "width": 800, "height": 450 }
+  }'
+```
+
+- There is no version check: if two people save at the same moment, the last save wins.
+- To change a few values without sending everything back, use `PUT /compositions/{id}/content` with `"partial": true`. It merges objects key by key, while arrays and plain values are replaced, so changing one item means sending the whole `contentItems` array.
+
+## Content, Design and Embed
+
+In Widgetic's editor, the Content, Design and Embed tabs are drawn from JSON, and the choices made in them are saved as JSON. The API gives you the same JSON, so you can draw your own forms on it.
+
+- **Content:** the schema comes from `GET /compositions/{id}/schema/content`. Values are saved in `content.content` (settings of the whole widget) and `content.contentItems` (a repeating list, such as the slides of a slider).
+- **Design:** the schema comes from `GET /compositions/{id}/schema/design`. Values are saved in `content.design`.
+- **Embed:** the schema comes from `GET /compositions/{id}/schema/embed`. Values are saved in `embedSettings`. This schema is the same for every widget.
+
+The Content and Design schemas belong to the widget, so every widget has its own. The schemas are read through a composition, not through a widget: to draw a form for a widget nobody has used yet, create one composition on it first.
+
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  "https://api.widgetic.com/v1/compositions/$COMPOSITION_ID/schema/design"
+```
+
+- A schema lists the settings with their names, the kind of control that sets each one (`inputController.type`), defaults, limits, labels and help texts.
+- The API stores the values as you send them and does not check them against the schema (`POST /compositions/{id}/content/validate` does not validate the keys and values of today's widgets either). Check them in your own code.
+- A schema can change when Widgetic publishes a new version of a widget, so read it again when your editing screen opens.
+
+## Batch Fetch Compositions
+
+Retrieve multiple compositions in a single request (optimized for the embed script):
+
+```typescript
+const { compositions: batchCompositions, errors } = await compositions.getCompositionsBatch({
+  getCompositionsBatchRequest: {
+    compositionIds: [
+      '123e4567-e89b-12d3-a456-426614174000',
+      '223e4567-e89b-12d3-a456-426614174001'
+    ]
+  }
+});
+```
+
+<Note>
+  The batch endpoint is designed for use by the embed script and includes domain validation. If a composition's owner has listed the websites it may appear on and the request comes from another website, that composition is left out of `compositions` and reported in `errors` as `Domain access denied: <reason>`; the others are still returned.
+</Note>
 
 ## Embedding Compositions
 
-Embed a composition on your site:
+Showing a composition needs only its id. There is no key in the page, and a change you save through the API appears on the next page load. Load the script once per page, then put one `<widgetic>` element where the widget should appear:
 
 ```html
-<div id="composition-container"></div>
-
-<script type="module">
-  import { embedComposition } from '@widgetic/embed-sdk';
-  
-  embedComposition({
-    compositionId: '123e4567-e89b-12d3-a456-426614174000',
-    container: '#composition-container',
-    responsive: true
-  });
-</script>
+<script src="https://cdn.widgetic.com/sdks/browser/embed-sdk.js?v=6"></script>
+<widgetic composition-id="123e4567-e89b-12d3-a456-426614174000" resize="fill-width" width="800" height="450" autoscale="on" adaptive="480" embed-target="site"></widgetic>
 ```
+
+- The attributes come from the composition's `embedSettings`: `resize` from `resizeMode` (`fillWidth` becomes `fill-width`), `width` and `height` in pixels, and `embed-target` from `embedTarget`.
+- **The default embed target is `overlay`**, which shows the widget as a pop-up. Save `"embedTarget": "site"` for a widget that sits inside the page.
+- When you cannot load a script, use the frame: `<iframe src="https://api.widgetic.com/embed/compositions/COMPOSITION_ID/frame" width="800" height="450" frameborder="0" allowfullscreen></iframe>`.
+- The status of a composition does not decide whether it is shown. Delete the composition, or remove the code from your page, to stop showing it.
+- The widget the composition is built on needs a published version. Until then the public address answers `404`.
+
+See [SDKs](/resources/sdks#embed-script) for more about the embed script, and [Security](/resources/security) for limiting the websites that may show your widgets.
 
 ## Related Endpoints
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /compositions` | List all compositions |
+| `GET /compositions` | List compositions |
+| `POST /compositions` | Create a composition |
 | `GET /compositions/{id}` | Get composition by ID |
+| `PUT /compositions/{id}` | Save a composition |
+| `DELETE /compositions/{id}` | Delete a composition |
+| `GET /compositions/{id}/schema/content` | Content schema |
+| `GET /compositions/{id}/schema/design` | Design schema |
+| `GET /compositions/{id}/schema/embed` | Embed schema |
+| `PUT /compositions/{id}/content` | Save content, optionally as a partial merge |
 | `POST /compositions/batch` | Batch fetch compositions |
 
 ## Next Steps
@@ -132,7 +174,7 @@ Embed a composition on your site:
   <Card title="Widgets" icon="cube" href="/docs/api/widgets">
     Manage individual widgets
   </Card>
-  <Card title="Embed SDK" icon="code" href="/resources/sdks">
+  <Card title="Embed Script" icon="code" href="/resources/sdks#embed-script">
     Embed compositions on your site
   </Card>
 </CardGroup>

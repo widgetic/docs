@@ -1,13 +1,20 @@
 ---
 title: Canvas Embedding
 description: Embed the Widgetic canvas in your platform
+tag: "Planned"
 ---
 
-The Widgetic canvas provides a full widget creation and editing experience that you can embed directly in your platform.
+The Widgetic canvas is planned to give you a full widget creation and editing experience that you can embed directly in your platform.
+
+<Warning>
+  **Planned. Not available yet.** A Widgetic editor that you can mount in your own page does not exist today. The editor runs on [widgetic.com](https://widgetic.com) for a signed-in account only. The UI SDK (`@widgetic/ui-sdk`) is not published, and the `/ui/components` calls only keep a record of a mount: they show nothing in your page. This page describes the design we plan to ship, and it can change, so do not build on it yet.
+
+  To let your customers make and show widgets today, use the API with your own screens (see [Widgets](/docs/api/widgets) and [Compositions](/docs/api/compositions)) and show the result with the embed code.
+</Warning>
 
 ## Overview
 
-The canvas embedding system consists of:
+The canvas embedding system is planned to consist of:
 
 1. **UI SDK**: A JavaScript library for mounting UI components
 2. **Widget Creator**: The main widget creation experience
@@ -16,22 +23,20 @@ The canvas embedding system consists of:
 
 ## Installation
 
-Install the UI SDK in your project:
-
-```bash
-npm install @widgetic/ui-sdk
-```
+The UI SDK is not on npm yet, so `npm install @widgetic/ui-sdk` finds nothing today. Only the API SDK, `@widgetic/api-sdk`, is published.
 
 ## Basic Usage
+
+The calls below exist in the API today. They are shown here to explain the planned design: `mountComponent` only records that a component was mounted, and nothing appears in your page.
 
 ### 1. List Available Components
 
 First, retrieve the list of available UI components:
 
 ```typescript
-import { UIApi } from '@widgetic/api-sdk';
+import { UIComponentsApi } from '@widgetic/api-sdk';
 
-const ui = new UIApi('wgt_prt_your_partner_key');
+const ui = new UIComponentsApi('wgt_prt_your_partner_key');
 const { components } = await ui.listComponents();
 
 // Returns: [
@@ -151,9 +156,12 @@ const { instanceId } = await ui.mountComponent({
   <div id="widgetic-canvas-container"></div>
   
   <script type="module">
-    import { UIApi } from '@widgetic/api-sdk';
-    
-    const ui = new UIApi('wgt_prt_your_partner_key');
+    import { UIComponentsApi } from '@widgetic/api-sdk';
+
+    // The short-lived token comes from your own server (see Security Considerations).
+    // The partner key never goes in the page.
+    const { token } = await (await fetch('/your-server/widgetic-token')).json();
+    const ui = new UIComponentsApi(token);
     
     async function initCanvas() {
       try {
@@ -193,14 +201,22 @@ const { instanceId } = await ui.mountComponent({
 </Warning>
 
 ```typescript
-// Server-side: Exchange partner key for limited token
+import { TokensApi } from '@widgetic/api-sdk';
+
+// Server-side: exchange the partner key for a short-lived token
+const tokens = new TokensApi(process.env.WIDGETIC_PARTNER_KEY!);
 const { token } = await tokens.exchangeToken({
-  scopes: ['ui:mount', 'canvas:read', 'canvas:write']
+  exchangeTokenRequest: {
+    scopes: ['compositions:read', 'widgets:read'],
+    expiresIn: 1800 // seconds, 60 to 3600
+  }
 });
 
-// Send token to client, use it there
-const ui = new UIApi(token);
+// Send the token to the client, and use it there
+const ui = new UIComponentsApi(token);
 ```
+
+The token records the scopes you ask for, but the API does not check them on each call yet, so treat the token as having the access of the key that made it until it expires. Keep the lifetime short, and never send the key itself to a browser. See [Authentication](/docs/authentication) for the scopes you can ask for.
 
 ## Next Steps
 

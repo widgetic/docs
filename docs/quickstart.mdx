@@ -46,11 +46,13 @@ console.log(user);
 ```
 
 ```typescript TypeScript SDK
-import { UsersApi } from '@widgetic/api-sdk';
+import { TokensApi } from '@widgetic/api-sdk';
 
-const users = new UsersApi('YOUR_API_KEY');
-const me = await users.getUserMe();
-console.log(me);
+// The SDK package has no call for your profile, so check the key instead:
+// the answer tells you the key is valid and which account it belongs to.
+const tokens = new TokensApi('YOUR_API_KEY');
+const check = await tokens.validateToken();
+console.log(check);
 ```
 </CodeGroup>
 

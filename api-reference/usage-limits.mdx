@@ -7,112 +7,104 @@ The Widgetic API implements rate limits and usage quotas to ensure fair usage an
 
 ## Rate Limits
 
-### By Plan
+Requests are counted over a 15-minute window. A recognized API key is counted on its own, so one customer's traffic never uses up another's. Anything else is counted by IP address.
 
-| Plan | Requests/Minute | Requests/Day | Burst |
-|------|-----------------|--------------|-------|
-| Free | 60 | 1,000 | 10 |
-| Solo | 300 | 10,000 | 50 |
-| Teams | 600 | 30,000 | 100 |
-| Partner | Custom | Custom | Custom |
+| Counted | Allowance |
+|---------|-----------|
+| An API key | About 3,000 requests per 15 minutes |
+| A partner API key | 1,000,000 requests per 15 minutes |
+
+The allowance that applies to a call is in the `RateLimit-Limit` header of its response, so read it there instead of hard-coding a number. The partner ceiling is there to stop a runaway loop, not to meter a platform that serves hundreds of thousands of its own users.
 
 ### Rate Limit Headers
 
-Every response includes rate limit information:
+Responses that were counted include rate limit information:
 
 ```
-X-RateLimit-Limit: 300
-X-RateLimit-Remaining: 295
-X-RateLimit-Reset: 1705317600
+RateLimit-Limit: 3000
+RateLimit-Remaining: 2995
+RateLimit-Reset: 540
 ```
 
 | Header | Description |
 |--------|-------------|
-| `X-RateLimit-Limit` | Maximum requests per window |
-| `X-RateLimit-Remaining` | Requests remaining in window |
-| `X-RateLimit-Reset` | Unix timestamp when window resets |
+| `RateLimit-Limit` | Maximum requests per window |
+| `RateLimit-Remaining` | Requests remaining in window |
+| `RateLimit-Reset` | Seconds until the window ends (a number of seconds to wait, not a timestamp) |
 
 ## When Rate Limited
 
-If you exceed rate limits, you'll receive a `429 Too Many Requests` response:
+If you exceed a limit, you'll receive a `429 Too Many Requests` response with a `Retry-After` header. `Retry-After` and `error.retryAfter` are the same number, in whole seconds:
 
 ```json
 {
   "success": false,
+  "message": "Too many requests, please try again later.",
   "error": {
     "code": "RATE_LIMIT_EXCEEDED",
-    "message": "Rate limit exceeded. Try again in 60 seconds.",
-    "correlationId": "req_123"
+    "message": "Too many requests, please try again later.",
+    "retryAfter": 540,
+    "details": { "limit": 3000 }
   }
 }
 ```
 
-The `Retry-After` header indicates when you can retry:
-
-```
-Retry-After: 60
-```
+`error.code` tells you which limit it was. See [Rate Limits](/docs/reference/rate-limits) for every code and for how to retry.
 
 ## Endpoint-Specific Limits
 
-Some endpoints have additional limits:
+Some operations have a limit of their own, on top of the allowance on your key:
 
-| Endpoint | Limit | Window |
-|----------|-------|--------|
-| `POST /ai/generate` | 10 | per minute |
-| `POST /tokens/exchange` | 100 | per minute |
-| `POST /analytics/events/bulk` | 1000 events | per request |
+| Operation | Limit | Counted |
+|-----------|-------|---------|
+| Creating a widget | 120 per minute | For each account, across all of its keys |
+| Billing operations | 20 per minute | For each person, across all of their keys |
+| Events sent to a Zap | 60 per minute | For each Zap. Events over the limit are not sent |
+
+AI generations are also held to a usage budget per hour and per day, and to a number of generations running at once. A refusal says which (`COST_LIMIT_EXCEEDED` or `CONCURRENCY_LIMIT_EXCEEDED`).
 
 ## Usage Quotas
 
-### Monthly Quotas by Plan
+### Plan Allowances
 
 | Resource | Free | Solo | Teams | Partner |
 |----------|------|------|-------|---------|
-| AI Generations | 50 | 500 | 2,000 | Custom |
-| Storage | 100 MB | 5 GB | 50 GB | Custom |
-| API Calls | 1,000 | 50,000 | 200,000 | Custom |
-| Widgets | 10 | 100 | Unlimited | Unlimited |
-| Compositions | 5 | 50 | Unlimited | Unlimited |
+| AI credits | 100 starter credits, for the 7-day trial window | 400 a month | 2,000 a month for each member | By contract |
+| Storage | 10 GB | 100 GB | 500 GB shared by the team | By contract |
+
+One credit pays for one AI generation. See [Credits & Billing](/docs/partners/credits-billing#what-a-credit-costs) for what spends credits.
 
 **Largest single file.** On Solo and Teams, a file can be up to 250 MB, whether it is uploaded in the app or saved to the media library by an AI assistant. On Free and Partner, a file saved by an assistant or sent in one request can be up to 10 MB, and a resumable upload from the app up to 100 MB. `GET /uploads/limits` returns the limit for the account that asks (`tus_max_bytes`).
 
-### Checking Your Quota
+### Checking Your Credits
 
-Use the entitlements endpoint to check your current usage:
+Read the credit balance of the account behind your key. Credits left are `balance` minus `reservedBalance`:
 
-```typescript
-import { EntitlementsApi } from '@widgetic/api-sdk';
-
-const entitlements = new EntitlementsApi('YOUR_API_KEY');
-const { entitlements: features } = await entitlements.getUserEntitlements();
-
-// features: [
-//   { feature: 'ai.generations', value: '500', usage: '125' },
-//   { feature: 'storage.limit', value: '5000', usage: '1250' },
-//   ...
-// ]
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  "https://api.widgetic.com/v1/credits/user/$WIDGETIC_ACCOUNT_ID/balance"
 ```
+
+See [Credits & Billing](/docs/partners/credits-billing#checking-your-balance) for how to find your account id.
 
 ## Best Practices
 
 ### Implement Backoff
 
 ```typescript
-async function withBackoff(fn, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
+import { ResponseError } from '@widgetic/api-sdk';
+
+async function withBackoff<T>(call: () => Promise<T>, maxRetries = 3): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      return await fn();
+      return await call();
     } catch (error) {
-      if (error.status === 429) {
-        const retryAfter = parseInt(
-          error.headers?.get('Retry-After') || '60', 
-          10
-        );
-        await sleep(retryAfter * 1000);
-        continue;
+      if (!(error instanceof ResponseError) || error.response.status !== 429 || attempt === maxRetries) {
+        throw error;
       }
-      throw error;
+      // Retry-After is a number of seconds. A CONCURRENCY_LIMIT_EXCEEDED refusal has none: wait a few seconds.
+      const waitSeconds = Number(error.response.headers.get('Retry-After')) || 5;
+      await new Promise((resolve) => setTimeout(resolve, waitSeconds * 1000));
     }
   }
   throw new Error('Max retries exceeded');
@@ -124,41 +116,32 @@ async function withBackoff(fn, maxRetries = 3) {
 Use batch endpoints to reduce API calls:
 
 ```typescript
-// Instead of multiple calls
-const widgets = await Promise.all(
-  ids.map(id => widgets.getWidgetById({ widgetId: id }))
-);
-
-// Use batch endpoint
-const { data: widgets } = await widgets.batchGetWidgets({
-  batchRequest: { ids }
+// Instead of one call for every widget
+const { widgets: foundWidgets, errors } = await widgetsApi.getWidgetsBatch({
+  getWidgetsBatchRequest: { widgetIds }
 });
 ```
 
 ### Cache Responses
 
-Cache read-only data to reduce API usage:
+Cache read-only data to reduce API usage, and let it expire so that a change you make is picked up:
 
 ```typescript
-const cache = new Map();
+const cache = new Map<string, { value: unknown; expiresAt: number }>();
+const cacheLifetimeMs = 60_000;
 
-async function getCachedWidget(id) {
-  if (cache.has(id)) {
-    return cache.get(id);
+async function getCachedComposition(id: string) {
+  const cached = cache.get(id);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value;
   }
-  
-  const widget = await widgets.getWidgetById({ widgetId: id });
-  cache.set(id, widget);
-  return widget;
+
+  const { data } = await compositionsApi.getCompositionById({ id });
+  cache.set(id, { value: data, expiresAt: Date.now() + cacheLifetimeMs });
+  return data;
 }
 ```
 
 ## Requesting Higher Limits
 
-If you need higher limits:
-
-1. **Upgrade your plan** via the dashboard
-2. **Contact sales** for partner plans with custom limits
-3. **Provide use case** details for custom limits
-
-Contact [support@widgetic.com](mailto:support@widgetic.com) with your requirements.
+If you need higher limits, contact [support@widgetic.com](mailto:support@widgetic.com) with your use case and the volume you expect.

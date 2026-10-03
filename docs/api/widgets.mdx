@@ -111,14 +111,22 @@ curl -X POST "https://api.widgetic.com/v1/widgets" \
 ```
 
 ```typescript TypeScript SDK
-const { data: widget } = await widgets.createWidget({
-  idempotencyKey: crypto.randomUUID(),
-  newWidget: {
-    name: 'Quarterly sales chart',
-    type: 'chart',
-    content: { chartType: 'bar' }
-  }
-});
+import { randomUUID } from 'node:crypto';
+
+// The API needs an Idempotency-Key header, and the SDK does not add one, so pass it in the second argument.
+// Keep the key if you retry, so that one widget is created, not two.
+const idempotencyKey = randomUUID();
+
+const { data: widget } = await widgets.createWidget(
+  {
+    newWidget: {
+      name: 'Quarterly sales chart',
+      type: 'chart',
+      content: { chartType: 'bar' }
+    }
+  },
+  async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': idempotencyKey } })
+);
 
 console.log(`Created ${widget.id}`);
 ```
@@ -232,21 +240,14 @@ Widgets keep a version history. A version is created when code is generated for 
 
 ## Embedding Widgets
 
-Once published, widgets can be embedded using the Embed SDK:
+A widget is shown on a page through a composition. Create a [composition](/docs/api/compositions) on the widget, fill in its values, and put the embed code in your page:
 
 ```html
-<div id="widget-container"></div>
-
-<script type="module">
-  import { embed } from '@widgetic/embed-sdk';
-  
-  embed({
-    widgetId: '123e4567-e89b-12d3-a456-426614174000',
-    container: '#widget-container',
-    version: 'latest' // or specific version number
-  });
-</script>
+<script src="https://cdn.widgetic.com/sdks/browser/embed-sdk.js?v=6"></script>
+<widgetic composition-id="COMPOSITION_ID" resize="fill-width" width="800" height="450" autoscale="on" adaptive="480" embed-target="site"></widgetic>
 ```
+
+The widget needs a published version before it can be shown. Until then the public address answers `404`. See [Compositions](/docs/api/compositions#embedding-compositions) for the attributes, and [SDKs](/resources/sdks#embed-script) for the embed script.
 
 ## Related Endpoints
 
@@ -261,7 +262,7 @@ Once published, widgets can be embedded using the Embed SDK:
 
 <CardGroup cols={2}>
   <Card title="Compositions" icon="layer-group" href="/docs/api/compositions">
-    Combine widgets into layouts
+    Set a widget up for one place and embed it
   </Card>
   <Card title="Canvases" icon="palette" href="/docs/api/canvases">
     Edit widgets on canvases
