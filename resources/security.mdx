@@ -31,6 +31,20 @@ This guide covers security best practices when integrating with the Widgetic API
 | `wdg_org_` | Organization | Shared server-side use |
 | `wgt_prt_` | Partner | White-label integrations |
 
+### Making, Rotating and Deleting Keys
+
+You make and manage your own keys. In the dashboard, open Workspace settings → API keys. With the API, use the key calls below. `{id}` is your own account id, which `GET /tokens/validate` returns as `data.userId`. Your plan must include API access.
+
+- `GET /users/{id}/keys` lists your keys, and `POST /users/{id}/keys` makes one (send an `Idempotency-Key`). The secret is in the answer once, in `key`, and cannot be shown again. An account can have 25 keys.
+- `PUT /users/{id}/keys/{keyId}` renames a key or switches it off with `isActive: false`, and `DELETE /users/{id}/keys/{keyId}` deletes it.
+- `GET /users/{id}/api-keys/{keyId}/logs` shows what a key was used for.
+
+To rotate a key, make the new one, switch your servers over, then delete the old one. A key that is switched off or deleted is refused at once by the server that took the request, and within a minute by the others.
+
+<Warning>
+  A key can make other keys. If a key leaks, delete it, then list your keys and delete any you did not make.
+</Warning>
+
 ## Client-Side Authentication
 
 For browser applications, use the token exchange flow:
@@ -66,6 +80,8 @@ You can limit the websites an embedded widget may appear on. If you list nothing
 2. Add each website: `example.com` also covers `www.example.com`, and `*.example.com` covers the domain and every subdomain
 3. Add `localhost` too while you test on your own machine
 
+You can also keep the list with the API, using your own account id as `{id}`. `GET /users/{id}/workspace/domains` reads it, `POST` adds a website with the body `{ "domain": "example.com" }`, `PUT /users/{id}/workspace/domains/{domainId}` changes one, and `DELETE` removes one. A list holds up to 50 websites, and a change applies within about 15 seconds.
+
 Once a list exists, the lookup that returns a widget's content answers `403` with the code `DOMAIN_NOT_ALLOWED` to a page on any other website, and the widget's frame page asks the browser not to show it anywhere else. Widgetic's own sites always work, and a list that cannot be read never blocks a widget.
 
 If you use the Partner API, the `allowedDomains` of your partner account is added to the list of the person who administers it, and applies to the widgets made with your API keys.
@@ -73,6 +89,10 @@ If you use the Partner API, the `allowedDomains` of your partner account is adde
 <Note>
   A domain list keeps your widgets off other people's pages. It is not access control: the content of a published widget can still be requested by anyone who has its ID, using a plain HTTP request that names no website for the check to read. Do not rely on it to keep content private.
 </Note>
+
+<Warning>
+  The `<widgetic>` embed script does not honour the refusal yet: it can fall back to a copy of the widget on Widgetic's CDN and draw it anyway. When you need the list to hold, use the frame (`https://api.widgetic.com/embed/compositions/{id}/frame`).
+</Warning>
 
 ## Request Signing
 

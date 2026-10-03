@@ -9,7 +9,7 @@ Partners use a credit-based system for operational costs. Credits are consumed w
 
 The credit system works as follows:
 
-1. **Purchase credits** through the billing dashboard or API
+1. **Get credits** from Widgetic: your contract includes some, and Widgetic adds more when you ask. No API call adds credits
 2. **Credits are consumed** based on usage (AI, storage, API calls)
 3. **Monitor balance** and set up auto-reload thresholds
 4. **Track transactions** for accounting and reconciliation
@@ -39,21 +39,7 @@ console.log(`Auto-reload: ${auto_reload_settings.enabled ? 'On' : 'Off'}`);
 
 ## Adding Credits
 
-Generate a checkout URL to purchase additional credits:
-
-```typescript
-const { checkoutUrl } = await partners.addPartnerCredits({
-  partnerId: 'your-partner-id',
-  addCreditsRequest: {
-    amount: 100, // 100 credits ($10), the minimum
-    successUrl: 'https://yourplatform.com/billing/success',
-    cancelUrl: 'https://yourplatform.com/billing/cancel'
-  }
-});
-
-// Redirect user to checkoutUrl
-window.location.href = checkoutUrl;
-```
+Credits are added by Widgetic, not through the API. Ask your Widgetic contact to add credits to your account, and agree with them how the credits are invoiced.
 
 ## Auto-Reload Configuration
 
