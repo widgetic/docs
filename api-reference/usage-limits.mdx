@@ -75,6 +75,8 @@ Some endpoints have additional limits:
 | Widgets | 10 | 100 | Unlimited | Unlimited |
 | Compositions | 5 | 50 | Unlimited | Unlimited |
 
+**Largest single file.** On Solo and Teams, a file can be up to 250 MB, whether it is uploaded in the app or saved to the media library by an AI assistant. On Free and Partner, a file saved by an assistant or sent in one request can be up to 10 MB, and a resumable upload from the app up to 100 MB. `GET /uploads/limits` returns the limit for the account that asks (`tus_max_bytes`).
+
 ### Checking Your Quota
 
 Use the entitlements endpoint to check your current usage:
