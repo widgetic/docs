@@ -215,6 +215,8 @@ curl -sS -X DELETE -H "Authorization: Bearer $WIDGETIC_API_KEY" \
   "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID"
 ```
 
+Deleting the record removes the managed user, not what you filed under it. The compositions, widgets and uploads stay in your account, and lose only their `managedUserId` label. To erase a customer's content as well, list it with the `managedUserId` filter and delete it first, then delete the record (see [Managed Users](/docs/partners/managed-users#filing-content-under-a-managed-user)).
+
 ### SOC 2
 
 Widgetic maintains SOC 2 Type II compliance. For compliance documentation, contact [security@widgetic.com](mailto:security@widgetic.com).

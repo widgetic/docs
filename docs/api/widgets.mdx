@@ -89,8 +89,19 @@ const { data: onThisCanvas } = await widgets.getWidgets({
 });
 ```
 
+### Widgets for One Managed User
+
+If you file widgets under your customers (see [Managed Users](/docs/partners/managed-users#filing-content-under-a-managed-user)), pass `managedUserId` (Widgetic's id for the managed user) or `managedUserExternalId` (your own id for them) to list only that customer's widgets. Send one of them, never both. It combines with `page`, `size` and `canvasId`, and it only narrows the list to your own account's widgets.
+
+```bash
+curl "https://api.widgetic.com/v1/widgets?managedUserExternalId=your-platform-user-123&page=1&size=20" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+A managed user that is not one of yours answers `404` with the code `MANAGED_USER_NOT_FOUND`.
+
 <Note>
-  The list takes no `sort` or filter parameters: it is always newest first.
+  The list takes no `sort` parameter, and no filter other than `canvasId` and the managed user: it is always newest first.
 </Note>
 
 ## Create a Widget
@@ -162,8 +173,10 @@ The response has status `201` and carries the new widget in `data` (shortened he
 | `projectId` | No | Project to file the widget in. You must be able to edit the project |
 | `organizationId` | No | Organization the widget belongs to. You must be a member who may create widgets there |
 | `workspaceType` | No | `personal` or `organization` |
+| `managedUserId` | No | File the widget under this managed user (Widgetic's id for the user). Send this or `managedUserExternalId`, not both. The managed user must be one of yours and switched on |
+| `managedUserExternalId` | No | The same, by the `external_id` you registered the managed user with |
 
-Only the fields above are used. Anything else in the body is ignored.
+Only the fields above are used. Anything else in the body is ignored, with one exception: `managed_user_id` and `managed_user_external_id` are refused with `400 MANAGED_USER_REFERENCE_INVALID`, so that a widget meant for a customer is never created without one. The answer carries `managedUserId`, and an update cannot change it. See [Managed Users](/docs/partners/managed-users#filing-content-under-a-managed-user) for the checks Widgetic makes.
 
 ### Where a Widget Can Go
 
@@ -211,6 +224,7 @@ interface Widget {
   content: Record<string, unknown>; // Content configuration
   creatorId: string;             // Owner's user ID
   canvasId?: string | null;      // The canvas the widget is on
+  managedUserId?: string | null; // The managed user it was filed under, or null
   repoId?: string | null;        // Associated repository
   databaseId?: string | null;    // Associated database
   version?: number | null;       // Current version number

@@ -24,6 +24,7 @@ interface Composition {
   id: string;                    // Unique identifier
   creatorId: string;             // The account that owns it
   widgetId: string;              // The widget it is built on
+  managedUserId?: string | null; // The managed user it was filed under, or null
   name: string;                  // Display name
   status: 'draft' | 'published' | 'archived';
   content: object;               // Content and design values (see below)
@@ -56,7 +57,14 @@ const { data, meta } = await compositions.getAllCompositions({
 console.log(`Found ${meta?.total} compositions`);
 ```
 
-You can also filter by widget (`widgetId` in the SDK) and by `status`.
+You can also filter by widget (`widget_id` in the query, `widgetId` in the SDK) and by [managed user](/docs/partners/managed-users#filing-content-under-a-managed-user), to list only what you filed under one of your customers:
+
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  "https://api.widgetic.com/v1/compositions?managedUserExternalId=your-platform-user-123&page=1&size=20"
+```
+
+Send `managedUserId` (Widgetic's id) or `managedUserExternalId` (your own id), never both. The filter only narrows the list to your own account's compositions.
 
 ## Get Composition by ID
 
@@ -81,6 +89,8 @@ curl -sS -X POST "https://api.widgetic.com/v1/compositions" \
   -H "Idempotency-Key: $(uuidgen)" \
   -d '{ "name": "Homepage slider", "widgetId": "WIDGET_ID" }'
 ```
+
+To file the composition under one of your customers, add `managedUserId` or `managedUserExternalId` to the body (one of them, never both). The answer then carries `managedUserId`, and `PUT /compositions/{id}` cannot change it later. See [Managed Users](/docs/partners/managed-users#filing-content-under-a-managed-user) for the checks Widgetic makes.
 
 Save the values with `PUT /compositions/{id}`. It accepts `name`, `widgetId`, `content`, `design`, `embedSettings`, `status` and `projectId`. Send only what changes, but note that `content` is **replaced as a whole**:
 

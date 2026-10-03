@@ -159,6 +159,8 @@ await db.widgeticUsers.create({
 });
 ```
 
+To keep each customer's work apart, send `managedUserId` (or your own id as `managedUserExternalId`) when you create a composition, a widget or an upload, and send the same field when you list. See [Filing Content Under a Managed User](/docs/partners/managed-users#filing-content-under-a-managed-user).
+
 ### Mount UI Component
 
 <Warning>

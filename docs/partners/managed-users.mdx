@@ -1,21 +1,22 @@
 ---
 title: Managed Users
-description: Keep a record of your platform's customers in Widgetic
+description: Keep a record of your platform's customers in Widgetic, and file what they make under them
 ---
 
-A managed user is a record in your partner registry, one for each of your platform's customers. **It is not a login, and it does not own anything.** Everything you create through the API still belongs to your administering account, and the link between a customer and their compositions is yours to keep.
+A managed user is a record in your partner registry, one for each of your platform's customers. **It is not a login, and it does not own anything.** Everything you create through the API still belongs to your administering account. What you can do is **file** a composition, a widget or an upload under a managed user when you create it, and later list only what one customer made, so your customers never see each other's work.
 
 ## Overview
 
 A managed user is:
 
-- A record with a Widgetic `id` (a UUID), your own `externalId` (unique among your managed users, for example your customer number) and a free-form `metadata` object.
+- A record with a Widgetic `id` (a UUID), your own `externalId` (unique among your managed users, for example your customer number), a free-form `metadata` object and an `isActive` switch.
 - Visible only to you. A record that belongs to another partner answers `404`, never `403`, so nothing about other partners can be learned.
+- A label you can put on compositions, widgets and uploads, to list them by customer. See [Filing Content Under a Managed User](#filing-content-under-a-managed-user).
 
 A managed user is not:
 
 - **A login.** It has no password, no API key and no session. You cannot act "as" a managed user.
-- **An owner.** Compositions, widgets, uploads, credits, storage and the list of allowed websites belong to your administering account. A composition has no field that names a managed user.
+- **An owner.** Compositions, widgets, uploads, credits, storage and the list of allowed websites belong to your administering account, and your key can read, change and delete all of them. Filing something under a managed user is a label for listing it, not an access rule: your key reaches everything either way, so deciding which of your customers may see what stays in your own platform.
 - **A billing unit.** There are no per-customer credits, storage or invoices. You are invoiced once, for the contract. See [Credits & Billing](/docs/partners/credits-billing).
 
 The examples on this page are for your server. Keep the key in an environment variable, such as `WIDGETIC_PARTNER_KEY`.
@@ -43,6 +44,7 @@ curl -sS -X POST "https://api.widgetic.com/v1/managed-users" \
     "managerId": "<your administering account id>",
     "externalId": "your-platform-user-123",
     "metadata": { "firstName": "John", "lastName": "Doe", "email": "john@example.com", "role": "editor" },
+    "isActive": true,
     "createdAt": "2026-10-02T20:10:00.000Z",
     "updatedAt": "2026-10-02T20:10:00.000Z"
   }
@@ -75,11 +77,74 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
   "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID"
 ```
 
-There is no search by `external_id`. Keep the Widgetic `id` in your own database next to your customer id, so you never need to look a customer up by scanning pages.
+There is no search by `external_id` in `GET /managed-users`. You do not need one to file or list a customer's work: the calls below accept your own id for the customer (`managedUserExternalId`) and look the managed user up for you.
+
+## Filing Content Under a Managed User
+
+When you create a composition, a widget or an upload for one of your customers, name the managed user in the request. Widgetic records it on the new item, and you can list only that customer's items afterwards.
+
+Name the managed user in one of two ways. Send one, never both (`400`):
+
+| Field | What it is |
+|-------|------------|
+| `managedUserId` | Widgetic's `id` for the managed user: the UUID the create call gave you |
+| `managedUserExternalId` | Your own id for the customer: the `external_id` you registered. Widgetic finds the managed user for you |
+
+Both are optional. A request that names no managed user creates an item that belongs to your account alone, exactly as before. An empty value (`null` or `""`) counts as naming no one.
+
+### Compositions and widgets
+
+Add the field to the body of `POST /compositions` or `POST /widgets`:
+
+```bash
+curl -sS -X POST "https://api.widgetic.com/v1/compositions" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "name": "your-platform-user-123 / homepage slider",
+    "widgetId": "WIDGET_ID",
+    "managedUserExternalId": "your-platform-user-123"
+  }'
+```
+
+The answer carries `managedUserId`, Widgetic's id for the customer, or `null` for an item that belongs to your account alone. To list one customer's items, send the same field in the query of `GET /compositions` or `GET /widgets`:
+
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  "https://api.widgetic.com/v1/compositions?managedUserExternalId=your-platform-user-123&page=1&size=20"
+```
+
+The filter only narrows the list: you still get nothing but your own account's items, and it combines with the paging and the other filters of the call (`widget_id` on compositions, `canvasId` on widgets). Spell the two fields exactly as shown, in camelCase: `managed_user_id` on these calls is refused with a `400`, not ignored, so a mistyped filter can never hand you every customer's items.
+
+### Uploads
+
+`POST /uploads` is a multipart form, so its fields are snake_case like the rest of that call: send `managed_user_id` or `managed_user_external_id` as a form field next to `file`. `GET /uploads` takes the same two names in its query, and every upload in an answer says `managed_user_id` (`null` when there is none).
+
+```bash
+curl -sS -X POST "https://api.widgetic.com/v1/uploads" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -F "file=@logo.png" \
+  -F "managed_user_external_id=your-platform-user-123"
+```
+
+Files sent in parts through a resumable upload are not filed under a managed user.
+
+### What Widgetic checks
+
+- The managed user must be one of yours. One that does not exist, and one that belongs to another partner, get the same answer, `404` with the code `MANAGED_USER_NOT_FOUND`, so nothing about other partners can be learned. Nothing is created or listed.
+- A managed user that has been switched off (see [Updating](#updating-managed-users)) cannot be given anything new: `409 MANAGED_USER_INACTIVE`. Its existing items stay and can still be listed.
+- A value that is not a UUID (for `managedUserId`), is not text, or is longer than 255 characters (for `managedUserExternalId`) is refused with `400 MANAGED_USER_REFERENCE_INVALID`. So is a field spelled the other way (`managed_user_id` where the call reads `managedUserId`, or `managedUserId` on `/uploads`): it is refused, never ignored, so an item is never filed under no one, and a list is never unfiltered, without you knowing. Sending both fields is `400 MANAGED_USER_REFERENCE_AMBIGUOUS`.
+- The label is set when the item is created, from your request only, and a `PUT` or `PATCH` does not change it. There is no way yet to move an item to another managed user or to take the label off (see [Not Available Yet](#not-available-yet)).
+- A copy of a composition that you duplicate is filed under the same managed user as the original.
+
+<Note>
+  Filing under a managed user does not change who owns the item or who may reach it. The item belongs to your account, your key reaches all of them, and it counts against your account's credits and storage.
+</Note>
 
 ## Updating Managed Users
 
-`PUT /managed-users/{id}` changes the `external_id` and/or the `metadata`. It needs an `Idempotency-Key`. The `metadata` is **replaced as a whole**, so send all of it:
+`PUT /managed-users/{id}` changes the `external_id`, the `metadata` and/or `is_active`. It needs an `Idempotency-Key`. The `metadata` is **replaced as a whole**, so send all of it:
 
 ```bash
 curl -sS -X PUT "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID" \
@@ -89,9 +154,21 @@ curl -sS -X PUT "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID" \
   -d '{ "metadata": { "firstName": "John", "lastName": "Smith", "role": "admin" } }'
 ```
 
+To stop a customer from creating anything new, for example when their plan on your platform ends, switch their managed user off. Send a real `true` or `false`, not text:
+
+```bash
+curl -sS -X PUT "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{ "is_active": false }'
+```
+
+What the managed user already has stays, and can still be listed. Send `"is_active": true` to switch it back on.
+
 ## Deleting Managed Users
 
-`DELETE /managed-users/{id}` removes the record and answers `200` with `{"message": "...", "id": "..."}`. It does not delete anything else: delete the customer's compositions yourself (`DELETE /compositions/{id}`) when they leave.
+`DELETE /managed-users/{id}` removes the record and answers `200` with `{"message": "...", "id": "..."}`. It does not delete anything else, but it does remove the label: the compositions, widgets and uploads that were filed under the managed user stay in your account, with `managedUserId` back to `null`. So when a customer leaves, list their items first (`GET /compositions?managedUserId=...`), delete what you want gone (`DELETE /compositions/{id}`), and only then delete the managed user.
 
 ## Managed User Entitlements
 
@@ -109,10 +186,10 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
 
 ## Keep Your Own Mapping
 
-Widgetic does not link customers to compositions, so your database must. A minimal shape:
+Widgetic records which managed user a composition, a widget or an upload was filed under, but it does not know your customers' permissions: which of them may open which composition is decided by your platform. Keep a small mapping of your own, and use the filter for listing:
 
 - A customers table: your customer id, and the Widgetic managed-user `id`.
-- A widgets table: your customer id, the Widgetic composition `id`, and the Widgetic `widgetId` it is built on.
+- A widgets table (optional): your customer id, the Widgetic composition `id`, and the Widgetic `widgetId` it is built on. Handy when you show a customer a page of their compositions without calling Widgetic, and when you decide who may open one.
 - Put the customer in the composition name as well, for example `your-platform-user-123 / homepage slider`, so a person looking in the Widgetic dashboard can tell whose it is.
 
 ```sql
@@ -164,27 +241,36 @@ Widgetic stores this object and gives it back. It does not act on it: a `role` h
   </Accordion>
 
   <Accordion title="Handle User Deletion">
-    When a user leaves your platform, delete their compositions first, then their managed user. Deleting a managed user does not delete anything else.
+    When a user leaves your platform, list their compositions with `managedUserId`, delete what you want gone, then delete their managed user. Deleting a managed user does not delete anything else, but the items that were filed under it lose the label and become your account's own.
+  </Accordion>
+
+  <Accordion title="Always Send the Filter From Your Server">
+    List a customer's items with `managedUserId` or `managedUserExternalId` on every call, from your own backend. A call without the filter lists everything on your account, for every customer.
   </Accordion>
 </AccordionGroup>
 
 ## Not Available Yet
 
 - Signing in as, or getting a key for, a managed user.
-- Linking a composition, an upload or a charge to a managed user.
-- Looking up a managed user by `external_id`.
+- Moving a composition, a widget or an upload to another managed user, or taking its label off, after it was created.
+- Filing a resumable upload, or a charge (credits or storage), under a managed user.
+- Searching managed users by `external_id` in `GET /managed-users`. To file or list by your own id, send `managedUserExternalId`.
 - Changing entitlements yourself.
 
 ## Error Handling
 
 Common errors when working with managed users. Branch on `error.code` in the answer (see [Errors](/api-reference/errors)):
 
-| Status | Description |
-|--------|-------------|
-| 400 | `external_id` is missing, or the `Idempotency-Key` header is missing |
-| 403 | The caller is not a partner, or `manager_id` names another account |
-| 404 | The managed user does not exist, or belongs to another partner |
-| 409 | A managed user with this `external_id` already exists |
+| Status | Code | Description |
+|--------|------|-------------|
+| 400 | | `external_id` is missing, or the `Idempotency-Key` header is missing, or `is_active` is not `true` or `false` |
+| 400 | `MANAGED_USER_REFERENCE_INVALID` | `managedUserId` is not a UUID, a field is not text, `managedUserExternalId` is longer than 255 characters, or a field is spelled the other way |
+| 400 | `MANAGED_USER_REFERENCE_AMBIGUOUS` | The request names the managed user twice, with both `managedUserId` and `managedUserExternalId` |
+| 403 | | The caller is not a partner, or `manager_id` names another account |
+| 404 | | The managed user does not exist, or belongs to another partner |
+| 404 | `MANAGED_USER_NOT_FOUND` | A composition, widget or upload call names a managed user that is not one of yours (the same answer for one that belongs to another partner) |
+| 409 | | A managed user with this `external_id` already exists |
+| 409 | `MANAGED_USER_INACTIVE` | A create call names a managed user that is switched off |
 
 ## Next Steps
 
