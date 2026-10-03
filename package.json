@@ -7,6 +7,8 @@
     "build": "mintlify build",
     "sync-openapi": "node scripts/sync-openapi.js",
     "check-openapi-drift": "node scripts/check-openapi-drift.js",
+    "check-agent-docs-drift": "node scripts/check-agent-docs-drift.js",
+    "test": "node --test scripts/__tests__/agentDocsDrift.test.js",
     "validate-links": "node scripts/validate-links.js",
     "generate-code-samples": "node scripts/generate-code-samples.js"
   },
