@@ -14,6 +14,11 @@ The credit system works as follows:
 3. **Monitor balance** and set up auto-reload thresholds
 4. **Track transactions** for accounting and reconciliation
 
+## What a Credit Costs
+
+One credit costs **$0.10**, and one AI generation uses **1 credit**. Credits are whole numbers. The least you can
+buy at once, or reload at once, is **100 credits ($10)**.
+
 ## Checking Your Balance
 
 Retrieve your current credit balance:
@@ -40,7 +45,7 @@ Generate a checkout URL to purchase additional credits:
 const { checkoutUrl } = await partners.addPartnerCredits({
   partnerId: 'your-partner-id',
   addCreditsRequest: {
-    amount: 100, // Minimum $10
+    amount: 100, // 100 credits ($10), the minimum
     successUrl: 'https://yourplatform.com/billing/success',
     cancelUrl: 'https://yourplatform.com/billing/cancel'
   }
@@ -59,8 +64,8 @@ await partners.configureAutoReload({
   partnerId: 'your-partner-id',
   autoReloadRequest: {
     enabled: true,
-    threshold: 20,     // Trigger when balance falls below $20
-    reload_amount: 50  // Add $50 (minimum $10)
+    threshold: 200,    // Trigger when balance falls below 200 credits ($20)
+    reload_amount: 500 // Add 500 credits ($50; minimum 100 credits, $10)
   }
 });
 ```
@@ -92,7 +97,7 @@ const transactions = await partners.getPartnerCreditTransactions({
 //   {
 //     id: "txn_123",
 //     type: "usage",
-//     amount: -0.50,
+//     amount: -1,
 //     description: "AI widget generation",
 //     created_at: "2024-01-15T10:30:00Z"
 //   },
@@ -115,7 +120,7 @@ const overview = await partners.getPartnerBillingOverview({
 //     name: "Your Company",
 //     tier: "partner"
 //   },
-//   credit_balance: 150.00,
+//   credit_balance: 1500, // credits ($150)
 //   usage_this_month: {
 //     ai_generations: 250,
 //     storage_gb: 12.5,
@@ -132,8 +137,8 @@ const overview = await partners.getPartnerBillingOverview({
 
 | Feature | Cost | Notes |
 |---------|------|-------|
-| AI Widget Generation | $0.50 | Per generation attempt |
-| AI Component Edit | $0.25 | Per edit request |
+| AI Widget Generation | 1 credit ($0.10) | Per generation |
+| AI Component Edit | 1 credit ($0.10) | Per edit request: an edit is a generation |
 | Storage | $0.10/GB/month | First 1GB free |
 | API Calls | Free | Up to 10,000/month, then $0.001/call |
 
@@ -154,7 +159,7 @@ Set up webhooks to receive billing events:
 
 | Status | Code | Description |
 |--------|------|-------------|
-| 400 | `BAD_REQUEST` | Invalid amount (minimum $10) |
+| 400 | `BAD_REQUEST` | Invalid amount (minimum 100 credits, $10) |
 | 402 | `PAYMENT_REQUIRED` | Insufficient credits |
 | 403 | `FORBIDDEN` | Not your partner account |
 
@@ -170,8 +175,8 @@ Set up webhooks to receive billing events:
       partnerId: 'your-partner-id',
       autoReloadRequest: {
         enabled: true,
-        threshold: 50,     // Early warning
-        reload_amount: 100 // Keep a comfortable buffer
+        threshold: 500,    // Early warning: 500 credits ($50)
+        reload_amount: 1000 // Keep a comfortable buffer: 1,000 credits ($100)
       }
     });
     ```
@@ -205,7 +210,7 @@ Set up webhooks to receive billing events:
       partnerId: 'your-partner-id'
     });
     
-    if (balance < 10) {
+    if (balance < 100) { // under 100 credits ($10)
       // Show warning to admin
       // Potentially limit new AI generations
       // Queue credit purchase
