@@ -105,50 +105,47 @@ All API responses follow a consistent format:
 
 ## Pagination
 
-All list endpoints support pagination:
+List endpoints page their results with these parameters:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `page` | integer | 1 | Page number (1-indexed) |
 | `size` | integer | 20 | Items per page (max 100) |
-| `sort` | string | varies | Sort field and direction (e.g., `created_at:desc`) |
+| `sort` | string | varies | Sort field and direction (e.g., `created_at:desc`), on the lists that take it |
+
+Each endpoint's reference page says which of these it accepts. `GET /widgets` takes `page` and `size` but not `sort` (it is always newest first), and it returns the whole list when you pass neither, so always page it when you do not know how many widgets an account holds.
 
 Example:
 
 ```typescript
 const { data, meta } = await widgets.getWidgets({
   page: 2,
-  size: 50,
-  sort: 'updated_at:desc'
+  size: 50
 });
 
-if (meta.hasNextPage) {
+if (meta?.hasNextPage) {
   // Fetch next page
 }
 ```
 
 ## Rate Limits
 
-API requests are rate-limited based on your plan:
+API requests are counted per API key over a 15-minute window, and the allowance depends on your plan. A partner key is held to a ceiling of 1,000,000 requests per 15 minutes, which is there to stop a runaway loop, not to meter a platform. Read the allowance that applies to you from the `RateLimit-Limit` header of any response.
 
-| Plan | Requests/minute | Requests/day |
-|------|-----------------|--------------|
-| Free | 60 | 1,000 |
-| Solo | 300 | 10,000 |
-| Teams | 600 | 30,000 |
-| Partner | Custom | Custom |
+A request over the limit is refused with `429 Too Many Requests` and a `Retry-After` header.
 
 See [Rate Limits](/docs/reference/rate-limits) for more details.
 
 ## Idempotency
 
-For state-changing requests (`POST`, `PATCH`, and `PUT` on the endpoints that document it), provide an idempotency key so a retry never runs the operation twice:
+For state-changing requests (`POST`, `PATCH`, and `PUT` on the endpoints that document it), provide an idempotency key so a retry never runs the operation twice. Some endpoints, such as `POST /widgets`, require it:
 
 ```bash
 curl -X POST "https://api.widgetic.com/v1/widgets" \
   -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
   -H "Idempotency-Key: unique-request-id-123" \
-  -d '{"name": "My Widget"}'
+  -d '{"name": "My Widget", "type": "chart", "content": {}}'
 ```
 
 See [Idempotency](/docs/reference/idempotency) for more details.

@@ -59,7 +59,7 @@ Content-Type: application/json
 
 - `RATE_LIMIT_EXCEEDED`: the general limit for calls counted by IP address, the sign-in limit, or the limit on public embed endpoints
 - `RATE_LIMIT_API_KEY_EXCEEDED`: the limit on a recognized API key
-- `RATE_LIMIT_USER_EXCEEDED`: the brake on repeated state changes by one person (for example billing operations)
+- `RATE_LIMIT_USER_EXCEEDED`: the brake on repeated state changes by one person, counted per minute (billing operations: 20 a minute; creating widgets: 120 a minute). It is separate from the allowance on your key, and it is counted across all of that person's keys
 - `COST_LIMIT_EXCEEDED`: a usage budget per hour or per day, not a count of requests. `Retry-After` is the end of the hour or day whose budget was used up
 - `CONCURRENCY_LIMIT_EXCEEDED`: too many operations of yours are running at once. It has no `Retry-After`: retry once one of them has finished
 

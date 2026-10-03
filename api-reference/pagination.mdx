@@ -3,7 +3,7 @@ title: Pagination
 description: How pagination works in the Widgetic API
 ---
 
-All list endpoints in the Widgetic API support pagination to efficiently handle large datasets.
+List endpoints in the Widgetic API page their results, so large datasets stay efficient to read. Each endpoint's reference page says which of the parameters below it accepts.
 
 ## Request Parameters
 
@@ -11,14 +11,18 @@ All list endpoints in the Widgetic API support pagination to efficiently handle 
 |-----------|------|---------|-----|-------------|
 | `page` | integer | 1 | - | Page number (1-indexed) |
 | `size` | integer | 20 | 100 | Number of items per page |
-| `sort` | string | varies | - | Sort field and direction |
+| `sort` | string | varies | - | Sort field and direction, on the lists that take it |
 
 ## Example Request
 
 ```bash
-curl -X GET "https://api.widgetic.com/v1/widgets?page=2&size=50&sort=created_at:desc" \
+curl -X GET "https://api.widgetic.com/v1/widgets?page=2&size=50" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
+
+<Warning>
+  `GET /widgets` returns the whole list when you pass neither `page` nor `size`. For an account with many widgets that response can be cut short, and nothing in it says so. Always page it when you do not know how many widgets an account holds.
+</Warning>
 
 ## Response Format
 
@@ -57,7 +61,7 @@ Paginated responses include a `meta` object with pagination details:
 
 ## Sorting
 
-Use the `sort` parameter with the format `field:direction`:
+Some list endpoints take a `sort` parameter. `GET /widgets` does not: it is always newest first. Where it is accepted, use the format `field:direction`:
 
 - **Ascending**: `sort=created_at:asc`
 - **Descending**: `sort=created_at:desc`
@@ -79,15 +83,14 @@ import { WidgetsApi } from '@widgetic/api-sdk';
 
 const widgets = new WidgetsApi('YOUR_API_KEY');
 
-// Fetch page 2 with 50 items, sorted by update time
+// Fetch page 2 with 50 items
 const { data, meta } = await widgets.getWidgets({
   page: 2,
-  size: 50,
-  sort: 'updated_at:desc'
+  size: 50
 });
 
-console.log(`Page ${meta.page} of ${Math.ceil(meta.total / meta.size)}`);
-console.log(`Showing ${data.length} of ${meta.total} items`);
+console.log(`Page ${meta?.page} of ${Math.ceil((meta?.total ?? 0) / (meta?.size ?? 1))}`);
+console.log(`Showing ${data.length} of ${meta?.total} items`);
 
 // Iterate through all pages
 async function* getAllWidgets() {
@@ -97,7 +100,7 @@ async function* getAllWidgets() {
   while (hasMore) {
     const { data, meta } = await widgets.getWidgets({ page, size: 100 });
     yield* data;
-    hasMore = meta.hasNextPage;
+    hasMore = meta?.hasNextPage ?? false;
     page++;
   }
 }
