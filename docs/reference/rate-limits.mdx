@@ -3,67 +3,86 @@ title: Rate Limits
 description: Understanding rate limits in the Widgetic API
 ---
 
-Rate limits protect the API from abuse and ensure fair usage across all users. This page explains how rate limits work and how to handle them.
+Rate limits protect the API from abuse and keep it fair for everyone. This page explains how they work and what a refused request looks like.
 
 ## How Rate Limits Work
 
-Each API key has a rate limit based on your plan. Limits are applied per-minute with a daily cap.
+Requests are counted over a 15-minute window. When a window's allowance is used up, further requests are refused with `429 Too Many Requests` until the window ends. A refused request is not run.
 
-| Plan | Per Minute | Per Day |
-|------|------------|---------|
-| Free | 60 | 1,000 |
-| Solo | 300 | 10,000 |
-| Teams | 600 | 30,000 |
-| Partner | Custom | Custom |
+- **A recognized API key is counted on its own**, so one customer's traffic never uses up another's.
+- **Anything else is counted by IP address**: calls with no key, and calls with a key the API cannot vouch for.
+- **A partner key is held to a ceiling of 1,000,000 requests per 15 minutes** (about 1,100 a second). It is there to stop a runaway loop, not to meter a platform that serves hundreds of thousands of its own users.
+
+The allowance that applies to a call is in the `RateLimit-Limit` header of its response, so read it there instead of hard-coding a number.
 
 ## Reading Rate Limit Headers
 
-Every API response includes rate limit headers:
+Responses that were counted include rate limit headers:
 
-```
-X-RateLimit-Limit: 300
-X-RateLimit-Remaining: 295
-X-RateLimit-Reset: 1705317600
+```http
+RateLimit-Limit: 3000
+RateLimit-Remaining: 2995
+RateLimit-Reset: 540
 ```
 
-Use these to track your usage and implement proactive throttling.
+- `RateLimit-Limit`: the requests allowed in the window
+- `RateLimit-Remaining`: the requests left in the window
+- `RateLimit-Reset`: the seconds until the window ends (a number of seconds to wait, not a timestamp)
+
+Use these to track your usage and slow down before you are refused.
 
 ## Handling 429 Responses
 
-When rate limited, you'll receive:
+Whichever limit you ran into, a refusal looks the same: a `Retry-After` header and the standard error envelope. `Retry-After` and `error.retryAfter` are the same number, in whole seconds (at least 1).
 
 ```http
 HTTP/1.1 429 Too Many Requests
-Retry-After: 60
+Retry-After: 540
 Content-Type: application/json
 
 {
   "success": false,
+  "message": "Too many requests, please try again later.",
   "error": {
     "code": "RATE_LIMIT_EXCEEDED",
-    "message": "Rate limit exceeded. Try again in 60 seconds."
+    "message": "Too many requests, please try again later.",
+    "retryAfter": 540,
+    "details": { "limit": 3000 },
+    "timestamp": "2026-10-02T12:00:00.000Z",
+    "docUrl": "/api-reference/errors#rate-limiting-errors-429",
+    "suggestedAction": "Wait before making more requests"
   }
 }
 ```
 
+`error.code` tells you which limit it was:
+
+- `RATE_LIMIT_EXCEEDED`: the general limit for calls counted by IP address, the sign-in limit, or the limit on public embed endpoints
+- `RATE_LIMIT_API_KEY_EXCEEDED`: the limit on a recognized API key
+- `RATE_LIMIT_USER_EXCEEDED`: the brake on repeated state changes by one person (for example billing operations)
+- `COST_LIMIT_EXCEEDED`: a usage budget per hour or per day, not a count of requests. `Retry-After` is the end of the hour or day whose budget was used up
+- `CONCURRENCY_LIMIT_EXCEEDED`: too many operations of yours are running at once. It has no `Retry-After`: retry once one of them has finished
+
+`error.details` carries what is particular to the limit (the `limit`, and for some codes the operation or the budgets). Do not depend on a key that is not documented for its code.
+
+<Note>
+A refusal never reaches the operation, so it is safe to retry. When you retry a `POST`, send the **same** `Idempotency-Key` as the first attempt (see [Idempotency](/docs/reference/idempotency)).
+</Note>
+
 ### Implementation Example
 
 ```typescript
-async function makeApiCall(fn, maxRetries = 3) {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (error.status === 429) {
-        const retryAfter = parseInt(
-          error.headers?.get('Retry-After') || '60'
-        );
-        console.log(`Rate limited. Waiting ${retryAfter}s...`);
-        await new Promise(r => setTimeout(r, retryAfter * 1000));
-        continue;
-      }
-      throw error;
-    }
+async function callWithRetry(url: string, init: RequestInit, maxRetries = 3): Promise<Response> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, init);
+    if (response.status !== 429) return response;
+    if (attempt === maxRetries) break;
+
+    // `Retry-After` is a number of seconds. A CONCURRENCY_LIMIT_EXCEEDED refusal has none:
+    // wait a few seconds and try again.
+    const waitSeconds = Number(response.headers.get('Retry-After') ?? 5);
+    console.log(`Rate limited. Waiting ${waitSeconds}s...`);
+    await new Promise((resolve) => setTimeout(resolve, waitSeconds * 1000));
   }
   throw new Error('Max retries exceeded');
 }
@@ -71,12 +90,13 @@ async function makeApiCall(fn, maxRetries = 3) {
 
 ## Best Practices
 
-1. **Monitor headers proactively** - Slow down before hitting limits
-2. **Implement exponential backoff** - Don't retry immediately
-3. **Use batch endpoints** - Reduce total request count
-4. **Cache responses** - Avoid redundant requests
-5. **Spread requests** - Don't burst all at once
+1. **Honor `Retry-After`** - It is the time left until your counter starts over; retrying sooner is refused again
+2. **Monitor headers proactively** - Slow down before hitting limits
+3. **Implement exponential backoff** - When a refusal has no `Retry-After`, don't retry immediately
+4. **Use batch endpoints** - Reduce total request count
+5. **Cache responses** - Avoid redundant requests
+6. **Spread requests** - Don't burst all at once
 
 ## Need Higher Limits?
 
-Contact [support@widgetic.com](mailto:support@widgetic.com) to discuss partner plans with custom rate limits.
+Contact [support@widgetic.com](mailto:support@widgetic.com) to discuss limits above what your key has today.
