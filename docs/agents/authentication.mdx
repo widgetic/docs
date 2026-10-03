@@ -1,0 +1,100 @@
+---
+title: Authentication
+description: How an AI assistant signs in to Widgetic, which permissions it can hold, and how to revoke its access
+---
+
+An assistant can connect to `https://mcp.widgetic.com` in two ways. Both act as your Widgetic account, and both need a plan that includes API access.
+
+| | Sign in with Widgetic (OAuth) | API key |
+|---|---|---|
+| Best for | ChatGPT, Codex, Cursor, Claude Code, VS Code | Clients that cannot open a browser, scripts |
+| You do | Approve the connection once on a Widgetic page | Create a key and put it in the client's settings |
+| Permissions | Exactly the ones you approve | All of them |
+| Ends when | You remove it, or Widgetic ends it for you | You delete or rotate the key |
+
+## Sign in with Widgetic
+
+The assistant starts the sign-in for you. You are taken to a Widgetic page, you sign in if you are not already, and you see which application is asking and what it would be allowed to do:
+
+<Steps>
+  <Step title="The assistant asks to connect">
+    Your client registers itself with Widgetic automatically and opens your browser.
+  </Step>
+  <Step title="You review the request">
+    The page names the application and lists each permission in plain words. Nothing is granted until you choose **Allow**; **Cancel** refuses the request.
+  </Step>
+  <Step title="The assistant is connected">
+    The client receives a short-lived access token and a way to renew it, and keeps itself signed in. You are not asked again until you remove the connection.
+  </Step>
+</Steps>
+
+<Warning>
+  Only approve a request you started. Check that the page is on `widgetic.com` and that the application name is the one you are connecting.
+</Warning>
+
+### Permissions
+
+These are the permissions an assistant can ask for. The consent page uses exactly these words.
+
+| Permission | What you are told you are approving |
+|---|---|
+| `widgetic.read` | See your widgets, your media library and your account details |
+| `widgetic.write` | Create, change and delete widgets and add files to your media library. Creating widgets uses your plan's credits |
+| `widgetic.publish` | Publish widgets, which makes them visible to anyone who has the link |
+| `openid` | Confirm that you are signed in to Widgetic |
+| `email` | See your email address |
+| `profile` | See your name |
+| `offline_access` | Stay connected until you disconnect it, without asking you to sign in again |
+
+Each tool needs one of the first three; the [tools reference](/docs/agents/tools) says which. A tool called without its permission is refused and the assistant is told to ask you to connect again and approve it.
+
+## API keys
+
+Create a key under **Settings** > **API Keys** in your [Widgetic dashboard](https://app.widgetic.com), then send it on every request:
+
+```bash
+Authorization: Bearer wgt_usr_your_api_key_here
+```
+
+Personal keys (`wgt_usr_`) and organization keys (`wdg_org_`) work. A key carries all three permissions, and there is no way to narrow it, so prefer signing in with Widgetic wherever the client supports it. Keep keys out of shared files and public repositories; see [Authentication](/docs/authentication) for key handling in general.
+
+## Revoking access
+
+<Steps>
+  <Step title="Open your connected apps">
+    Go to [widgetic.com/profile/connected-apps](https://widgetic.com/profile/connected-apps) while signed in.
+  </Step>
+  <Step title="Disconnect the application">
+    Choose **Disconnect** next to the assistant and confirm. It stops being able to use your account straight away, and it has to ask you for permission again to get back in.
+  </Step>
+</Steps>
+
+Removing the server inside your assistant only makes the assistant forget it. To end the access itself, disconnect it at Widgetic as above. An API key is revoked by deleting it in the dashboard.
+
+### When Widgetic ends a connection for you
+
+Widgetic disconnects every connected assistant when you:
+
+- change your password,
+- delete your account, or
+- are removed from a team seat and nothing else, such as a plan of your own or a seat in another team, still gives you API access.
+
+If your plan ends, connections are not removed but every request is refused until the account has API access again.
+
+## Errors
+
+| Status | Meaning | What to do |
+|---|---|---|
+| `401 Unauthorized` | No credentials, or they are invalid or expired. The response names where the sign-in details are published (`WWW-Authenticate` with `resource_metadata`) | Sign in again, or check the API key |
+| `403 forbidden` | Your plan does not include API access (the message says so), or the credential may not use the Widgetic MCP endpoint | Change plan, or ask your team owner |
+| A tool result that says `Widgetic needs your permission for this` | The connection was approved without a permission this one tool needs. The request itself succeeds (it is not an HTTP error): the result is marked as an error and carries a `WWW-Authenticate` challenge in its `_meta`, with `error="insufficient_scope"` and the missing permission in `scope`. That is how ChatGPT knows to show its connect screen again | Connect again and approve every permission |
+| `403 access_denied` | Widgetic is not available in this assistant right now | Use another client, or try again later |
+| `405 Method Not Allowed` | The server answers `POST` only | Send requests with `POST` |
+| `406 Not Acceptable` | `Accept` does not list both `application/json` and `text/event-stream` | Send both |
+| `413 Payload Too Large` | The request body is over 1 MiB | Send less |
+| `429 Too Many Requests` | Too many requests for your account or network address in a short time | Wait for the time in `Retry-After` |
+| `503 Service Unavailable` | Widgetic could not check the credential just now | Try again after the time in `Retry-After` |
+
+## Privacy
+
+Widgetic receives what your assistant sends in tool calls, such as the description of a widget you asked for, and the files you ask it to save. It does not receive the rest of your conversation. Requests to create or revise a widget are screened with a content moderation service first. The [privacy policy](https://widgetic.com/privacy) has the details, and [support](https://widgetic.com/support) can help with any question about a connection.

@@ -1,0 +1,91 @@
+---
+title: AI agents (MCP)
+description: Build, preview, publish and embed Widgetic widgets from ChatGPT, Codex, Cursor, Claude Code, VS Code and any other MCP client
+---
+
+Widgetic runs one public [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server. Connect an AI assistant to it and you can describe a widget in plain words, watch it being built, publish it and get the code to put it on a website, without leaving the conversation.
+
+```text
+https://mcp.widgetic.com
+```
+
+That address is the whole setup: every supported assistant uses the same one.
+
+## What you can ask for
+
+<CardGroup cols={2}>
+  <Card title="Build" icon="wand-magic-sparkles">
+    "Make a countdown to our launch on March 3, in our brand green." The assistant starts the build and shows you the preview as it comes together.
+  </Card>
+  <Card title="Change" icon="pen">
+    "Make the numbers bigger and add a title." Changes that need new code are rebuilt as a new draft; texts, images, colors, fonts and sizes of a published widget change at once.
+  </Card>
+  <Card title="Publish and embed" icon="rocket">
+    "Publish it and give me the React component." Publishing happens only when you agree, and you get plain HTML, an iframe, or React, Vue, Svelte and Angular code.
+  </Card>
+  <Card title="Find, reuse and manage" icon="images">
+    "Show my drafts." "Save these logos to my media library and use the first one." "Go back to the previous version." "Copy this widget for the pricing page." The assistant can also rename or delete a widget (deleting asks you to confirm its title) and tell you how many credits you have left.
+  </Card>
+</CardGroup>
+
+## How it works
+
+<Steps>
+  <Step title="Describe the widget">
+    The assistant calls `create_widget` with your description. The build starts and returns at once, usually finishing within a few minutes.
+  </Step>
+  <Step title="Watch and review">
+    `show_widget` displays the build progress and then the live preview (as a card in assistants that can show one, as text otherwise). Ask for changes with `revise_widget`.
+  </Step>
+  <Step title="Publish when you are happy">
+    `publish_widget` makes the current draft live. It is only called after you approve the preview, because it replaces what existing embeds show.
+  </Step>
+  <Step title="Customize and embed">
+    `update_widget_customization` changes the texts, images, colors, fonts and sizes of a published widget without rebuilding it. `get_embed_code` returns the code and a share link.
+  </Step>
+</Steps>
+
+The full list of tools is in the [tools reference](/docs/agents/tools).
+
+## What it costs
+
+- **Creating and revising** a widget uses **1 credit per call**, charged when the build starts.
+- Everything else (previews, listing, versions, copies, renaming, deleting, customization, embed code, the media library, checking your usage) uses no credits. Saved files count against your storage allowance.
+- **Publishing** needs a plan that includes it. If yours does not, the assistant tells you.
+
+## What you need
+
+- A Widgetic account whose plan **includes API access**. Without it the connection is refused with a message saying so.
+- An assistant that supports remote MCP servers. See [Connect your assistant](/docs/agents/connect) for ChatGPT, Codex, Cursor, Claude Code and VS Code.
+
+## Good to know
+
+<AccordionGroup>
+  <Accordion title="Widgets the assistant builds display content; they do not collect it">
+    A widget the assistant builds shows information (a quiz, a countdown, a gallery, a chart, a calculator). It does not store what a visitor types or votes, so sign-up forms, RSVPs and polls that need to keep answers are not something the assistant can build today. If you already have a published Widgetic widget that collects entries from your visitors, the assistant can read them for you: counts per option by default, and the entries themselves only when you ask.
+  </Accordion>
+  <Accordion title="Retrying a build">
+    Each `create_widget` call starts a separate widget and charges credits. A repeat of the same title within two minutes returns the widget already started and charges nothing, so a retry after a lost answer does not build twice. If a call times out, ask the assistant to check your widget list before it tries again.
+  </Accordion>
+  <Accordion title="Deleting a widget">
+    `delete_widget` removes a widget for good, with all its versions and published copies; embeds already placed on websites stop working, and it cannot be undone. The assistant has to pass the exact title you confirmed, and a widget that is still being built cannot be deleted. Going back to an earlier version never deletes anything: `list_widget_versions` and `publish_widget` do that.
+  </Accordion>
+  <Accordion title="Files you attach or link">
+    Images (PNG, JPEG, WebP, GIF, HEIC), videos (MP4, WebM, MOV) and PDFs can be saved to your media library from attached files or HTTPS links, up to 10 MB each (250 MB each on the Solo and Teams plans). Audio, spreadsheets and SVG images cannot be saved.
+  </Accordion>
+  <Accordion title="Your prompts are screened">
+    Requests to create or revise a widget are checked with a content moderation service before they are acted on. See the [privacy policy](https://widgetic.com/privacy) for what is sent and why.
+  </Accordion>
+</AccordionGroup>
+
+<CardGroup cols={3}>
+  <Card title="Connect your assistant" icon="plug" href="/docs/agents/connect">
+    One snippet per client.
+  </Card>
+  <Card title="Tools reference" icon="screwdriver-wrench" href="/docs/agents/tools">
+    Every tool, what it costs and what it needs.
+  </Card>
+  <Card title="Authentication" icon="key" href="/docs/agents/authentication">
+    Sign-in, API keys and revoking access.
+  </Card>
+</CardGroup>

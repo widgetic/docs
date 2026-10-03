@@ -1,0 +1,141 @@
+---
+title: Tools reference
+description: The tools the Widgetic MCP server offers, what each does, what it costs and which permission it needs
+---
+
+Your assistant chooses between the tools from their descriptions, so you rarely name one yourself. The server describes each tool fully (inputs, outputs, when to use it) to the client; this page is the overview.
+
+<Note>
+  The list is the same for everyone. A tool you are not allowed to use is refused when called, not hidden.
+</Note>
+
+## At a glance
+
+| Tool | What it does | Permission | Credits |
+|---|---|---|---|
+| `get_profile` | Tells which Widgetic account the connection acts for | `widgetic.read` | 0 |
+| `get_account_usage` | Reports your credits, storage, widget counts and whether you can publish | `widgetic.read` | 0 |
+| `create_widget` | Starts building a new widget from a description | `widgetic.write` | 1 |
+| `get_widget` | Reports a widget's state: building, ready, failed, published | `widgetic.read` | 0 |
+| `revise_widget` | Starts a new build of an existing widget from your feedback | `widgetic.write` | 1 |
+| `cancel_widget_creation` | Cancels a build that has not finished | `widgetic.write` | 0 |
+| `show_widget` | Shows a widget as a card: progress, then the live preview | `widgetic.read` | 0 |
+| `list_widgets` | Lists your widgets, drafts or published, a few at a time | `widgetic.read` | 0 |
+| `publish_widget` | Makes the current draft, or an earlier version, live | `widgetic.publish` | 0 |
+| `list_widget_versions` | Lists the versions a widget has been through and which one is live | `widgetic.read` | 0 |
+| `get_widget_customization_options` | Lists what you can change on a published widget without rebuilding | `widgetic.read` | 0 |
+| `update_widget_customization` | Changes texts, images, list items, colors, fonts or sizes at once | `widgetic.write` | 0 |
+| `get_embed_code` | Returns the code or link to put a published widget on a website | `widgetic.read` | 0 |
+| `duplicate_composition` | Makes a second embeddable copy of a published widget | `widgetic.write` | 0 |
+| `list_widget_data` | Shows whether a published widget keeps what visitors send in (votes, RSVPs, form entries), and how much | `widgetic.read` | 0 |
+| `get_widget_data` | Counts those entries, or tallies them per option; shows the entries themselves only when you ask | `widgetic.read` | 0 |
+| `rename_widget` | Gives a widget a different name | `widgetic.write` | 0 |
+| `delete_widget` | Permanently deletes a widget, after you confirm its title | `widgetic.write` | 0 |
+| `save_to_media_library` | Saves images, videos or PDFs you provide to your media library | `widgetic.write` | 0 |
+| `list_media_library` | Lists the files in your media library | `widgetic.read` | 0 |
+
+Permissions are the scopes you approve when you sign in; see [Authentication](/docs/agents/authentication#permissions).
+
+## Building
+
+<AccordionGroup>
+  <Accordion title="create_widget" icon="wand-magic-sparkles">
+    Starts a new widget from a description: a quiz, countdown, gallery, timeline, FAQ, chart, calculator, list, carousel or similar. It returns at once with a widget id; the build usually takes a few minutes. Each call starts a separate widget and uses 1 credit, charged up front. A call that repeats the title of a widget started in the last two minutes returns that widget and charges nothing, so a retry after a failure or timeout does not build twice. If you are unsure, check your widgets before creating again.
+  </Accordion>
+  <Accordion title="get_widget" icon="gauge">
+    The current state of one widget: still being built and how far along, draft ready, failed or cancelled, the link to its preview, and whether it is published and being served. For a published widget it also lists its copies (compositions) with their ids. While a build runs, the assistant checks it every 5 to 10 seconds.
+  </Accordion>
+  <Accordion title="show_widget" icon="eye">
+    Shows a widget as a card, with the build progress and then the live preview, and actions to revise, publish, customize or copy the embed code. Assistants that cannot display cards get the same state as text.
+  </Accordion>
+  <Accordion title="revise_widget" icon="pen">
+    For changes that need new code: new features, a different layout, another visual style. It starts a new build from the latest draft (1 credit). If the widget is already published, the revision is a new draft: embeds keep showing the last published version until you publish again.
+  </Accordion>
+  <Accordion title="cancel_widget_creation" icon="ban">
+    Cancels a build that is still queued or generating. A build already under way may still finish and leave a draft, and credits already charged are not refunded. It does nothing to a draft that is ready or a widget that is published.
+  </Accordion>
+</AccordionGroup>
+
+## Finding and publishing
+
+<AccordionGroup>
+  <Accordion title="list_widgets" icon="list">
+    All your widgets, only drafts that were never published, only published ones, or those whose name contains some words. It shows up to 8 at a time as a carousel and the assistant can ask for the next page.
+  </Accordion>
+  <Accordion title="publish_widget" icon="rocket">
+    Publishes the current draft (final build and upload), or an earlier version you choose, and returns the composition id and the published version. It can take up to a minute. It replaces the version existing embeds show, so the assistant calls it only after you agree. It needs a plan that includes publishing.
+  </Accordion>
+  <Accordion title="list_widget_versions" icon="clock-rotate-left">
+    The versions a widget has been through, newest first, with a short title for each when it has one, whether it was ever published and which one is live now. The assistant uses the numbers to bring an earlier version back with `publish_widget`. It shows up to 20 at a time and can ask for older ones. It does not show what a version contains.
+  </Accordion>
+</AccordionGroup>
+
+## Customizing and embedding
+
+<AccordionGroup>
+  <Accordion title="get_widget_customization_options" icon="sliders">
+    Every content field, list and design control of a published widget, with its current value and limits. The assistant reads this before changing anything. A draft that was never published has no options yet.
+  </Accordion>
+  <Accordion title="update_widget_customization" icon="palette">
+    Changes what a published widget shows or how it looks: texts, images from your media library, list items, colors, fonts and sizes. It applies at once, embeds show the change, and it uses no credits. Only options the widget offers are accepted, values are checked against its limits, and a list the assistant sends replaces the whole list while anything left out stays as it is.
+  </Accordion>
+  <Accordion title="get_embed_code" icon="code">
+    Plain HTML, an iframe, or a React, Vue, Svelte or Angular component, at a fixed size or fully responsive, plus a share link. If embeds are not being served right now because of your account's state, the result says so.
+  </Accordion>
+</AccordionGroup>
+
+## Managing widgets
+
+<AccordionGroup>
+  <Accordion title="duplicate_composition" icon="copy">
+    Makes a second embeddable copy of a published widget: the same content, design and embed settings, with its own id and embed code. Useful for the same widget on another page with different texts or colors. A widget can have up to 10 copies. It uses no credits and does not rebuild or republish anything.
+  </Accordion>
+  <Accordion title="list_widget_data" icon="table-list">
+    For one of your published widgets that keeps what visitors send in, shows which tables of entries it has, their columns and how many entries each holds. A widget made by the assistant displays content and keeps nothing, so for those it says there is no data. It only reads and uses no credits.
+  </Accordion>
+  <Accordion title="get_widget_data" icon="chart-column">
+    Answers "how many votes did each option get?" or "how many said yes?" for a published widget that keeps entries: a count, or a tally per value of a column, largest first. The entries themselves (the newest 10, at most 25, long texts cut) come back only when you ask to read what visitors wrote. What visitors typed is reported as their words and is never treated as an instruction by the assistant. It only reads: it cannot change or delete an entry, and it uses no credits.
+  </Accordion>
+  <Accordion title="rename_widget" icon="pencil">
+    Gives a widget a different name. Only the widget's title changes: its published copies keep their names, nothing is rebuilt and embeds are not affected. The previous name is returned.
+  </Accordion>
+  <Accordion title="delete_widget" icon="trash">
+    Permanently deletes a widget with all its versions and its published copies. Embeds already placed on websites stop working, credits already used are not refunded, and it cannot be undone. The assistant has to pass the exact title of the widget as you confirmed it, and a widget that is still being built cannot be deleted.
+  </Accordion>
+</AccordionGroup>
+
+## Media library
+
+<AccordionGroup>
+  <Accordion title="save_to_media_library" icon="upload">
+    Saves images (PNG, JPEG, WebP, GIF, HEIC), videos (MP4, WebM, MOV) or PDFs you attached or linked. Links must be HTTPS and are not followed through redirects; files up to 10 MB each, or 250 MB each on the Solo and Teams plans. They go into the folder you name (default "Assets") and count against your storage allowance. Files that cannot be saved are listed with the reason; the others are still saved.
+  </Accordion>
+  <Accordion title="list_media_library" icon="images">
+    Browses what is already saved, as a carousel of thumbnails you can filter by folder, kind or name, and gives the file ids a widget can use.
+  </Accordion>
+</AccordionGroup>
+
+## Account
+
+<AccordionGroup>
+  <Accordion title="get_profile" icon="user">
+    The account the connection acts for: name, email and nickname when available, and an opaque id that stays the same across reconnects. Useful to confirm the connection works and whose widgets will be created. It cannot look up anyone else.
+  </Accordion>
+  <Accordion title="get_account_usage" icon="chart-simple">
+    Your credits available (after those held for builds in progress) and how many builds they cover, your storage use and limit, how many widgets you have and how many are published, whether your plan includes publishing, and whether embeds are being served. A figure that cannot be read at that moment is reported as unknown, never as zero. It uses no credits.
+  </Accordion>
+</AccordionGroup>
+
+## What the tool flags mean
+
+Each tool declares, for assistants that show a confirmation before acting, whether it only reads, whether it can change or replace something that exists, and whether it interacts with the outside world.
+
+| Tool | Reads only | Can change or replace | Interacts with the outside world |
+|---|---|---|---|
+| `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library` | yes | no | no |
+| `create_widget`, `revise_widget` | no | no (they add a draft) | no |
+| `duplicate_composition` | no | no (it adds a copy) | no |
+| `cancel_widget_creation`, `update_widget_customization`, `rename_widget` | no | yes | no |
+| `delete_widget` | no | yes (it removes the widget for good) | no |
+| `publish_widget` | no | yes (it replaces what embeds show) | yes (it makes the widget publicly reachable) |
+| `save_to_media_library` | no | no | yes (it fetches the links you give) |

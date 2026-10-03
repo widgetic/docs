@@ -1,0 +1,181 @@
+---
+title: Connect your assistant
+description: Add the Widgetic MCP server to ChatGPT, Codex, Cursor, Claude Code, VS Code or any MCP client
+---
+
+Every client uses the same server address and the same sign-in:
+
+```text
+https://mcp.widgetic.com
+```
+
+Most clients sign you in with your Widgetic account in the browser (OAuth). A client that cannot do that can send a [Widgetic API key](/docs/agents/authentication#api-keys) instead.
+
+<Note>
+  Your Widgetic plan must include API access, whichever way you sign in. If it does not, the connection is refused with a message that says so.
+</Note>
+
+## Pick your client
+
+<Tabs>
+  <Tab title="ChatGPT">
+    Use the Widgetic app from the ChatGPT app directory, or add it yourself:
+
+    <Steps>
+      <Step title="Add a custom app">
+        In ChatGPT, open the apps settings, turn on developer mode if your plan requires it, and create an app that points at the MCP server `https://mcp.widgetic.com`. Choose OAuth for authentication.
+      </Step>
+      <Step title="Sign in">
+        ChatGPT opens a Widgetic page that shows what the app is asking for. Check it and choose **Allow**.
+      </Step>
+      <Step title="Use it">
+        Start a chat, enable the Widgetic app, and ask for a widget.
+      </Step>
+    </Steps>
+
+    <Note>
+      Which ChatGPT plans and workspaces can use apps and developer mode is decided by OpenAI and, in a workspace, by its administrators.
+    </Note>
+  </Tab>
+
+  <Tab title="Codex">
+    Add the server to `~/.codex/config.toml`:
+
+    ```toml
+    [mcp_servers.widgetic]
+    url = "https://mcp.widgetic.com"
+    ```
+
+    Then sign in:
+
+    ```bash
+    codex mcp login widgetic
+    ```
+
+    <Note>
+      Codex's MCP commands and settings have changed between releases. If a command above is not recognized, run `codex mcp --help` and keep the server name `widgetic` and the address above.
+    </Note>
+  </Tab>
+
+  <Tab title="Cursor">
+    Add the server to `.cursor/mcp.json` in your project, or `~/.cursor/mcp.json` for every project:
+
+    ```json
+    {
+      "mcpServers": {
+        "widgetic": {
+          "url": "https://mcp.widgetic.com"
+        }
+      }
+    }
+    ```
+
+    Cursor shows the server as needing sign-in. Choose **Connect**, sign in to Widgetic in the browser and allow access.
+
+    To use an API key instead of signing in:
+
+    ```json
+    {
+      "mcpServers": {
+        "widgetic": {
+          "url": "https://mcp.widgetic.com",
+          "headers": { "Authorization": "Bearer ${env:WIDGETIC_API_KEY}" }
+        }
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http widgetic https://mcp.widgetic.com
+    ```
+
+    Then, inside Claude Code, run `/mcp`, choose **widgetic** and authenticate. A browser window opens for you to sign in to Widgetic and allow access.
+
+    To use an API key instead of signing in:
+
+    ```bash
+    claude mcp add --transport http widgetic https://mcp.widgetic.com \
+      --header "Authorization: Bearer $WIDGETIC_API_KEY"
+    ```
+  </Tab>
+
+  <Tab title="VS Code">
+    Add the server to `.vscode/mcp.json`:
+
+    ```json
+    {
+      "servers": {
+        "widgetic": {
+          "type": "http",
+          "url": "https://mcp.widgetic.com"
+        }
+      }
+    }
+    ```
+
+    VS Code offers to start the server and sign you in. Sign in to Widgetic in the browser and allow access.
+
+    To use an API key instead of signing in:
+
+    ```json
+    {
+      "inputs": [
+        { "type": "promptString", "id": "widgetic-api-key", "description": "Widgetic API key", "password": true }
+      ],
+      "servers": {
+        "widgetic": {
+          "type": "http",
+          "url": "https://mcp.widgetic.com",
+          "headers": { "Authorization": "Bearer ${input:widgetic-api-key}" }
+        }
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Other clients">
+    Any client that supports **remote MCP servers over Streamable HTTP** can connect.
+
+    - Server address: `https://mcp.widgetic.com`
+    - Sign-in: OAuth 2.1 with automatic client registration, which most clients do for you. The server publishes its discovery documents at `https://mcp.widgetic.com/.well-known/oauth-protected-resource` and `https://mcp.widgetic.com/.well-known/oauth-authorization-server`.
+    - Or send `Authorization: Bearer <your Widgetic API key>` on every request.
+
+    The server is stateless: it keeps no session between requests, and each request is answered with one JSON document.
+  </Tab>
+</Tabs>
+
+## Check that it works
+
+Ask the assistant:
+
+> Which Widgetic account am I connected to?
+
+It answers with the name and email of your account. If you see that, ask it to build something.
+
+## Check your key by hand
+
+An API key is enough to call the server with `curl`. Each request stands alone, so there is no handshake first. The `Accept` header must list both content types:
+
+```bash
+curl -sS https://mcp.widgetic.com/ \
+  -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+You should get back the tools listed in the [tools reference](/docs/agents/tools).
+
+## If it does not connect
+
+| You see | It means | What to do |
+|---|---|---|
+| The client asks you to sign in again | The connection was removed, expired, or approved without a permission a tool needs | Sign in again and approve every permission |
+| A message that your plan does not include API access | The account is on a plan without API access | See the [pricing page](https://widgetic.com/pricing) or ask your team owner |
+| `403 access_denied` | Widgetic is not available in this assistant right now, for example while a rollout is still limited | Use another client, or try again later |
+| `406 Not Acceptable` (custom clients) | `Accept` does not list both `application/json` and `text/event-stream` | Send both |
+| `429 Too Many Requests` | Too many requests in a short time | Wait for the time in `Retry-After` |
+
+More in [Authentication](/docs/agents/authentication).

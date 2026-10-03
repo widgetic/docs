@@ -77,6 +77,15 @@
             ]
           },
           {
+            "group": "AI agents (MCP)",
+            "pages": [
+              "docs/agents/overview",
+              "docs/agents/connect",
+              "docs/agents/tools",
+              "docs/agents/authentication"
+            ]
+          },
+          {
             "group": "Reference",
             "pages": [
               "docs/reference/rate-limits",
