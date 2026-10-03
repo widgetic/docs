@@ -60,13 +60,19 @@ const api = new WidgetsApi({
 
 ## Domain Validation
 
-For embedded widgets, configure allowed domains:
+You can limit the websites an embedded widget may appear on. If you list nothing, the widget works everywhere.
 
-1. Go to Dashboard → Settings → Domains
-2. Add your production domains
-3. Test domains are automatically allowed in development
+1. Go to Dashboard → Settings → Domains (for a team workspace, use that workspace's domain settings)
+2. Add each website: `example.com` also covers `www.example.com`, and `*.example.com` covers the domain and every subdomain
+3. Add `localhost` too while you test on your own machine
 
-The Embed SDK validates the requesting domain against your allowed list.
+Once a list exists, the lookup that returns a widget's content answers `403` with the code `DOMAIN_NOT_ALLOWED` to a page on any other website, and the widget's frame page asks the browser not to show it anywhere else. Widgetic's own sites always work, and a list that cannot be read never blocks a widget.
+
+If you use the Partner API, the `allowedDomains` of your partner account is added to the list of the person who administers it, and applies to the widgets made with your API keys.
+
+<Note>
+  A domain list keeps your widgets off other people's pages. It is not access control: the content of a published widget can still be requested by anyone who has its ID, using a plain HTTP request that names no website for the check to read. Do not rely on it to keep content private.
+</Note>
 
 ## Request Signing
 

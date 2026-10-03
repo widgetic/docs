@@ -61,7 +61,7 @@ const { data: batchCompositions } = await compositions.batchGetCompositions({
 ```
 
 <Note>
-  The batch endpoint includes domain validation and is designed for use by the embed SDK. It validates the requesting domain against allowed domains.
+  The batch endpoint is designed for use by the embed SDK and includes domain validation. If a composition's owner has listed the websites it may appear on and the request comes from another website, that composition is left out of `compositions` and reported in `errors` as `Domain access denied: <reason>`; the others are still returned.
 </Note>
 
 ## Composition Structure
