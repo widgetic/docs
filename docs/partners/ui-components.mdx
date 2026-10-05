@@ -88,7 +88,7 @@ await fileBrowser.unmount();
 | `container` | element or CSS selector | **Required.** Where the piece is drawn. |
 | `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. See [Tokens](#tokens). |
 | `version` | `string` | Pin an exact version of the piece, such as `1.2.0`. Default: the newest. Pin it in production. |
-| `theme` | `'light'`, `'dark'` or `'system'` | Default `light`. `system` follows the customer's setting. |
+| `theme` | `'light'`, `'dark'`, `'system'`, or `{ preset, mode, colors, radius, font }` | Default `light`. `system` follows the customer's setting. An object gives the piece your colours, corner radius and font. See [Make the pieces look like your product](#make-the-pieces-look-like-your-product). |
 | `locale` | `string` | A BCP 47 tag such as `en` or `de`. |
 | `apiUrl` | `string` | The Widgetic API. Default `https://api.widgetic.com`. |
 | `moduleBaseUrl` | `string` | Where pieces are served from. Default `https://cdn.widgetic.com/modules`. See [Versions and self-hosting](#versions-and-self-hosting). |
@@ -106,6 +106,7 @@ await fileBrowser.unmount();
   module: UIModule;                              // the piece itself, for its own methods
   on(event, handler): () => void;                // returns a function that unsubscribes
   off(event, handler): void;
+  setTheme(theme): void;                         // this piece's look alone
   unmount(): Promise<void>;                      // takes the piece and its listeners down
 }
 ```
@@ -131,10 +132,79 @@ const ui = new WidgeticUI({ getToken, theme: 'system' });      // touches nothin
 await ui.preload('widget-creator');                            // optional: download it ahead of time
 const files = await ui.mount('file-browser', { container: '#files' });
 
-ui.updateTheme('dark');                                        // every mounted piece, and later ones
+ui.updateTheme('dark');                                        // every mounted piece, and later ones (colours, radius and font stay)
 await files.unmount();
 await ui.destroy();                                            // unmounts whatever is left
 ```
+
+## Make the pieces look like your product
+
+A piece can wear your colours, the roundness of your corners and your typeface. The components, the layout and the wording stay Widgetic's: only the look follows your design system. Each piece has a theme of its own, so the File Browser, the composition editor and the widget creator can look the same or different.
+
+```javascript
+const ui = new WidgeticUI({
+  getToken,
+  // The look of every piece of this page
+  theme: {
+    preset: 'ocean',
+    radius: 'medium',
+    font: { family: 'Poppins', stylesheetUrl: 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap' },
+  },
+});
+
+const files = await ui.mount('file-browser', { container: '#files' });   // takes the page's look
+const editor = await ui.mount('composition-editor', {
+  container: '#editor',
+  compositionId,
+  theme: { preset: 'violet', mode: 'dark', colors: { primary: '#e0541b' } },   // a look of its own
+});
+
+ui.updateTheme('dark');                 // the mode of every piece; each keeps its colours, radius and font
+ui.updateTheme({ preset: 'sunset' });   // new page-wide settings, for the pieces that have none of their own
+editor.setTheme({ radius: 'none' });    // one piece alone
+```
+
+### The settings
+
+| Setting | |
+|---------|---|
+| `preset` | A built-in look to start from: `'widgetic'` (the default), `'graphite'`, `'ocean'`, `'violet'` or `'sunset'`. Each has a light and a dark look. A preset sets colours only. |
+| `mode` | `'light'` or `'dark'`. On the `WidgeticUI` you can also write `'system'`, which follows the customer's own setting. |
+| `colors` | Any of `primary`, `primaryForeground` (the text on the primary colour), `background`, `foreground` (the text), `muted` (quiet surfaces), `mutedForeground` (secondary text), `border`, `accent` (the soft highlight) and `destructive` (errors). Name only the ones you want to decide: the rest follows from them. A `primary` on its own changes the brand colours and leaves the greys alone. |
+| `radius` | `'none'` (square), `'small'` (4 px), `'medium'` (8 px) or `'large'` (12 px), or a number of pixels from 0 to 32. Without it the corners are as they were. |
+| `font` | `{ family, stylesheetUrl? }`. `family` is a CSS font-family value: one name gets system fonts behind it, a list is used as written. It applies to the piece's text, not to your page. |
+
+| Preset | Brand colour, light | Brand colour, dark | |
+|--------|---------------------|--------------------|---|
+| `widgetic` | Deep forest green (unchanged) | A lighter green on near-black | The Widgetic look. |
+| `graphite` | `#1f2328` | `#6b7683` | Neutral and quiet. The content carries the colour. |
+| `ocean` | `#0b69c7` | `#3b82f0` | Clear blue. |
+| `violet` | `#6d3fd9` | `#8b5cf6` | A saturated purple. |
+| `sunset` | `#e0541b` | `#e8602a` | Warm orange. |
+
+Your own `colors` win over the preset's. A `primary` of yours without a `primaryForeground` gets the white or the dark ink that reads better on it.
+
+### Writing a colour
+
+`#rrggbb`, `#rgb`, `rgb(11 107 203)` and `hsl(210 90% 41%)` always work. A colour name or `oklch()` works in a browser that understands it. `var(--brand)` and `currentColor` are refused: the piece reads the colour when you give it and cannot look at your page's variables from there, so read the value in your page and pass it in. Transparency is ignored. The piece warns in the console about a combination that is hard to read: your text under 4.5:1 against your background, or your primary colour (or the text on it) under 3:1.
+
+### A font your page does not load yet
+
+A font can only be defined by the page itself, never from inside a piece. Give the `https` address of its stylesheet as `stylesheetUrl` and the piece adds one `<link rel="stylesheet" data-widgetic-ui-font>` to your `<head>`, once however many pieces use it. It stays after `unmount()`, like the font rules every piece adds. A font your page already loads needs no `stylesheetUrl`. Under a strict Content-Security-Policy, `style-src` has to allow the stylesheet's host and `font-src` the font files (for Google Fonts, `https://fonts.googleapis.com` and `https://fonts.gstatic.com`).
+
+### Changing a look later
+
+- A bare mode (`'dark'`, `{ mode: 'dark' }`) changes the mode and keeps the rest of the look. Settings replace the whole look.
+- Settings given in a mount call, or to `setTheme` on a piece, are that piece's own. `ui.updateTheme(settings)` does not take them away, and a page that changes a preset does not turn a dark piece light. A call that names a mode reaches every piece.
+- `ui.getTheme()` tells you the page's mode and settings. `'system'` stays `'system'`.
+- A theme that cannot be used is refused with the code `INVALID_THEME`. The message names the setting and what to write instead, and nothing changes. When only the piece can tell (an unknown preset name, a colour it cannot read), `ui.updateTheme` reports it in the console and the piece keeps its look, while `setTheme` and a mount call throw (the mount fails with `MOUNT_FAILED` and leaves its container empty).
+
+### What a theme cannot do yet
+
+- **The widget creator's dark look is partial.** Some of its panels write their text as fixed greys, which stay dark on a dark surface. Light themes, colours, radius and font apply everywhere in the creator, and the console says so when a creator gets a dark theme. The File Browser and the composition editor follow a dark theme fully.
+- **No layout, icons or wording.** The components and their text are Widgetic's. `locale` is not applied yet.
+- **Colours the piece can read as they are.** No CSS variables, gradients or images.
+- **The old `ThemeConfig` shape is gone.** `{ mode, colors: { secondary, surface, text }, spacing }` never changed anything in a piece and `theme` no longer takes it. Use the settings above.
 
 ## Tokens
 
@@ -203,6 +273,7 @@ worker-src  blob:;                                     # only to preview a PDF: 
 `img-src` also needs the address your customers' files are served from (the `url` of a picked file). To preview a PDF, that address also goes in `connect-src` (the PDF is downloaded with a request, so the file server has to allow your page's origin with CORS) and the policy needs the `worker-src blob:` above; without it the preview says "Failed to load PDF" and everything else works. No `data:` in `script-src` and no `'unsafe-eval'` are needed. The PDF viewer is downloaded when the first PDF is previewed, from the same folder of the CDN as the piece itself, so `script-src` needs nothing more.
 
 - The **composition editor** works under the same policy plus `frame-src https://cdn.widgetic.com` (the live preview is the widget's published page). Its font picker also needs `style-src https://fonts.googleapis.com` and `font-src https://fonts.gstatic.com`.
+- A **font of your own** (`theme.font.stylesheetUrl`) needs its stylesheet's host in `style-src` and its font files' host in `font-src`. See [A font your page does not load yet](#a-font-your-page-does-not-load-yet).
 - The **widget creator** needs what the composition editor needs plus `frame-src https://wbuilder.widgetic.com` and `connect-src https://wbuilder.widgetic.com` (the live previews of widgets are served from there).
 
 ## What the SDK puts on your page
@@ -279,6 +350,7 @@ Every error carries a `code`.
 | `MODULE_LOAD_FAILED`, `MODULE_INVALID` | The file could not be imported, or it does not export a piece. |
 | `MOUNT_FAILED` | The piece loaded but failed to start. Nothing is left in the container. |
 | `MOUNT_ABORTED` | The mount was cancelled through `signal`. |
+| `INVALID_THEME` | A theme cannot be used: `updateTheme` was given something that is not a mode or settings, or a piece refused the settings (`setTheme`, a mount call). The message names the setting. |
 
 ## If you read an older version of this page
 
