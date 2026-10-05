@@ -3,7 +3,7 @@ title: SDKs
 description: Official Widgetic SDKs and libraries
 ---
 
-Widgetic provides an SDK for calling the API from your server, and an embed script for showing widgets on your pages.
+Widgetic provides an SDK for calling the API from your server, an embed script for showing widgets on your pages, and a UI SDK for putting Widgetic's editors in your own page.
 
 ## Official SDKs
 
@@ -14,13 +14,13 @@ Widgetic provides an SDK for calling the API from your server, and an embed scri
   <Card title="Embed Script" icon="code">
     One script tag from the Widgetic CDN that shows published widgets. It is not an npm package
   </Card>
-  <Card title="UI SDK (planned)" icon="window">
-    For partners embedding UI components. Not published yet
+  <Card title="UI SDK (preview)" icon="window">
+    The `@widgetic/ui-sdk` package on npm, for your customer's browser: the File Browser, the composition editor and the widget creator in your own page
   </Card>
 </CardGroup>
 
 <Tip>
-  Only the API SDK is published on npm today. For other languages, use the multi-language code samples in the API Reference (or cURL).
+  Two packages are on npm: `@widgetic/api-sdk` for your server and `@widgetic/ui-sdk` for your page. For other languages, use the multi-language code samples in the API Reference (or cURL).
 </Tip>
 
 ## JavaScript / TypeScript API SDK
@@ -80,8 +80,7 @@ Every method takes one request object, for example `getWidgets({ page: 1, size: 
 | `TokensApi` | Token exchange and validation |
 | `EntitlementsApi` | Feature access |
 | `UsersApi` | User management |
-| `ManagedUsersApi` | Partner user management |
-| `UIComponentsApi` | UI component records (the mountable editor is planned) |
+| `ManagedUsersApi` | Partner user management and editor sessions |
 | `PartnersApi` | Partner operations |
 | `CreditsApi` | Account credit balance and ledger |
 | `InvoicesApi` | Invoices |
@@ -140,9 +139,27 @@ When you cannot load a script, use the frame instead:
 
 ## UI SDK (Partners)
 
-<Warning>
-  **Planned. Not available yet.** The UI SDK (`@widgetic/ui-sdk`) is not published, so `npm install @widgetic/ui-sdk` finds nothing today, and the editor it would mount does not exist for partners yet. See [UI Components](/docs/partners/ui-components) for the plan.
-</Warning>
+<Note>
+  **Preview.** The UI SDK and the pieces it mounts are new. They are built and tested, and you can try them now, but small details can still change while this label is on.
+</Note>
+
+`@widgetic/ui-sdk` runs in your customer's browser. It downloads a piece (the File Browser, the composition editor or the widget creator) from Widgetic's CDN and draws it in your page, inside a shadow root, so your styles and its own do not touch each other. It never holds your API key: your server makes an [editor session](/docs/partners/editor-sessions) and the page only gets the token.
+
+```bash
+npm install @widgetic/ui-sdk
+```
+
+```javascript
+import { mountModule } from '@widgetic/ui-sdk';
+
+await mountModule('file-browser', {
+  container: '#media-library',
+  getToken: async () => (await fetch('/widgetic-session', { method: 'POST' })).json(), // { token, expiresAt }
+  on: { select: ({ files }) => useFiles(files) },
+});
+```
+
+See [UI Components](/docs/partners/ui-components) for the options and events, and [Canvas Embedding](/docs/partners/canvas-embedding) for the composition editor and the widget creator.
 
 ## Multi-Language Code Samples (API Reference)
 

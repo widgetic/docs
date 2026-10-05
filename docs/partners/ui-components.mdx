@@ -281,7 +281,7 @@ Every error carries a `code`.
 
 ## If you read an older version of this page
 
-The earlier design had `mountComponent`, `getComponentManifest` and the `/ui/components` calls of the API. They only kept a record of a mount and showed nothing in your page, and they are not part of this design. Use `mountModule` with a `getToken` that returns an editor session. The API key never goes in the browser (`apiKey` is refused with `API_KEY_NOT_ALLOWED`). The `embed-editor` piece does not exist: the composition editor has the embed settings.
+The earlier design had `getComponentManifest`, `mountComponent` and the `/ui/components` calls of the API. The calls only kept a record of a mount and showed nothing in your page, so they were removed from the API (and from `UIComponentsApi` in the API SDK, from its next release), and `getComponentManifest` is not in the UI SDK any more. `mountComponent` is still there, but it is now `mountModule` that gives back the id of the instance instead of the module. Use `mountModule` with a `getToken` that returns an editor session. The API key never goes in the browser (`apiKey` is refused with `API_KEY_NOT_ALLOWED`). The `embed-editor` piece does not exist: the composition editor has the embed settings.
 
 ## Next Steps
 

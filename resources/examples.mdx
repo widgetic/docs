@@ -161,11 +161,42 @@ await db.widgeticUsers.create({
 
 To keep each customer's work apart, send `managedUserId` (or your own id as `managedUserExternalId`) when you create a composition, a widget or an upload, and send the same field when you list. See [Filing Content Under a Managed User](/docs/partners/managed-users#filing-content-under-a-managed-user).
 
-### Mount UI Component
+### Mount an Editor in Your Page
 
-<Warning>
-  **Planned. Not available yet.** A Widgetic editor that you can mount in your own page does not exist today, so there is no example to run. See [UI Components](/docs/partners/ui-components) for the plan.
-</Warning>
+<Note>
+  **Preview.** The editors are new, and small details can still change while this label is on. See [UI Components](/docs/partners/ui-components).
+</Note>
+
+Your server makes an [editor session](/docs/partners/editor-sessions) for the customer who is on the page, and the page mounts the editor with the token. The API key stays on your server.
+
+```typescript
+import { ManagedUsersApi } from '@widgetic/api-sdk';
+
+const managedUsers = new ManagedUsersApi(process.env.WIDGETIC_PARTNER_KEY);
+
+// On your server, when the page that holds the editor opens for one of your customers.
+const session = await managedUsers.createManagedUserEditorSession({
+  id: widgeticUserId,
+  newEditorSession: {
+    surfaces: ['editor', 'files'],
+    expires_in_seconds: 3600,
+    allowed_origin: 'https://app.example.com'
+  }
+});
+
+// Send session.token to that customer's browser, and nothing else of yours.
+```
+
+```javascript
+import { mountModule } from '@widgetic/ui-sdk';
+
+// In your page. /widgetic-session is the endpoint of yours that makes the session and returns { token, expiresAt }.
+const editor = await mountModule('composition-editor', {
+  container: '#editor',
+  compositionId, // a composition your server made with managedUserId set to this customer
+  getToken: async () => (await fetch('/widgetic-session', { method: 'POST' })).json()
+});
+```
 
 ## Error Handling
 
