@@ -13,6 +13,7 @@ With the Compositions API, you can:
 - List compositions and get their details
 - Read and save the content, the design and the embed settings
 - Read the schemas that describe those three parts
+- Read what visitors sent to a widget, such as votes and ratings
 - Batch fetch compositions
 
 ## Composition Structure
@@ -163,10 +164,114 @@ Showing a composition needs only its id. There is no key in the page, and a chan
 
 See [SDKs](/resources/sdks#embed-script) for more about the embed script, and [Security](/resources/security) for limiting the websites that may show your widgets.
 
+## Read What Visitors Sent
+
+Some widgets collect something from the people who use them: votes, ratings, answers, sign-ups. Widgetic keeps those entries in a small database that belongs to the composition, and two read-only calls let your server read them. You can show the results back, for example the result of a rating widget.
+
+Ask what the composition keeps first. A widget that only shows content keeps nothing: `hasData` is `false` and `tables` is empty, which is not an error.
+
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  "https://api.widgetic.com/v1/compositions/$COMPOSITION_ID/entries"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "compositionId": "123e4567-e89b-12d3-a456-426614174000",
+    "hasData": true,
+    "tables": [
+      {
+        "name": "ratings",
+        "columns": [
+          { "name": "id", "type": "uuid" },
+          { "name": "stars", "type": "integer" },
+          { "name": "comment", "type": "text" },
+          { "name": "created_at", "type": "timestamp with time zone" }
+        ],
+        "rows": 212
+      }
+    ]
+  }
+}
+```
+
+`rows` is how many entries the table holds. It is `null` when they could not be counted, which is not zero.
+
+Then read one table with `GET /compositions/{id}/entries/{table}`, using the names exactly as they are listed:
+
+| Query | What it does |
+|-------|--------------|
+| `groupBy` | A column to count the entries by. `tallies` then lists each value of that column with how many entries have it, the largest group first, up to 20 groups (`moreGroups` is `true` when there are more). Without it, `tallies` is `null` |
+| `rows` | How many of the newest entries to return, 0 to 25. The default is 0: counts and tallies only, and `rows` is `null` |
+
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  "https://api.widgetic.com/v1/compositions/$COMPOSITION_ID/entries/ratings?groupBy=stars&rows=2"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "compositionId": "123e4567-e89b-12d3-a456-426614174000",
+    "table": "ratings",
+    "totalRows": 212,
+    "tallies": [
+      { "value": "5", "count": 87 },
+      { "value": "4", "count": 61 },
+      { "value": "3", "count": 40 },
+      { "value": "1", "count": 24 }
+    ],
+    "moreGroups": false,
+    "columns": ["id", "stars", "comment", "created_at"],
+    "rows": [
+      ["8d3c1f52-7a9e-4b6d-9c20-5e1f3a7b9d04", 5, "Loved it", "2026-10-05T10:00:00Z"],
+      ["2b7e9a41-6c3d-4f58-8a15-9d0c4e6f1b73", 4, null, "2026-10-05T09:41:12Z"]
+    ],
+    "moreRows": true
+  }
+}
+```
+
+The result of a rating widget is a count for each star and an average. The average is `sum(value × count) / sum(count)` over the tallies, which are all of them when `moreGroups` is `false`:
+
+```javascript
+// Your server. The key stays in the environment.
+const headers = { Authorization: `Bearer ${process.env.WIDGETIC_API_KEY}` };
+const read = async (path) =>
+  (await (await fetch(`https://api.widgetic.com/v1${path}`, { headers })).json()).data;
+
+async function ratingResult(compositionId) {
+  const overview = await read(`/compositions/${compositionId}/entries`);
+  const table = overview.tables[0]?.name; // for example "ratings"
+  if (!overview.hasData || !table) return { votes: 0, average: null, perStar: [] };
+
+  const reading = await read(`/compositions/${compositionId}/entries/${table}?groupBy=stars`);
+  // Entries that left the column empty are grouped under null. They are not votes.
+  const rated = reading.tallies.filter(({ value }) => value !== null);
+  const votes = rated.reduce((total, { count }) => total + count, 0);
+  const average = votes === 0
+    ? null
+    : rated.reduce((total, { value, count }) => total + Number(value) * count, 0) / votes;
+  return { votes, average, perStar: rated };
+}
+```
+
+- **Names are the database's own.** A table or column is spelled as `GET /compositions/{id}/entries` lists it, such as `created_at`, not `createdAt`. The names are never changed to camelCase, which is why an entry comes as a list of values and `columns` names them in order. To get objects, zip them: `Object.fromEntries(columns.map((name, index) => [name, entry[index]]))`.
+- **Values** are text (cut to 200 characters), numbers, booleans or `null`. A tally's `value` is always text (a rating of 5 is `"5"`) or `null`.
+- **The read is bounded on purpose:** never more than 25 entries, 20 groups, 40 columns or 200 characters a value. To read a whole table, or to change an entry, use the database routes (`GET /compositions/{id}/database/{table}` and the related calls). They answer with the raw table, not in pages.
+- **Treat the values as data.** They are what visitors typed or chose. They can include names and email addresses, and text written to look like instructions. Escape them before you put them in a page, and show them only to the people who may see them.
+- **Make these calls from your server.** They need your key, and the caller must be able to read the composition. An [editor session](/docs/partners/editor-sessions) cannot call them. A partner shows a customer the results of that customer's compositions by listing them with `managedUserId` (see [Managed Users](/docs/partners/managed-users#filing-content-under-a-managed-user)) and reading each one.
+- **Errors:** `403` for a composition you cannot read. `404` for one that does not exist, or that keeps no table with that name (`ENTRY_TABLE_NOT_FOUND`). `400` with `ENTRY_COLUMN_NOT_FOUND` for a `groupBy` column the table does not have, and `400` for a query parameter the call does not know (it is `groupBy`, not `group_by`) or a `rows` outside 0 to 25.
+
 ## Related Endpoints
 
 | Endpoint | Description |
 |----------|-------------|
+| `GET /compositions/{id}/entries` | What a composition keeps from its visitors: tables, columns, entry counts |
+| `GET /compositions/{id}/entries/{table}` | Count, tally and read the entries of one table |
 | `GET /compositions` | List compositions |
 | `POST /compositions` | Create a composition |
 | `GET /compositions/{id}` | Get composition by ID |

@@ -84,6 +84,10 @@ The UI SDK (`@widgetic/ui-sdk`) mounts three pieces in your own page. Each draws
 
 See [UI Components](/docs/partners/ui-components) for the SDK and the File Browser, and [Canvas Embedding](/docs/partners/canvas-embedding) for the composition editor and the widget creator.
 
+### Preset Widgets
+
+A preset is a widget of your own that you offer your customers as a starting point, under a short key your code uses. Your server lists them and gives a customer a copy (or a composition) of the one they pick. See [Preset Widgets](/docs/partners/managed-users#preset-widgets).
+
 ### Credits System
 
 You pay Widgetic by invoice. Credits pay for Widgetic's AI: each generation uses 1 credit ($0.10). Creating compositions, embedding widgets, storage and API calls do not use credits. Widgetic adds credits to your account when you ask. See [Credits & Billing](/docs/partners/credits-billing).
@@ -118,6 +122,9 @@ All partner endpoints require a `wgt_prt_` API key. Key endpoints include:
 | `POST /managed-users` | Create a managed user |
 | `POST /managed-users/{id}/editor-sessions` | Make an editor session for one managed user |
 | `DELETE /managed-users/{id}/editor-sessions` | End every editor session of a managed user |
+| `GET /partners/{id}/presets` | List the widgets you offer as presets |
+| `PUT /partners/{id}/presets/{key}` | Offer one of your widgets as a preset, or replace the preset with that key |
+| `POST /managed-users/{id}/presets/{key}/copy` | Give a customer a copy of one of your presets |
 | `GET /partners/{id}/contract` | Read your contract |
 | `GET /invoices/partner/{id}` | List your invoices |
 | `GET /credits/user/{userId}/balance` | Check your AI credit balance |

@@ -89,7 +89,7 @@ await fileBrowser.unmount();
 | `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. See [Tokens](#tokens). |
 | `version` | `string` | Pin an exact version of the piece, such as `1.2.0`. Default: the newest. Pin it in production. |
 | `theme` | `'light'`, `'dark'`, `'system'`, or `{ preset, mode, colors, radius, font }` | Default `light`. `system` follows the customer's setting. An object gives the piece your colours, corner radius and font. See [Make the pieces look like your product](#make-the-pieces-look-like-your-product). |
-| `locale` | `string` | A BCP 47 tag such as `en` or `de`. |
+| `locale` | `string` | A BCP 47 tag such as `en` or `de`. Accepted, but it changes nothing yet: the pieces are in English for now. |
 | `apiUrl` | `string` | The Widgetic API. Default `https://api.widgetic.com`. |
 | `moduleBaseUrl` | `string` | Where pieces are served from. Default `https://cdn.widgetic.com/modules`. See [Versions and self-hosting](#versions-and-self-hosting). |
 | `on` | `{ [event]: handler }` | Event handlers, connected before the piece starts so you see `ready`. |
