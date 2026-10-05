@@ -182,6 +182,7 @@ const fileBrowser = await mountModule('file-browser', {
 
 - A failure inside your functions is shown to the customer, with "Try again" where that helps, and reported through the `error` event with `fatal: false`. The code is `MEDIA_LIBRARY_` plus `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `NETWORK`, `INVALID_RESPONSE`, `NOT_SUPPORTED` or `FAILED`, and `action` says what the customer was doing (`load`, `upload`, `rename` or `delete`). Throw an error with a `status` property (a failed `fetch` response) and it is sorted for you.
 - Everything your functions return is checked before it is shown. A file without an id, a name or a usable address is skipped with a console warning rather than breaking the list.
+- The `url` of a file is what a widget stores and shows. Once your customer saves or publishes, everyone who sees the widget loads that address, not only the customer who picked it: give one that stays valid and needs no sign-in. A link that expires after a few minutes, or one that checks a cookie, breaks the published widget. Widgetic keeps the `id` with the file only so that the picker shows it as selected when it is opened again.
 - The composition editor and the widget creator take the same `mediaLibrary`: their file pickers then show your files.
 - Text, PDF and font previews read the file with a script, so a file on another website needs an `Access-Control-Allow-Origin` header for your page's origin. Pictures, audio and video are shown without it.
 
