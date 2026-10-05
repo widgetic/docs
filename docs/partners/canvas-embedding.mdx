@@ -109,6 +109,7 @@ It also tells **your page**, with `limitReached` `{ message: 'The visitor reache
 | `AUTHZ_PLAN_RESTRICTION` | Your plan does not include what the customer asked for. |
 | `QUOTA_STORAGE_EXCEEDED` | Your storage is full. A chat attachment was refused. |
 | `COST_LIMIT_EXCEEDED` | This customer used their allowance for the hour or the day. It comes back by itself, and it is this customer's alone. |
+| `EDITOR_SESSION_CREDIT_LIMIT_REACHED` | This session spent the `max_credits` you gave it when you made it. It is this session's alone: make a new one if the customer may spend more. See [A limit for one session](/docs/partners/editor-sessions#a-limit-for-one-session). |
 | `LIMIT_REACHED` | The customer pressed an "Upgrade" button in the chat. The creator never opens a page or a window for it: what an upgrade means in your product is for you to show. |
 
 Your page hears each `code` once in half a minute, however many requests are refused meanwhile. Ordinary rate limiting (`RATE_LIMIT_EXCEEDED`) is **not** a limit: the creator asks the customer to wait a moment and tells your page nothing.

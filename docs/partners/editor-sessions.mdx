@@ -72,6 +72,7 @@ const session = await managedUsersApi.createManagedUserEditorSession({
 | `surfaces` | Yes | What the session may do. One or more of `files`, `editor` and `creator`. See [Surfaces](#surfaces). |
 | `expires_in_seconds` | No | How long the session lasts: 60 to 14400 (four hours). Default 3600. It cannot be extended: make a new session when it ends. |
 | `allowed_origin` | No | Bind the session to one web page origin, such as `https://app.example.com` (no path; `http` only for `localhost`). See [Bind it to your page](#bind-it-to-your-page). |
+| `max_credits` | No | The most credits this session may spend on the AI: a whole number from 1 to 1000000, refunds taken off. Leave it out for no limit of its own. See [A limit for one session](#a-limit-for-one-session). |
 
 The answer is `201`:
 
@@ -85,6 +86,7 @@ The answer is `201`:
     "managedUserExternalId": "your-platform-user-123",
     "surfaces": ["creator", "editor", "files"],
     "allowedOrigin": "https://app.example.com",
+    "maxCredits": null,
     "expiresAt": "2026-10-04T14:00:00.000Z",
     "createdAt": "2026-10-04T13:00:00.000Z"
   }
@@ -196,6 +198,72 @@ The AI is paid for by **your account**, as your own calls are: a generation a cu
 - **Your credits, plan and storage are yours.** When your account cannot pay, every customer is refused: `402` `BILLING_INSUFFICIENT_CREDITS` (credits), `403` `AUTHZ_PLAN_RESTRICTION` (your plan does not include it) or `413` `QUOTA_STORAGE_EXCEEDED` (storage). A customer is never told what your account holds: the message is one plain sentence, "This is not available right now. Please try again later.", with no balance, cost or plan. The same calls made with your key keep the full messages.
 - **The editors tell your page.** The widget creator reports these as a `limitReached` event, once per code in half a minute, so your page can offer more or tell its own team. See [Canvas Embedding](/docs/partners/canvas-embedding#when-a-limit-is-reached).
 - **Ordinary rate limiting** (`RATE_LIMIT_EXCEEDED`) counts the address each request comes from, not your account, so your customers do not share it. It is not a limit your page needs to report.
+- **You can hold one session to a number of credits, and see what each customer spent.** See [A limit for one session](#a-limit-for-one-session) and [What each customer spent](#what-each-customer-spent).
+
+### A limit for one session
+
+Send `max_credits` when you make a session, and that session can spend at most that many credits on the AI. Refunds are taken off: a generation that fails gives its credit back to the session as well as to your account.
+
+```bash
+curl -sS -X POST "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID/editor-sessions" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "surfaces": ["creator", "editor", "files"], "max_credits": 20 }'
+```
+
+- **The call that would go past the limit is refused before anything is taken from your account.** The answer is `402` with the code `EDITOR_SESSION_CREDIT_LIMIT_REACHED`. The customer reads the same plain sentence as for any other limit, never the limit or what was spent. The widget creator tells your page with a `limitReached` event whose `code` is this one, so you can tell it from an empty wallet (`BILLING_INSUFFICIENT_CREDITS`).
+- **The limit belongs to the session.** A new session starts again from zero. For a cap on what a customer may spend in a day or a month, read [their usage](#what-each-customer-spent) on your server and stop making sessions at your own number.
+- **Only calls that take credits count.** Building a widget takes none, so it is never counted or held back by `max_credits`.
+- **A limit that cannot be checked does not let the call through.** If Widgetic cannot read what the session has spent, the call is refused with `503` and the customer can try again in a moment.
+
+### What each customer spent
+
+Your account pays for the AI, so your credit ledger does not say which of your customers used what. Widgetic notes every call that a customer's session paid for, and adds the notes up for one customer over a period:
+
+<CodeGroup>
+
+```bash cURL
+curl -sS "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID/usage?startDate=2026-10-01&endDate=2026-11-01" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY"
+```
+
+```typescript TypeScript SDK
+import { ManagedUsersApi } from '@widgetic/api-sdk';
+
+const managedUsersApi = new ManagedUsersApi(process.env.WIDGETIC_PARTNER_KEY!);
+
+// What this customer's sessions spent in October:
+const usage = await managedUsersApi.getManagedUserUsage({
+  id: managedUserId,
+  startDate: '2026-10-01',
+  endDate: '2026-11-01',
+});
+
+console.log(usage.totals.credits, usage.operations);
+```
+
+</CodeGroup>
+
+```json
+{
+  "success": true,
+  "data": {
+    "managedUserId": "3f0c9a52-8e0a-4a52-9d52-5d8a1f1b7c10",
+    "managedUserExternalId": "your-platform-user-123",
+    "from": "2026-10-01T00:00:00.000Z",
+    "to": "2026-11-01T00:00:00.000Z",
+    "totals": { "calls": 41, "credits": 41, "refundedCalls": 3, "refundedCredits": 3 },
+    "operations": [
+      { "operation": "agent.code.generate", "calls": 41, "credits": 41, "refundedCalls": 3, "refundedCredits": 3 }
+    ]
+  }
+}
+```
+
+- **`calls` and `credits` are what the customer's sessions spent and kept.** A call that failed and was refunded is in `refundedCalls` and `refundedCredits` instead, so it never counts against the customer.
+- **The period runs from `startDate` (included) to `endDate` (not included).** Give neither and it is the 30 days before now; it can be 366 days at most. A date without a time is midnight UTC, so for all of October give `2026-10-01` and `2026-11-01`. A date-time must say its offset (`2026-10-01T08:00:00Z`).
+- **Only what a customer's sessions spent is counted, from the day Widgetic first recorded it.** What you spend with your own key is not in it, and neither is anything from before.
+- **It answers for your managed users only.** One that is not yours answers `404` with `MANAGED_USER_NOT_FOUND`, exactly like one that does not exist. A date that is not a date, a `startDate` that is not before `endDate`, or a period over 366 days answers `400`.
 
 ## Browsers
 
@@ -213,13 +281,14 @@ The browser side of a session answers with these. The editors handle them for yo
 | 401 | `EDITOR_SESSION_EXPIRED` | The session ran out | Mint a new session |
 | 401 | `EDITOR_SESSION_REVOKED` | You ended it, or the customer was switched off | Mint a new session if the customer should continue |
 | 401 | `EDITOR_SESSION_USER_UNAVAILABLE` | The managed user no longer exists or is switched off | Do not mint another until the customer is back |
+| 402 | `EDITOR_SESSION_CREDIT_LIMIT_REACHED` | The session has spent the `max_credits` you gave it | Mint a new session if the customer may spend more |
 | 403 | `EDITOR_SESSION_ORIGIN_NOT_ALLOWED` | The session is bound to another page | Mint it with this page's `allowed_origin` |
 | 403 | `EDITOR_SESSION_ROUTE_NOT_ALLOWED` | A session cannot make this call | Not a session's job: do it from your server |
 | 403 | `EDITOR_SESSION_FIELD_NOT_ALLOWED` | The request sets a field a session may not set | Remove the field |
 | 404 | `RESOURCE_…_NOT_FOUND`, such as `RESOURCE_WIDGET_NOT_FOUND` | The item is not this customer's, does not exist, or is not even an id | File it under the customer, or check the id |
 | 503 | `EDITOR_SESSIONS_DISABLED` | Editor sessions are switched off for the moment | Try again later |
 
-Making a session can also answer: `400` (a surface that does not exist, `expires_in_seconds` out of range, or `allowed_origin` that is not an origin), `403` (the caller is not a partner), `404` `MANAGED_USER_NOT_FOUND`, `409` `MANAGED_USER_INACTIVE` (switched off managed users get no sessions), `429` `EDITOR_SESSION_LIMIT_REACHED` and `503` `EDITOR_SESSIONS_DISABLED`.
+Making a session can also answer: `400` (a surface that does not exist, `expires_in_seconds` or `max_credits` out of range, or `allowed_origin` that is not an origin), `403` (the caller is not a partner), `404` `MANAGED_USER_NOT_FOUND`, `409` `MANAGED_USER_INACTIVE` (switched off managed users get no sessions), `429` `EDITOR_SESSION_LIMIT_REACHED` and `503` `EDITOR_SESSIONS_DISABLED`.
 
 ## Security checklist
 

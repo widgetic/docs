@@ -17,7 +17,7 @@ A managed user is not:
 
 - **A login.** It has no password and no API key, and you cannot sign in as a managed user. The one thing that acts for a managed user is an [editor session](/docs/partners/editor-sessions): a short-lived token your server makes, so that the customer's browser can use Widgetic's editors on what is filed under them and nothing else.
 - **An owner.** Compositions, widgets, uploads, credits, storage and the list of allowed websites belong to your administering account, and your key can read, change and delete all of them. Filing something under a managed user is a label for listing it, not an access rule for your key: your key reaches everything either way, so deciding which of your customers may see what stays in your own platform. (An editor session is the exception: it reaches only what is filed under its customer.)
-- **A billing unit.** There are no per-customer credits, storage or invoices. You are invoiced once, for the contract. See [Credits & Billing](/docs/partners/credits-billing).
+- **A billing unit.** There are no per-customer credits, storage or invoices. You are invoiced once, for the contract. What a customer's editor sessions spent on the AI can be read per customer, so you can bill them for it yourself (see [What a Managed User Spent](#what-a-managed-user-spent)). See [Credits & Billing](/docs/partners/credits-billing).
 
 The examples on this page are for your server. Keep the key in an environment variable, such as `WIDGETIC_PARTNER_KEY`.
 
@@ -184,6 +184,17 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
   "https://api.widgetic.com/v1/entitlements/managed-users/$MANAGED_USER_ID"
 ```
 
+## What a Managed User Spent
+
+Your account pays for the AI, so your credit ledger does not say which customer used what. For what a customer does in an [editor session](/docs/partners/editor-sessions), Widgetic keeps a note of each call that took credits, and adds the notes up for one customer over a period:
+
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID/usage?startDate=2026-10-01&endDate=2026-11-01"
+```
+
+The answer has the credits in total and for each operation, with the generations that were refunded counted apart. It covers what editor sessions spent, from the day Widgetic first recorded it; what you spend with your own key is not in it. The period, the answer and the limit you can put on a single session are on [Editor Sessions](/docs/partners/editor-sessions#credits-and-limits).
+
 ## Keep Your Own Mapping
 
 Widgetic records which managed user a composition, a widget or an upload was filed under, but it does not know your customers' permissions: which of them may open which composition is decided by your platform. Keep a small mapping of your own, and use the filter for listing:
@@ -253,7 +264,7 @@ Widgetic stores this object and gives it back. It does not act on it: a `role` h
 
 - Signing in as, or getting a key for, a managed user. A managed user's browser can use Widgetic's editors with an [editor session](/docs/partners/editor-sessions), and nothing more.
 - Moving a composition, a widget or an upload to another managed user, or taking its label off, after it was created.
-- Filing a resumable upload, or a charge (credits or storage), under a managed user.
+- Filing a resumable upload, or a charge for storage, under a managed user. The credits an editor session spends are noted for its customer (see [What a Managed User Spent](#what-a-managed-user-spent)); the credits you spend with your own key are not.
 - Searching managed users by `external_id` in `GET /managed-users`. To file or list by your own id, send `managedUserExternalId`.
 - Changing entitlements yourself.
 

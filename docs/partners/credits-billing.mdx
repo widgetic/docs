@@ -172,7 +172,7 @@ Your partner record also has a separate "wallet", with its own balance and ledge
 - Buying credits or paying an invoice through the API, or with a card on file.
 - A notification (webhook or email) when an invoice is issued, when credits run low or when a payment fails. Poll the invoice and balance calls instead.
 - Changing your contract, your billing contact or your payment method yourself.
-- Usage per customer. Credits and storage are counted for your account as a whole, so your product has to record which of your customers caused what.
+- Usage per customer for storage, and for the credits you spend with your own key. They are counted for your account as a whole, so your product has to record which of your customers caused what. The credits that a customer's [editor sessions](/docs/partners/editor-sessions#what-each-customer-spent) spend are the exception: you can read them for each customer, and hold one session to a number of them.
 
 ## Error Handling
 
