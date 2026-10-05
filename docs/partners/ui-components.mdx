@@ -246,7 +246,7 @@ export function MediaLibrary({ getToken, onPick }) {
 }
 ```
 
-The same pattern works in Vue and Svelte: mount in the component's mount hook with an `AbortController`, and abort and unmount when it goes away. Mounting needs a page, so start it from an effect or an event handler: calling `mountModule` while rendering on a server rejects with `NOT_IN_BROWSER`.
+The same component mounts the other pieces: give `mountModule` the piece's name (`'composition-editor'` or `'widget-creator'`) and its options. The Widgetic build tests run it in a React 18 page, with and without `<React.StrictMode>`, for all three pieces. The same pattern works in Vue and Svelte: mount in the component's mount hook with an `AbortController`, and abort and unmount when it goes away. Mounting needs a page, so start it from an effect or an event handler: calling `mountModule` while rendering on a server rejects with `NOT_IN_BROWSER`.
 
 ## Versions and self-hosting
 
