@@ -14,7 +14,7 @@ The UI SDK (`@widgetic/ui-sdk`) puts Widgetic's ready-made pieces in your own we
 
 | Module | What your customer can do | The session needs |
 |--------|--------------------------|-------------------|
-| `file-browser` | Browse, upload and pick files, from Widgetic's media library or from your own | `files` (nothing, with your own [media library](#show-your-own-media-library)) |
+| `file-browser` | Browse, upload and pick files, from Widgetic's media library (files kept in your own storage) or from your own | `files`, which needs [your own storage](/docs/partners/editor-sessions#the-files-surface-needs-your-own-storage) (nothing, with your own [media library](#show-your-own-media-library)) |
 | `composition-editor` | Change the texts, pictures, colours and fonts of a widget beside a live preview, and save | `editor` and `files` |
 | `widget-creator` | The whole Widgetic canvas: draw, describe a widget to the AI, watch it being built, change it and publish it | `creator`, `editor` and `files` |
 

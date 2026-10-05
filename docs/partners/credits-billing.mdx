@@ -158,7 +158,7 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
 
 ## Storage
 
-Uploads count against the storage included in your contract (`customStorageGb`, or the standard allowance when that is `null`). A full allowance refuses an upload with `413` and the code `QUOTA_STORAGE_EXCEEDED`. Files that go to your own bucket take none of it.
+Uploads count against the storage included in your contract (`customStorageGb`, or the standard allowance when that is `null`). A full allowance refuses an upload with `413` and the code `QUOTA_STORAGE_EXCEEDED`. Files that go to your own bucket take none of it. The files your customers upload in Widgetic's [editors](/docs/partners/editor-sessions#the-files-surface-needs-your-own-storage) always go to your own bucket, so they never count against it.
 
 ## The Partner Wallet
 

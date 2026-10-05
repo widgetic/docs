@@ -61,7 +61,7 @@ await creator.unmount();
 | `canvasId` | The canvas to open, as `canvasChanged` gave it to you. It has to be this customer's. Without one the creator opens the customer's latest canvas, or makes a new one when they have none. |
 | `widgetId` | The widget of that canvas to open (needs `canvasId`). |
 | `startWithNewWidget` | Start from an empty canvas with a new widget instead of the latest canvas. |
-| `mediaLibrary` | Your own media library for the file pickers of the settings panel. See [Show your own media library](/docs/partners/ui-components#show-your-own-media-library). Pictures dropped on the canvas and the chat's attachments still go to Widgetic's storage. |
+| `mediaLibrary` | Your own media library for the file pickers of the settings panel. See [Show your own media library](/docs/partners/ui-components#show-your-own-media-library). Pictures dropped on the canvas and the chat's attachments do not use it: they go through Widgetic's upload call into your own storage, which a session with the `files` surface requires (see [The files surface needs your own storage](/docs/partners/editor-sessions#the-files-surface-needs-your-own-storage)). |
 | `widgetBuilderUrl` | The origin the live previews of widgets are served from. Default: Widgetic's. |
 | `theme` | As for every piece: a mode, or your colours, corner radius and font. See [Make the pieces look like your product](/docs/partners/ui-components#make-the-pieces-look-like-your-product). |
 | `apiUrl` | As for every piece. |
@@ -100,7 +100,7 @@ Everything the creator makes is filed under the session's managed user, and the 
 
 ### When a limit is reached
 
-The AI is paid for by your account (see [Credits & Billing](/docs/partners/credits-billing)), and your credits, your plan and your storage are yours: **a customer is never told what they hold.** When one is used up, the API refuses the session with one plain sentence, "This is not available right now. Please try again later.", and the creator shows exactly that, in the chat with a *Retry* button and in a toast, and keeps working: the canvas, the chat and the other widgets are still there.
+The AI is paid for by your account (see [Credits & Billing](/docs/partners/credits-billing)), and your credits and your plan are yours: **a customer is never told what they hold.** When one is used up, the API refuses the session with one plain sentence, "This is not available right now. Please try again later.", and the creator shows exactly that, in the chat with a *Retry* button and in a toast, and keeps working: the canvas, the chat and the other widgets are still there.
 
 It also tells **your page**, with `limitReached` `{ message: 'The visitor reached a limit.', code }`. The `code` is what the API answered:
 
@@ -108,14 +108,15 @@ It also tells **your page**, with `limitReached` `{ message: 'The visitor reache
 |--------|---------------|
 | `BILLING_INSUFFICIENT_CREDITS` | Your account is out of credits. Every customer is refused until you add some. |
 | `AUTHZ_PLAN_RESTRICTION` | Your plan does not include what the customer asked for. |
-| `QUOTA_STORAGE_EXCEEDED` | Your storage is full. A chat attachment was refused. |
 | `COST_LIMIT_EXCEEDED` | This customer used their allowance for the hour or the day. It comes back by itself, and it is this customer's alone. |
 | `EDITOR_SESSION_CREDIT_LIMIT_REACHED` | This session spent the `max_credits` you gave it when you made it. It is this session's alone: make a new one if the customer may spend more. See [A limit for one session](/docs/partners/editor-sessions#a-limit-for-one-session). |
 | `LIMIT_REACHED` | The customer pressed an "Upgrade" button in the chat. The creator never opens a page or a window for it: what an upgrade means in your product is for you to show. |
 
 Your page hears each `code` once in half a minute, however many requests are refused meanwhile. Ordinary rate limiting (`RATE_LIMIT_EXCEEDED`) is **not** a limit: the creator asks the customer to wait a moment and tells your page nothing.
 
-The allowance of the hour or the day is counted for each customer on their own, so one customer reaching it refuses and tells nobody else. Credits, plan and storage are your account's, so when they run out every customer is refused.
+The allowance of the hour or the day is counted for each customer on their own, so one customer reaching it refuses and tells nobody else. Credits and plan are your account's, so when they run out every customer is refused.
+
+A customer's upload that cannot be kept, because you have set up no storage of your own (`409` `PARTNER_STORAGE_REQUIRED`), is not a limit: your page hears no `limitReached` for it, and the customer reads the same plain sentence. You find out when you make the session, which is refused for the same reason. See [The files surface needs your own storage](/docs/partners/editor-sessions#the-files-surface-needs-your-own-storage).
 
 ### When something goes wrong
 
