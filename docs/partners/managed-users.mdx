@@ -15,8 +15,8 @@ A managed user is:
 
 A managed user is not:
 
-- **A login.** It has no password, no API key and no session. You cannot act "as" a managed user.
-- **An owner.** Compositions, widgets, uploads, credits, storage and the list of allowed websites belong to your administering account, and your key can read, change and delete all of them. Filing something under a managed user is a label for listing it, not an access rule: your key reaches everything either way, so deciding which of your customers may see what stays in your own platform.
+- **A login.** It has no password and no API key, and you cannot sign in as a managed user. The one thing that acts for a managed user is an [editor session](/docs/partners/editor-sessions): a short-lived token your server makes, so that the customer's browser can use Widgetic's editors on what is filed under them and nothing else.
+- **An owner.** Compositions, widgets, uploads, credits, storage and the list of allowed websites belong to your administering account, and your key can read, change and delete all of them. Filing something under a managed user is a label for listing it, not an access rule for your key: your key reaches everything either way, so deciding which of your customers may see what stays in your own platform. (An editor session is the exception: it reaches only what is filed under its customer.)
 - **A billing unit.** There are no per-customer credits, storage or invoices. You are invoiced once, for the contract. See [Credits & Billing](/docs/partners/credits-billing).
 
 The examples on this page are for your server. Keep the key in an environment variable, such as `WIDGETIC_PARTNER_KEY`.
@@ -139,7 +139,7 @@ Files sent in parts through a resumable upload are not filed under a managed use
 - A copy of a composition that you duplicate is filed under the same managed user as the original.
 
 <Note>
-  Filing under a managed user does not change who owns the item or who may reach it. The item belongs to your account, your key reaches all of them, and it counts against your account's credits and storage.
+  Filing under a managed user does not change who owns the item or who your key may reach. The item belongs to your account, your key reaches all of them, and it counts against your account's credits and storage. What filing does decide is what an [editor session](/docs/partners/editor-sessions) for that managed user can open: only the items filed under it.
 </Note>
 
 ## Updating Managed Users
@@ -164,11 +164,11 @@ curl -sS -X PUT "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID" \
   -d '{ "is_active": false }'
 ```
 
-What the managed user already has stays, and can still be listed. Send `"is_active": true` to switch it back on.
+What the managed user already has stays, and can still be listed. Switching a managed user off also ends all of its editor sessions, and they do not come back when you switch it on again: make new ones. Send `"is_active": true` to switch it back on.
 
 ## Deleting Managed Users
 
-`DELETE /managed-users/{id}` removes the record and answers `200` with `{"message": "...", "id": "..."}`. It does not delete anything else, but it does remove the label: the compositions, widgets and uploads that were filed under the managed user stay in your account, with `managedUserId` back to `null`. So when a customer leaves, list their items first (`GET /compositions?managedUserId=...`), delete what you want gone (`DELETE /compositions/{id}`), and only then delete the managed user.
+`DELETE /managed-users/{id}` removes the record and answers `200` with `{"message": "...", "id": "..."}`. It does not delete anything else, but it does remove the label: the compositions, widgets and uploads that were filed under the managed user stay in your account, with `managedUserId` back to `null`. Its editor sessions end. So when a customer leaves, list their items first (`GET /compositions?managedUserId=...`), delete what you want gone (`DELETE /compositions/{id}`), and only then delete the managed user.
 
 ## Managed User Entitlements
 
@@ -251,7 +251,7 @@ Widgetic stores this object and gives it back. It does not act on it: a `role` h
 
 ## Not Available Yet
 
-- Signing in as, or getting a key for, a managed user.
+- Signing in as, or getting a key for, a managed user. A managed user's browser can use Widgetic's editors with an [editor session](/docs/partners/editor-sessions), and nothing more.
 - Moving a composition, a widget or an upload to another managed user, or taking its label off, after it was created.
 - Filing a resumable upload, or a charge (credits or storage), under a managed user.
 - Searching managed users by `external_id` in `GET /managed-users`. To file or list by your own id, send `managedUserExternalId`.
@@ -270,11 +270,14 @@ Common errors when working with managed users. Branch on `error.code` in the ans
 | 404 | | The managed user does not exist, or belongs to another partner |
 | 404 | `MANAGED_USER_NOT_FOUND` | A composition, widget or upload call names a managed user that is not one of yours (the same answer for one that belongs to another partner) |
 | 409 | | A managed user with this `external_id` already exists |
-| 409 | `MANAGED_USER_INACTIVE` | A create call names a managed user that is switched off |
+| 409 | `MANAGED_USER_INACTIVE` | A create call names a managed user that is switched off, or an editor session is asked for one |
 
 ## Next Steps
 
 <CardGroup cols={2}>
+  <Card title="Editor Sessions" icon="key" href="/docs/partners/editor-sessions">
+    Let a customer use Widgetic's editors in your page
+  </Card>
   <Card title="Credits & Billing" icon="credit-card" href="/docs/partners/credits-billing">
     How you pay and how credits work
   </Card>

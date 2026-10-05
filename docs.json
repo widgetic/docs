@@ -60,9 +60,10 @@
             "group": "Partner Integration",
             "pages": [
               "docs/partners/overview",
-              "docs/partners/canvas-embedding",
-              "docs/partners/ui-components",
               "docs/partners/managed-users",
+              "docs/partners/editor-sessions",
+              "docs/partners/ui-components",
+              "docs/partners/canvas-embedding",
               "docs/partners/credits-billing"
             ]
           },

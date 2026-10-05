@@ -79,6 +79,10 @@ const { token, expiresAt } = await tokens.exchangeToken({
 - **Only an API key can be exchanged.** A token cannot be exchanged for another token.
 - **The scopes are recorded in the token, but the API does not check them on each call yet.** Treat the token as having the access of the key that made it until it expires.
 
+<Note>
+  To put Widgetic's own editors in your page for one of your customers, do not use a token exchange. Make an [editor session](/docs/partners/editor-sessions) instead: it reaches only that customer's content, only the calls the editors need, and only for the page you name.
+</Note>
+
 ## Validating Tokens
 
 You can validate a token to check its status and associated permissions:

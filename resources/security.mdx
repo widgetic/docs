@@ -77,6 +77,10 @@ const api = new WidgetsApi({
 
 The scopes are recorded in the token, but the API does not check them on each call yet, so treat the token as having the access of the key that made it until it expires. See [Authentication](/docs/authentication) for the scopes you can ask for.
 
+<Note>
+  To run Widgetic's own editors in a browser for one of your customers, use an [editor session](/docs/partners/editor-sessions) rather than this flow. A session reaches only that customer's content, only the calls the editors need, and can be bound to your page and ended at any time.
+</Note>
+
 ## Domain Validation
 
 You can limit the websites an embedded widget may appear on. If you list nothing, the widget works everywhere.

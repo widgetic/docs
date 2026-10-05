@@ -1,230 +1,197 @@
 ---
 title: Canvas Embedding
-description: Embed the Widgetic canvas in your platform
-tag: "Planned"
+description: Let your customers create and edit widgets with Widgetic's canvas and AI inside your platform
+tag: "Preview"
 ---
 
-The Widgetic canvas is planned to give you a full widget creation and editing experience that you can embed directly in your platform.
+Two of Widgetic's pieces let your customers make widgets without leaving your product:
 
-<Warning>
-  **Planned. Not available yet.** A Widgetic editor that you can mount in your own page does not exist today. The editor runs on [widgetic.com](https://widgetic.com) for a signed-in account only. The UI SDK (`@widgetic/ui-sdk`) is not published, and the `/ui/components` calls only keep a record of a mount: they show nothing in your page. This page describes the design we plan to ship, and it can change, so do not build on it yet.
+- The **widget creator** is the whole Widgetic canvas. Your customer draws frames, describes a widget to the AI in the chat, watches it being built, changes its settings and publishes it.
+- The **composition editor** changes the texts, pictures, colours and fonts of a widget your customer owns, beside a live preview, and saves it.
 
-  To let your customers make and show widgets today, use the API with your own screens (see [Widgets](/docs/api/widgets) and [Compositions](/docs/api/compositions)) and show the result with the embed code.
-</Warning>
+Both are mounted with the [UI SDK](/docs/partners/ui-components) and use an [editor session](/docs/partners/editor-sessions) for one of your [managed users](/docs/partners/managed-users). This page covers what is specific to them.
 
-## Overview
+<Note>
+  **Preview.** These pieces are new. They are built and tested, and you can try them now, but small details can still change while this label is on. Tell us what you find at [support@widgetic.com](mailto:support@widgetic.com).
+</Note>
 
-The canvas embedding system is planned to consist of:
+## Before you start
 
-1. **UI SDK**: A JavaScript library for mounting UI components
-2. **Widget Creator**: The main widget creation experience
-3. **Composition Editor**: For editing widget layouts
-4. **Embed Editor**: For configuring embed settings
+<Steps>
+  <Step title="Make a managed user for the customer">
+    One for each of your customers. See [Managed Users](/docs/partners/managed-users). Widgetic's `id` for the managed user is what your server uses to make sessions.
+  </Step>
+  <Step title="Make an editor session on your server">
+    Ask for the surfaces the piece needs: `["creator", "editor", "files"]` for the widget creator, `["editor", "files"]` for the composition editor. See [Editor Sessions](/docs/partners/editor-sessions).
+  </Step>
+  <Step title="Mount the piece in your page">
+    With the UI SDK's `mountModule`, as below. Give the container a height: the piece fills it.
+  </Step>
+</Steps>
 
-## Installation
+## The widget creator
 
-The UI SDK is not on npm yet, so `npm install @widgetic/ui-sdk` finds nothing today. Only the API SDK, `@widgetic/api-sdk`, is published.
+```javascript
+import { mountModule } from '@widgetic/ui-sdk';
 
-## Basic Usage
-
-The calls below exist in the API today. They are shown here to explain the planned design: `mountComponent` only records that a component was mounted, and nothing appears in your page.
-
-### 1. List Available Components
-
-First, retrieve the list of available UI components:
-
-```typescript
-import { UIComponentsApi } from '@widgetic/api-sdk';
-
-const ui = new UIComponentsApi('wgt_prt_your_partner_key');
-const { components } = await ui.listComponents();
-
-// Returns: [
-//   { id: 'widget-creator', name: 'Widget Creator', ... },
-//   { id: 'composition-editor', name: 'Composition Editor', ... },
-//   { id: 'embed-editor', name: 'Embed Editor', ... }
-// ]
-```
-
-### 2. Get Component Manifest
-
-Retrieve the component manifest for assets and configuration:
-
-```typescript
-const manifest = await ui.getComponentManifest({ componentId: 'widget-creator' });
-
-// manifest.assets.js - JavaScript files to load
-// manifest.assets.css - CSS files to load
-// manifest.config - Component configuration options
-```
-
-### 3. Mount the Component
-
-Mount the component in your DOM:
-
-```typescript
-const { instanceId, mountStatus } = await ui.mountComponent({
-  componentId: 'widget-creator',
-  mountRequest: {
-    container: 'widgetic-canvas-container',
-    theme: {
-      mode: 'dark',
-      colors: {
-        primary: '#6366F1',
-        background: '#1F2937'
-      }
-    }
-  }
-});
-
-if (mountStatus === 'success') {
-  console.log('Canvas mounted:', instanceId);
-}
-```
-
-### 4. Unmount When Done
-
-Clean up when the component is no longer needed:
-
-```typescript
-await ui.unmountComponent({
-  componentId: 'widget-creator',
-  instanceId: instanceId
-});
-```
-
-## Theming
-
-Customize the canvas appearance to match your brand:
-
-```typescript
-const theme = {
-  mode: 'light', // or 'dark'
-  colors: {
-    primary: '#6366F1',    // Primary accent color
-    secondary: '#8B5CF6',  // Secondary color
-    background: '#FFFFFF', // Background color
-    text: '#1F2937'        // Text color
+const creator = await mountModule('widget-creator', {
+  container: '#creator', // give it a height: it fills its container
+  canvasId: savedCanvasIdOfThisCustomer, // optional: the one `canvasChanged` gave you last time
+  getToken: async () => (await fetch('/widgetic-session', { method: 'POST' })).json(), // { token, expiresAt }
+  theme: 'light',
+  on: {
+    ready: ({ canvasId }) => {},
+    canvasChanged: ({ canvasId }) => rememberForNextVisit(canvasId),
+    widgetRenamed: ({ widgetId, name }) => setTitleOfTheCustomersWork(name),
+    widgetPublished: ({ widgetId, version }) => showInMyProduct(widgetId),
+    limitReached: ({ message, code }) => offerMore(),
+    error: ({ message, code, fatal, sessionEnded }) => report(code, message),
   },
-  typography: {
-    fontFamily: 'Inter, sans-serif',
-    fontSize: '14px'
-  }
-};
-```
-
-## Event Handling
-
-Listen for events from the embedded canvas:
-
-```typescript
-// In your mount configuration
-const { instanceId } = await ui.mountComponent({
-  componentId: 'widget-creator',
-  mountRequest: {
-    container: 'widgetic-canvas-container',
-    callbacks: {
-      onWidgetCreated: (widget) => {
-        console.log('New widget created:', widget.id);
-      },
-      onWidgetSaved: (widget) => {
-        console.log('Widget saved:', widget.id);
-      },
-      onError: (error) => {
-        console.error('Canvas error:', error);
-      }
-    }
-  }
-});
-```
-
-## Complete Example
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Widget Creator</title>
-  <style>
-    #widgetic-canvas-container {
-      width: 100%;
-      height: 100vh;
-    }
-  </style>
-</head>
-<body>
-  <div id="widgetic-canvas-container"></div>
-  
-  <script type="module">
-    import { UIComponentsApi } from '@widgetic/api-sdk';
-
-    // The short-lived token comes from your own server (see Security Considerations).
-    // The partner key never goes in the page.
-    const { token } = await (await fetch('/your-server/widgetic-token')).json();
-    const ui = new UIComponentsApi(token);
-    
-    async function initCanvas() {
-      try {
-        const { instanceId, mountStatus } = await ui.mountComponent({
-          componentId: 'widget-creator',
-          mountRequest: {
-            container: 'widgetic-canvas-container',
-            theme: {
-              mode: 'dark',
-              colors: {
-                primary: '#6366F1'
-              }
-            }
-          }
-        });
-        
-        if (mountStatus !== 'success') {
-          throw new Error('Failed to mount canvas');
-        }
-        
-        console.log('Canvas ready:', instanceId);
-      } catch (error) {
-        console.error('Failed to initialize canvas:', error);
-      }
-    }
-    
-    initCanvas();
-  </script>
-</body>
-</html>
-```
-
-## Security Considerations
-
-<Warning>
-  Never expose your partner API key in client-side code. Use the token exchange flow to obtain short-lived tokens for browser usage.
-</Warning>
-
-```typescript
-import { TokensApi } from '@widgetic/api-sdk';
-
-// Server-side: exchange the partner key for a short-lived token
-const tokens = new TokensApi(process.env.WIDGETIC_PARTNER_KEY!);
-const { token } = await tokens.exchangeToken({
-  exchangeTokenRequest: {
-    scopes: ['compositions:read', 'widgets:read'],
-    expiresIn: 1800 // seconds, 60 to 3600
-  }
 });
 
-// Send the token to the client, and use it there
-const ui = new UIComponentsApi(token);
+// later:
+await creator.unmount();
 ```
 
-The token records the scopes you ask for, but the API does not check them on each call yet, so treat the token as having the access of the key that made it until it expires. Keep the lifetime short, and never send the key itself to a browser. See [Authentication](/docs/authentication) for the scopes you can ask for.
+### Options
+
+| Option | |
+|--------|---|
+| `getToken` | **Required.** Returns the editor session's token, as for every piece. It is called once before the creator appears (a `getToken` that fails fails the mount), and again when the token is about to run out or the API refuses it. |
+| `canvasId` | The canvas to open, as `canvasChanged` gave it to you. It has to be this customer's. Without one the creator opens the customer's latest canvas, or makes a new one when they have none. |
+| `widgetId` | The widget of that canvas to open (needs `canvasId`). |
+| `startWithNewWidget` | Start from an empty canvas with a new widget instead of the latest canvas. |
+| `mediaLibrary` | Your own media library for the file pickers of the settings panel. See [Show your own media library](/docs/partners/ui-components#show-your-own-media-library). Pictures dropped on the canvas and the chat's attachments still go to Widgetic's storage. |
+| `widgetBuilderUrl` | The origin the live previews of widgets are served from. Default: Widgetic's. |
+| `theme`, `apiUrl` | As for every piece. |
+
+### Events
+
+| Event | Payload | |
+|-------|---------|---|
+| `ready` | `{ canvasId }` | The canvas is on screen. `canvasId` is `null` for a new, empty one. |
+| `canvasChanged` | `{ canvasId }` | The creator opened a canvas or made one. Keep the id and give it back as `canvasId` next time. |
+| `widgetRenamed` | `{ widgetId, name }` | The main widget has this name. Said when the canvas opens and each time the customer renames it, never twice in a row for the same name, so you can keep a title for the customer's work. |
+| `widgetPublished` | `{ widgetId, version? }` | The customer published a version of a widget. |
+| `limitReached` | `{ message, code? }` | The customer ran into a limit. The creator has told them already. See [When a limit is reached](#when-a-limit-is-reached). |
+| `reloadRequested` | | The creator would have reloaded the page to recover. Unmount it and mount a new one. |
+| `error` | `{ message, code?, fatal, during?, sessionEnded? }` | See [When something goes wrong](#when-something-goes-wrong). |
+
+Methods on `creator.module`: `getCanvasId()` (the canvas that is open now, or `null`) and `setTheme('light' | 'dark')`. `creator.unmount()` takes the creator away.
+
+### Remember where the customer was
+
+The creator writes nothing to your `localStorage`, `sessionStorage`, cookies or address bar, and never opens a window or reloads your page. What it remembers lives in memory until `unmount()`. So keep the id from `canvasChanged` with your customer's record and give it back as `canvasId` the next time, and the customer finds their work where they left it.
+
+### What the creator makes, and how you find it
+
+Everything the creator makes is filed under the session's managed user, and the session can open only that customer's canvases, widgets and compositions. Another customer's canvas answers `404`, exactly as if it did not exist.
+
+- **Find a customer's work** from your server with the filter you already know. Your key sees all of it:
+  ```bash
+  curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+    "https://api.widgetic.com/v1/widgets?managedUserExternalId=your-platform-user-123"
+  ```
+  `GET /canvases` and `GET /compositions` take the same `managedUserId` and `managedUserExternalId` filters.
+- **Show the result in your product** the way you show any widget: a [composition](/docs/api/compositions) of the widget, and the embed code. The creator makes compositions of the widgets it builds to show them with sample values; you can list them with the filter above or make your own on the same widget with your key.
+- **Private to your account.** A widget a customer builds is never made public in Widgetic's catalogue by a session. Publishing a version saves it and the customer can go back to an earlier one.
+- **Your key reaches everything**, filed under a customer or not. Deciding which of your customers may see which widget stays in your own platform.
+
+### When a limit is reached
+
+The AI is paid for by your account (see [Credits & Billing](/docs/partners/credits-billing)), and your credits, your plan and your storage are yours: **a customer is never told what they hold.** When one is used up, the API refuses the session with one plain sentence, "This is not available right now. Please try again later.", and the creator shows exactly that, in the chat with a *Retry* button and in a toast, and keeps working: the canvas, the chat and the other widgets are still there.
+
+It also tells **your page**, with `limitReached` `{ message: 'The visitor reached a limit.', code }`. The `code` is what the API answered:
+
+| `code` | What happened |
+|--------|---------------|
+| `BILLING_INSUFFICIENT_CREDITS` | Your account is out of credits. Every customer is refused until you add some. |
+| `AUTHZ_PLAN_RESTRICTION` | Your plan does not include what the customer asked for. |
+| `QUOTA_STORAGE_EXCEEDED` | Your storage is full. A chat attachment was refused. |
+| `COST_LIMIT_EXCEEDED` | This customer used their allowance for the hour or the day. It comes back by itself, and it is this customer's alone. |
+| `LIMIT_REACHED` | The customer pressed an "Upgrade" button in the chat. The creator never opens a page or a window for it: what an upgrade means in your product is for you to show. |
+
+Your page hears each `code` once in half a minute, however many requests are refused meanwhile. Ordinary rate limiting (`RATE_LIMIT_EXCEEDED`) is **not** a limit: the creator asks the customer to wait a moment and tells your page nothing.
+
+The allowance of the hour or the day is counted for each customer on their own, so one customer reaching it refuses and tells nobody else. Credits, plan and storage are your account's, so when they run out every customer is refused.
+
+### When something goes wrong
+
+The creator shows a problem to the customer itself. The `error` event is for your page. `fatal: true` means the creator cannot go on, and it has said so on its own screen:
+
+- **The session is over** (`sessionEnded: true`, for example `EDITOR_SESSION_EXPIRED` or `EDITOR_SESSION_REVOKED`). Mount again, with a new token from `getToken`.
+- **The `canvasId` you gave is not this customer's** (`during: 'canvas'`, code `NOT_FOUND`). Mount again without it.
+
+Either way no `ready` comes, and the creator stops asking the API. With `fatal: false` the creator carries on (a failed token refresh that will be retried, for example).
+
+### What it leaves alone
+
+- **The keyboard.** The canvas's shortcuts (Delete, the arrows, `v`, `r`, `h`, Ctrl+A and so on) work only while the focus is inside the creator, so a customer who clicked on your page keeps every key of it. Your page's own zoom (Ctrl or Cmd with `+`, `-`, `0`, Ctrl with the wheel) works everywhere. A customer gives the creator the keyboard by clicking on it or tabbing into it.
+- **Your page's scroll.** The chat follows its newest message inside its own box and never scrolls your page.
+- **Your `<head>` and `<body>`.** The creator adds one `<style>` with font rules to `<head>`, removes it on unmount, and draws everything else inside its shadow root.
+
+## The composition editor
+
+Let a customer change the texts, pictures, colours and fonts of a widget they own, beside a live preview, and save it. It is the editor of Widgetic's own site, drawn in your page.
+
+Create the composition on your server with your key and file it under the customer. A session opens only compositions filed under its customer. Then mount the editor on it:
+
+```javascript
+const editor = await mountModule('composition-editor', {
+  container: '#editor', // give it a height: it fills its container
+  compositionId: 'cmp_123', // the composition of the customer who is on the page; one editor edits one composition
+  getToken: async () => (await fetch('/widgetic-session', { method: 'POST' })).json(), // { token, expiresAt }
+  on: {
+    ready: ({ name, widgetId }) => showTitle(name),
+    dirty: ({ dirty }) => markUnsaved(dirty),
+    saved: ({ savedAt }) => markSaved(savedAt),
+    error: ({ message, code, fatal, sessionEnded }) => report(code, message),
+  },
+});
+
+// later: saves what is unsaved first, then takes the editor away
+await editor.unmount();
+```
+
+| Option | |
+|--------|---|
+| `compositionId` | **Required.** The composition to edit. |
+| `mediaLibrary` | Your own media library for the file pickers. |
+| `googleFontsApiKey` | A Google Fonts Web Fonts API key for the font picker's list. Without one the picker lists a short set of popular families. |
+| `autosaveDelayMs` | How long after the last change the editor saves by itself. Default 2500. `0` turns autosave off. |
+
+- **Saving.** The editor saves by itself shortly after the last change. `editor.module.save()` saves what is unsaved now, `editor.module.flush()` saves everything unsaved and waits until it is (both resolve `true` when nothing is left unsaved), and `editor.module.isDirty()` tells whether anything is unsaved. A save is safe to retry: it carries an `Idempotency-Key`.
+- **`unmount()` saves first**, for up to 10 seconds, so closing the editor never loses the last edits. If some could not be saved you hear an `error` with the code `UNSAVED_ON_UNMOUNT`. `editor.module.unmount({ discard: true })` throws unsaved edits away instead.
+- **Problems** are shown to the customer by the editor itself, with "Try again" where that helps. `error` is for your page, and adds `during`, `status`, `retryable`, `sessionEnded` and `correlationId` to the usual fields. `fatal: true` means the editor cannot go on: the composition cannot be opened, or the session is over (`sessionEnded: true`). Mint a new session or take the editor away. Quote `correlationId` to Widgetic's support.
+- **Another customer's composition** is answered with `404`, and the editor says it cannot be opened.
+- **One composition editor per page** for now. A second is refused with a clear message.
+
+## Content Security Policy and CORS
+
+If your page sends a Content-Security-Policy, the widget creator needs, in addition to what the File Browser needs, `frame-src` and `connect-src` for the preview hosts, and the composition editor needs `frame-src https://cdn.widgetic.com`. The full list is in [UI Components](/docs/partners/ui-components#content-security-policy). You do not have to ask Widgetic for anything to allow your page (CORS): the API accepts a session token from any origin (see [Editor Sessions](/docs/partners/editor-sessions#browsers)). Bind the session to your page with `allowed_origin` instead.
+
+## Not there yet
+
+- **One creator and one composition editor per page.** Their state (the signed-in customer, the chat, the file lists) belongs to the page, so a second one is refused with a clear message. Unmount the first before mounting another.
+- **No composition steps in the creator.** The creator's *Edit* step (a widget's compositions) and *Embed* step are off in a session, and a page cannot switch them on. Edit compositions with the composition editor.
+- **A chat attachment over 10 MB is refused** before anything is sent. A session cannot use the resumable upload.
+- **Stop only stops the creator waiting.** The *Stop* button ends the creator's wait for a generation. The generation, and the credits it uses, run on until the server finishes it.
+- **Size.** The widget creator is about 7.8 MB (2.0 MB gzip), downloaded when you mount it and not before. To have it ready sooner, call `preload('widget-creator')` on a `WidgeticUI` when the page that will host it opens (see [Several pieces on one page](/docs/partners/ui-components#several-pieces-on-one-page)).
+- **Brand colours.** The pieces have a light and a dark theme. Your own colours and typography are not available yet.
 
 ## Next Steps
 
 <CardGroup cols={2}>
+  <Card title="Editor Sessions" icon="key" href="/docs/partners/editor-sessions">
+    Make the token on your server
+  </Card>
   <Card title="UI Components" icon="puzzle-piece" href="/docs/partners/ui-components">
-    Learn about all available UI components
+    The UI SDK, the File Browser and your own media library
   </Card>
   <Card title="Managed Users" icon="users" href="/docs/partners/managed-users">
-    Associate canvases with your users
+    File your customers' work under them
+  </Card>
+  <Card title="Compositions" icon="layer-group" href="/docs/api/compositions">
+    Show a widget in your product with the embed code
   </Card>
 </CardGroup>

@@ -1,242 +1,299 @@
 ---
 title: UI Components
-description: Embeddable UI components for partners
-tag: "Planned"
+description: Put Widgetic's File Browser, composition editor and widget creator in your own page
+tag: "Preview"
 ---
 
-Widgetic plans to provide several embeddable UI components that partners can integrate into their platforms.
+The UI SDK (`@widgetic/ui-sdk`) puts Widgetic's ready-made pieces in your own web page with a few lines of code. Your customers use them without leaving your product and without a Widgetic account.
 
-<Warning>
-  **Planned. Not available yet.** None of these components can be mounted in your own page today. The UI SDK (`@widgetic/ui-sdk`) is not published, and the `/ui/components` calls only keep a record of a mount: they show nothing in your page. This page describes the design we plan to ship, and it can change, so do not build on it yet. See [Canvas Embedding](/docs/partners/canvas-embedding) for what to use today.
-</Warning>
+<Note>
+  **Preview.** The pieces on this page are new. They are built and tested, and you can try them now, but small details can still change while this label is on. Tell us what you find at [support@widgetic.com](mailto:support@widgetic.com).
+</Note>
 
-## Available Components
+## The pieces
 
-These are the three component ids the API knows:
+| Module | What your customer can do | The session needs |
+|--------|--------------------------|-------------------|
+| `file-browser` | Browse, upload and pick files, from Widgetic's media library or from your own | `files` (nothing, with your own [media library](#show-your-own-media-library)) |
+| `composition-editor` | Change the texts, pictures, colours and fonts of a widget beside a live preview, and save | `editor` and `files` |
+| `widget-creator` | The whole Widgetic canvas: draw, describe a widget to the AI, watch it being built, change it and publish it | `creator`, `editor` and `files` |
 
-| Component ID | Name | Description |
-|--------------|------|-------------|
-| `widget-creator` | Widget Creator | Full widget creation experience with AI assistance |
-| `composition-editor` | Composition Editor | Edit and arrange widgets in compositions |
-| `embed-editor` | Embed Editor | Configure widget embed settings and appearance |
+The File Browser is covered on this page. The composition editor and the widget creator have their own options and events, in [Canvas Embedding](/docs/partners/canvas-embedding).
 
-The examples on this page use `ui`, an instance of `UIComponentsApi` from the API SDK, set up with a short-lived token from your server (see [Security Considerations](/docs/partners/canvas-embedding#security-considerations)):
+Three things hold for all of them:
 
-```typescript
-import { UIComponentsApi } from '@widgetic/api-sdk';
+- **No API key in the browser.** Your server keeps the key and makes a short-lived [editor session](/docs/partners/editor-sessions) for the customer who is on the page. The page only ever holds that session's token, and it can reach only that customer's content.
+- **Your page stays yours.** A piece is drawn inside a shadow root: your CSS cannot restyle it and its CSS cannot touch your page. The SDK writes nothing to `<html>` or `<body>`, sends no `postMessage` and never clears your container.
+- **Small.** The SDK is a loader of about 30 KB. A piece is downloaded from Widgetic's CDN when you mount it, and only then.
 
-const ui = new UIComponentsApi(tokenFromYourServer);
+## How it works
+
+<Steps>
+  <Step title="Your server makes an editor session">
+    When the page opens, your server asks Widgetic for a session for the signed-in customer (`POST /v1/managed-users/{id}/editor-sessions`, with your API key) and returns the token. See [Editor Sessions](/docs/partners/editor-sessions).
+  </Step>
+  <Step title="Your page gives the SDK a getToken function">
+    `getToken` fetches that token from your server. The SDK calls it when the piece starts and again shortly before the token runs out.
+  </Step>
+  <Step title="The SDK mounts the piece">
+    It downloads the piece, draws it in your container, and the piece talks to the Widgetic API with the token and nothing else.
+  </Step>
+</Steps>
+
+## Install
+
+```bash
+npm install @widgetic/ui-sdk
 ```
 
-## Widget Creator
+Or with a script tag. Pin the version and do not use `@latest`:
 
-The Widget Creator is the primary component for creating widgets through AI-powered prompts or manual editing.
-
-### Features
-- AI-powered widget generation from text prompts
-- Visual editor with drag-and-drop
-- Real-time preview
-- Component library
-- Version history
-
-### Mounting
-
-```typescript
-await ui.mountComponent({
-  componentId: 'widget-creator',
-  mountRequest: {
-    container: 'creator-container',
-    theme: { mode: 'dark' }
-  }
-});
+```html
+<script src="https://unpkg.com/@widgetic/ui-sdk@0.1.0/dist/umd/ui-sdk.js"></script>
+<script>
+  WidgeticUISDK.mountModule('file-browser', {
+    container: '#media-library',
+    getToken: () => fetch('/widgetic-session', { method: 'POST' }).then((response) => response.json()),
+    on: { select: ({ files }) => console.log(files) },
+  });
+</script>
 ```
 
-## Composition Editor
+## Mount a piece
 
-The Composition Editor allows users to combine multiple widgets into layouts.
+Give the container a height: the piece fills it.
 
-### Features
-- Drag-and-drop widget placement
-- Responsive layout controls
-- Widget configuration panels
-- Preview modes (desktop, tablet, mobile)
+```javascript
+import { mountModule } from '@widgetic/ui-sdk';
 
-### Mounting
-
-```typescript
-await ui.mountComponent({
-  componentId: 'composition-editor',
-  mountRequest: {
-    container: 'editor-container',
-    theme: { mode: 'light' }
-  }
-});
-```
-
-## Embed Editor
-
-The Embed Editor configures how widgets appear when embedded on external sites.
-
-### Features
-- Embed code generation
-- Size and responsiveness settings
-- Custom styling options
-- Domain restrictions
-
-### Mounting
-
-```typescript
-await ui.mountComponent({
-  componentId: 'embed-editor',
-  mountRequest: {
-    container: 'embed-container',
-    theme: { mode: 'light' }
-  }
-});
-```
-
-## Component Manifest
-
-Each component is planned to have a manifest describing its assets and configuration. This is the shape the API declares; the values are an example:
-
-```typescript
-const manifest = await ui.getComponentManifest({ 
-  componentId: 'widget-creator' 
-});
-
-// manifest structure:
-// {
-//   version: "2.1.0",
-//   dependencies: ["fabric.js", "svelte"],
-//   assets: {
-//     js: ["https://example.com/ui/widget-creator.js"],
-//     css: ["https://example.com/ui/widget-creator.css"]
-//   },
-//   config: {
-//     supportedEvents: ["widgetCreated", "widgetSaved", "error"],
-//     allowedDomains: ["*"],
-//     requiredPermissions: ["canvas:write"]
-//   }
-// }
-```
-
-## Theming Reference
-
-The components are planned to support comprehensive theming. Today the API accepts only `mode`, `colors.primary`, `colors.secondary`, `colors.background`, `colors.text`, `typography.fontFamily` and `typography.fontSize`; the other values below are part of the plan:
-
-```typescript
-const theme = {
-  mode: 'dark', // 'light' | 'dark'
-  colors: {
-    primary: '#6366F1',      // Primary brand color
-    secondary: '#8B5CF6',    // Secondary color
-    background: '#1F2937',   // Main background
-    surface: '#374151',      // Card/panel backgrounds
-    text: '#F9FAFB',         // Primary text
-    textSecondary: '#9CA3AF' // Secondary text
+const fileBrowser = await mountModule('file-browser', {
+  container: document.querySelector('#media-library'), // an element, or a CSS selector
+  getToken: async () => (await fetch('/widgetic-session', { method: 'POST' })).json(), // { token, expiresAt }
+  maxSelections: 1,
+  on: {
+    select: ({ files }) => useFiles(files), // [{ id, name, url, mimeType?, size?, thumbnail? }]
   },
-  typography: {
-    fontFamily: 'Inter, system-ui, sans-serif',
-    fontSize: '14px',
-    fontWeight: {
-      normal: 400,
-      medium: 500,
-      bold: 700
-    }
-  },
-  borderRadius: '8px',
-  spacing: {
-    xs: '4px',
-    sm: '8px',
-    md: '16px',
-    lg: '24px',
-    xl: '32px'
-  }
-};
+});
+
+// later:
+await fileBrowser.unmount();
 ```
 
-## Event Callbacks
+`/widgetic-session` is the endpoint of yours that makes the session (see [A server endpoint for your page](/docs/partners/editor-sessions#a-server-endpoint-for-your-page)). It returns `{ token, expiresAt }`.
 
-Components are planned to emit events that you can handle. The callbacks are functions that live in the browser, so they belong to the planned UI SDK: the API call takes JSON and cannot carry a function.
+### Options
+
+| Option | Type | |
+|--------|------|---|
+| `container` | element or CSS selector | **Required.** Where the piece is drawn. |
+| `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. See [Tokens](#tokens). |
+| `version` | `string` | Pin an exact version of the piece, such as `1.2.0`. Default: the newest. Pin it in production. |
+| `theme` | `'light'`, `'dark'` or `'system'` | Default `light`. `system` follows the customer's setting. |
+| `locale` | `string` | A BCP 47 tag such as `en` or `de`. |
+| `apiUrl` | `string` | The Widgetic API. Default `https://api.widgetic.com`. |
+| `moduleBaseUrl` | `string` | Where pieces are served from. Default `https://cdn.widgetic.com/modules`. See [Versions and self-hosting](#versions-and-self-hosting). |
+| `on` | `{ [event]: handler }` | Event handlers, connected before the piece starts so you see `ready`. |
+| `signal` | `AbortSignal` | Cancels the mount, for components that can go away before the piece is up. |
+| `placeholder` | `boolean` | `false` skips the loading spinner shown while the piece downloads. |
+| anything else | | Handed to the piece. File Browser: `maxSelections`, `initialFilter`, `selectLabel`, `mediaLibrary`. |
+
+`mountModule` resolves with a handle once the piece is on screen:
 
 ```typescript
-const callbacks = {
-  // Widget Creator events
-  onWidgetCreated: (widget) => { /* New widget created */ },
-  onWidgetSaved: (widget) => { /* Widget saved */ },
-  onPromptSubmitted: (prompt) => { /* AI prompt submitted */ },
-  
-  // Composition Editor events
-  onCompositionSaved: (composition) => { /* Composition saved */ },
-  onWidgetAdded: (widgetId) => { /* Widget added to composition */ },
-  onWidgetRemoved: (widgetId) => { /* Widget removed */ },
-  
-  // Common events
-  onError: (error) => { /* Error occurred */ },
-  onReady: () => { /* Component mounted and ready */ },
-  onClose: () => { /* User requested close */ }
-};
+{
+  id: string; type: string; version: string;     // version is the one that was actually loaded
+  container: HTMLElement;
+  module: UIModule;                              // the piece itself, for its own methods
+  on(event, handler): () => void;                // returns a function that unsubscribes
+  off(event, handler): void;
+  unmount(): Promise<void>;                      // takes the piece and its listeners down
+}
+```
 
-await ui.mountComponent({
-  componentId: 'widget-creator',
-  mountRequest: {
-    container: 'container',
-    callbacks
-  }
+### Events
+
+| Event | Payload | |
+|-------|---------|---|
+| `ready` | | The piece is on screen. |
+| `error` | `{ message, code?, fatal }` | `fatal: true`: the piece has stopped. `false`: it carries on, for example after a failed token refresh that will be retried. |
+| `select` | `{ files }` | File Browser: the customer confirmed a pick. |
+
+The composition editor and the widget creator add events of their own (`dirty`, `saved`, `canvasChanged`, `widgetPublished`, `limitReached` and more). They are listed in [Canvas Embedding](/docs/partners/canvas-embedding).
+
+### Several pieces on one page
+
+`mountModule` creates a `WidgeticUI`, mounts one piece with it and destroys it again when you `unmount()`. To mount several pieces, or to download one ahead of time, make the `WidgeticUI` yourself:
+
+```javascript
+import { WidgeticUI } from '@widgetic/ui-sdk';
+
+const ui = new WidgeticUI({ getToken, theme: 'system' });      // touches nothing until you mount
+await ui.preload('widget-creator');                            // optional: download it ahead of time
+const files = await ui.mount('file-browser', { container: '#files' });
+
+ui.updateTheme('dark');                                        // every mounted piece, and later ones
+await files.unmount();
+await ui.destroy();                                            // unmounts whatever is left
+```
+
+## Tokens
+
+`getToken` is the only credential the SDK takes. It is called with `{ reason }`:
+
+- `'initial'`: the piece is starting.
+- `'expiring'`: the current token runs out in about a minute. Return its replacement now.
+- `'expired'`: the current token has already run out (the page was asleep, or an earlier refresh failed).
+
+Return the token itself, or `{ token, expiresAt }` (an ISO string, epoch milliseconds or a `Date`). With `expiresAt` the piece renews the token in time and the customer is never interrupted. The answer of your own endpoint can pass on what Widgetic gave you.
+
+An `apiKey` option is refused with `API_KEY_NOT_ALLOWED`. The key must stay on your server.
+
+## Show your own media library
+
+If your platform already has a media library (a CMS, an S3 bucket, a DAM), give the File Browser plain functions that read and write it. Your customers browse, upload and pick from **your** files with the same screen. The piece then never talks to Widgetic, so there is no session to make and no `getToken`.
+
+```javascript
+const fileBrowser = await mountModule('file-browser', {
+  container: '#media-library',
+  mediaLibrary: {
+    id: 'acme-assets',
+    label: 'Acme assets', // shown as the list's title. Default "My uploads"
+    // Required. One page of files, newest first. `cursor` is the `nextCursor` you returned for the page before.
+    list: async ({ cursor, limit, signal }) => {
+      const response = await fetch(`/api/assets?cursor=${cursor ?? ''}&limit=${limit}`, { signal });
+      if (!response.ok) throw Object.assign(new Error('Could not load your files'), { status: response.status });
+      const page = await response.json();
+      return {
+        items: page.assets.map((asset) => ({ id: asset.id, name: asset.fileName, url: asset.publicUrl, mimeType: asset.contentType })),
+        nextCursor: page.next ?? null, // null: that was the last page
+      };
+    },
+    // Optional. A button is shown only for the functions you give.
+    upload: async ({ file, onProgress, signal }) => uploadToAcme(file, onProgress, signal), // return the stored file
+    rename: async ({ id, name, signal }) => renameInAcme(id, name, signal),
+    delete: async ({ id, signal }) => deleteInAcme(id, signal),
+  },
+  on: {
+    select: ({ files }) => useFiles(files), // your files, as your library described them
+    error: ({ message, code, action }) => report(code, action, message),
+  },
 });
 ```
 
-## Best Practices
+- A failure inside your functions is shown to the customer, with "Try again" where that helps, and reported through the `error` event with `fatal: false`. The code is `MEDIA_LIBRARY_` plus `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `NETWORK`, `INVALID_RESPONSE`, `NOT_SUPPORTED` or `FAILED`, and `action` says what the customer was doing (`load`, `upload`, `rename` or `delete`). Throw an error with a `status` property (a failed `fetch` response) and it is sorted for you.
+- Everything your functions return is checked before it is shown. A file without an id, a name or a usable address is skipped with a console warning rather than breaking the list.
+- The composition editor and the widget creator take the same `mediaLibrary`: their file pickers then show your files.
+- Text, PDF and font previews read the file with a script, so a file on another website needs an `Access-Control-Allow-Origin` header for your page's origin. Pictures, audio and video are shown without it.
 
-<AccordionGroup>
-  <Accordion title="Container Sizing">
-    Ensure your container has explicit dimensions. The components will fill the available space.
-    
-    ```css
-    #widgetic-container {
-      width: 100%;
-      height: 600px; /* or 100vh */
-      min-height: 400px;
-    }
-    ```
-  </Accordion>
-  
-  <Accordion title="Loading States">
-    Show loading indicators while components initialize:
-    
-    ```typescript
-    const container = document.getElementById('container');
-    container.innerHTML = '<div class="loading">Loading...</div>';
-    
-    await ui.mountComponent({ ... });
-    // Component replaces loading content
-    ```
-  </Accordion>
-  
-  <Accordion title="Error Handling">
-    Always handle mount failures gracefully:
-    
-    ```typescript
-    try {
-      const { mountStatus } = await ui.mountComponent({ ... });
-      if (mountStatus !== 'success') {
-        showFallbackUI();
-      }
-    } catch (error) {
-      console.error('Mount failed:', error);
-      showFallbackUI();
-    }
-    ```
-  </Accordion>
-</AccordionGroup>
+## Content Security Policy
+
+If your page sends a Content-Security-Policy, the File Browser works with this and nothing more. The build tests load it under the same policy and list, pick and upload images; each source below is needed.
+
+```text
+default-src 'none';
+script-src  'self' https://cdn.widgetic.com;           # plus whatever your own page needs
+connect-src https://cdn.widgetic.com https://api.widgetic.com;
+style-src   'unsafe-inline';                           # the piece's styles are <style> elements in its shadow root
+font-src    data:;                                     # its fonts are embedded
+img-src     https://cdn.widgetic.com data: blob:;      # data: for its icons, blob: for an upload's preview
+```
+
+`img-src` also needs the address your customers' files are served from (the `url` of a picked file).
+
+- The **composition editor** works under the same policy plus `frame-src https://cdn.widgetic.com` (the live preview is the widget's published page). Its font picker also needs `style-src https://fonts.googleapis.com` and `font-src https://fonts.gstatic.com`.
+- The **widget creator** needs what the composition editor needs plus `frame-src https://wbuilder.widgetic.com` and `connect-src https://wbuilder.widgetic.com` (the live previews of widgets are served from there).
+
+## What the SDK puts on your page
+
+- On import: nothing.
+- While a piece downloads: one `div[data-widgetic-ui-loading]` in your container, removed when the piece is up.
+- A mounted piece: one `<widgetic-ui-module>` element in your container, holding a shadow root. The pieces also add one `<style data-widgetic-ui-document-rules>` to `<head>` with `@font-face` rules for fonts named `Widgetic UI …`, so they cannot collide with yours. The composition editor also adds Google's stylesheet for each font the customer looks at in its font picker. They are all taken away when the piece is unmounted, and your own `<link>`s and `<meta>`s are never touched.
+- Never: global CSS or CSS variables, changes to `<html>` or `<body>`, `postMessage`, or removing your own elements.
+
+## React
+
+```jsx
+import { useEffect, useRef } from 'react';
+import { mountModule } from '@widgetic/ui-sdk';
+
+export function MediaLibrary({ getToken, onPick }) {
+  const containerRef = useRef(null);
+  const onPickRef = useRef(onPick);
+  onPickRef.current = onPick;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let mounted = null;
+
+    mountModule('file-browser', {
+      container: containerRef.current,
+      getToken,
+      signal: controller.signal,
+      on: { select: ({ files }) => onPickRef.current(files) },
+    }).then(
+      (handle) => { mounted = handle; },
+      (error) => { if (error.name !== 'AbortError') console.error(error); },
+    );
+
+    return () => {
+      controller.abort();   // before the piece is running: it never appears
+      mounted?.unmount();   // after: it is taken down
+    };
+  }, []); // StrictMode runs this twice; the first run is cancelled cleanly
+
+  return <div ref={containerRef} style={{ height: 600 }} />;
+}
+```
+
+The same pattern works in Vue and Svelte: mount in the component's mount hook with an `AbortController`, and abort and unmount when it goes away. Mounting needs a page, so start it from an effect or an event handler: calling `mountModule` while rendering on a server rejects with `NOT_IN_BROWSER`.
+
+## Versions and self-hosting
+
+Pieces are static files, so nothing can change under your feet when you pin a version:
+
+```text
+https://cdn.widgetic.com/modules/<name>/manifest.json            { "name": "file-browser", "version": "1.2.0", "entry": "1.2.0/index.js" }
+https://cdn.widgetic.com/modules/<name>/<version>/index.js       never changes once published
+```
+
+- Without `version` the SDK reads the manifest and loads the newest version. With `version: '1.2.0'` it loads that file directly. **Pin the version in production** and upgrade when you have looked at the release.
+- To serve the pieces yourself, copy that layout to your own origin and set `moduleBaseUrl`. The manifest's `entry` must be a `.js` file inside the piece's own folder on the same origin.
+- Failed downloads are retried twice (network errors and server errors, not 404). Requests to the CDN carry no cookies.
+
+## Errors
+
+Every error carries a `code`.
+
+| Code | Meaning |
+|------|---------|
+| `API_KEY_NOT_ALLOWED` | An `apiKey` option was given. Make an editor session on your server instead. |
+| `INVALID_GET_TOKEN` | `getToken` was given but is not a function. |
+| `NOT_IN_BROWSER` | Mounting on a server. |
+| `MISSING_CONTAINER`, `CONTAINER_NOT_FOUND`, `INVALID_CONTAINER` | `container` is missing, matches nothing, or is not an element. |
+| `INVALID_MODULE_NAME`, `INVALID_VERSION`, `INVALID_MODULE_BASE_URL` | The name, the pinned version or the module address is not valid. |
+| `MODULE_NOT_FOUND` | The CDN has no such piece. |
+| `MANIFEST_UNAVAILABLE`, `MANIFEST_INVALID` | The manifest could not be fetched, or it is not valid. |
+| `MODULE_LOAD_FAILED`, `MODULE_INVALID` | The file could not be imported, or it does not export a piece. |
+| `MOUNT_FAILED` | The piece loaded but failed to start. Nothing is left in the container. |
+| `MOUNT_ABORTED` | The mount was cancelled through `signal`. |
+
+## If you read an older version of this page
+
+The earlier design had `mountComponent`, `getComponentManifest` and the `/ui/components` calls of the API. They only kept a record of a mount and showed nothing in your page, and they are not part of this design. Use `mountModule` with a `getToken` that returns an editor session. The API key never goes in the browser (`apiKey` is refused with `API_KEY_NOT_ALLOWED`). The `embed-editor` piece does not exist: the composition editor has the embed settings.
 
 ## Next Steps
 
 <CardGroup cols={2}>
+  <Card title="Editor Sessions" icon="key" href="/docs/partners/editor-sessions">
+    Make the token on your server
+  </Card>
   <Card title="Canvas Embedding" icon="window" href="/docs/partners/canvas-embedding">
-    Complete embedding guide
+    The widget creator and the composition editor
   </Card>
   <Card title="Managed Users" icon="users" href="/docs/partners/managed-users">
-    Associate components with users
+    File your customers' content under them
+  </Card>
+  <Card title="Credits & Billing" icon="credit-card" href="/docs/partners/credits-billing">
+    How the AI is paid for
   </Card>
 </CardGroup>
