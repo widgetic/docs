@@ -200,7 +200,7 @@ img-src     https://cdn.widgetic.com data: blob:;      # data: for its icons, bl
 worker-src  blob:;                                     # only to preview a PDF: pdf.js reads it in a worker made from a blob
 ```
 
-`img-src` also needs the address your customers' files are served from (the `url` of a picked file). To preview a PDF, that address also goes in `connect-src` (the PDF is downloaded with a request, so the file server has to allow your page's origin with CORS) and the policy needs the `worker-src blob:` above; without it the preview says "Failed to load PDF" and everything else works. No `data:` in `script-src` and no `'unsafe-eval'` are needed.
+`img-src` also needs the address your customers' files are served from (the `url` of a picked file). To preview a PDF, that address also goes in `connect-src` (the PDF is downloaded with a request, so the file server has to allow your page's origin with CORS) and the policy needs the `worker-src blob:` above; without it the preview says "Failed to load PDF" and everything else works. No `data:` in `script-src` and no `'unsafe-eval'` are needed. The PDF viewer is downloaded when the first PDF is previewed, from the same folder of the CDN as the piece itself, so `script-src` needs nothing more.
 
 - The **composition editor** works under the same policy plus `frame-src https://cdn.widgetic.com` (the live preview is the widget's published page). Its font picker also needs `style-src https://fonts.googleapis.com` and `font-src https://fonts.gstatic.com`.
 - The **widget creator** needs what the composition editor needs plus `frame-src https://wbuilder.widgetic.com` and `connect-src https://wbuilder.widgetic.com` (the live previews of widgets are served from there).
@@ -256,11 +256,12 @@ Pieces are static files, so nothing can change under your feet when you pin a ve
 ```text
 https://cdn.widgetic.com/modules/<name>/manifest.json            { "name": "file-browser", "version": "1.2.0", "entry": "1.2.0/index.js" }
 https://cdn.widgetic.com/modules/<name>/<version>/index.js       never changes once published
+https://cdn.widgetic.com/modules/<name>/<version>/chunks/<file>.js    the parts a piece fetches later (the PDF viewer); never change either
 ```
 
 - Without `version` the SDK reads the manifest and loads the newest version. With `version: '1.2.0'` it loads that file directly. **Pin the version in production** and upgrade when you have looked at the release.
-- To serve the pieces yourself, copy that layout to your own origin and set `moduleBaseUrl`. The manifest's `entry` must be a `.js` file inside the piece's own folder on the same origin.
-- Failed downloads are retried twice (network errors and server errors, not 404). Requests to the CDN carry no cookies.
+- To serve the pieces yourself, copy that layout to your own origin (the whole `<version>` folder: `index.js` fetches its `chunks/` files from the folder it was loaded from) and set `moduleBaseUrl`. The manifest's `entry` must be a `.js` file inside the piece's own folder on the same origin.
+- Failed downloads are retried twice (network errors and server errors, not 404). A piece also asks twice more, the same way, when a file it fetches later fails. Requests to the CDN carry no cookies.
 
 ## Errors
 
