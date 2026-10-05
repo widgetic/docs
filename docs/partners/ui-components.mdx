@@ -187,7 +187,7 @@ const fileBrowser = await mountModule('file-browser', {
 
 ## Content Security Policy
 
-If your page sends a Content-Security-Policy, the File Browser works with this and nothing more. The build tests load it under the same policy and list, pick and upload images; each source below is needed.
+If your page sends a Content-Security-Policy, the File Browser works with this and nothing more. The build tests load it under the same policy, list, pick and upload images and preview a PDF; each source below is needed.
 
 ```text
 default-src 'none';
@@ -196,9 +196,10 @@ connect-src https://cdn.widgetic.com https://api.widgetic.com;
 style-src   'unsafe-inline';                           # the piece's styles are <style> elements in its shadow root
 font-src    data:;                                     # its fonts are embedded
 img-src     https://cdn.widgetic.com data: blob:;      # data: for its icons, blob: for an upload's preview
+worker-src  blob:;                                     # only to preview a PDF: pdf.js reads it in a worker made from a blob
 ```
 
-`img-src` also needs the address your customers' files are served from (the `url` of a picked file).
+`img-src` also needs the address your customers' files are served from (the `url` of a picked file). To preview a PDF, that address also goes in `connect-src` (the PDF is downloaded with a request, so the file server has to allow your page's origin with CORS) and the policy needs the `worker-src blob:` above; without it the preview says "Failed to load PDF" and everything else works. No `data:` in `script-src` and no `'unsafe-eval'` are needed.
 
 - The **composition editor** works under the same policy plus `frame-src https://cdn.widgetic.com` (the live preview is the widget's published page). Its font picker also needs `style-src https://fonts.googleapis.com` and `font-src https://fonts.gstatic.com`.
 - The **widget creator** needs what the composition editor needs plus `frame-src https://wbuilder.widgetic.com` and `connect-src https://wbuilder.widgetic.com` (the live previews of widgets are served from there).
