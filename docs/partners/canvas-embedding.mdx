@@ -128,7 +128,7 @@ Either way no `ready` comes, and the creator stops asking the API. With `fatal: 
 
 - **The keyboard.** The canvas's shortcuts (Delete, the arrows, `v`, `r`, `h`, Ctrl+A and so on) work only while the focus is inside the creator, so a customer who clicked on your page keeps every key of it. Your page's own zoom (Ctrl or Cmd with `+`, `-`, `0`, Ctrl with the wheel) works everywhere. A customer gives the creator the keyboard by clicking on it or tabbing into it.
 - **Your page's scroll.** The chat follows its newest message inside its own box and never scrolls your page.
-- **Your `<head>` and `<body>`.** The creator adds one `<style>` with font rules to `<head>`, removes it on unmount, and draws everything else inside its shadow root.
+- **Your `<head>` and `<body>`.** The creator adds one `<style>` with font rules to `<head>` (named `Widgetic UI …`, shared with the other pieces and never added twice, so it stays when the creator is unmounted) and draws everything else inside its shadow root.
 
 ## The composition editor
 

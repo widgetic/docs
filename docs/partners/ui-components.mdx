@@ -207,7 +207,7 @@ img-src     https://cdn.widgetic.com data: blob:;      # data: for its icons, bl
 
 - On import: nothing.
 - While a piece downloads: one `div[data-widgetic-ui-loading]` in your container, removed when the piece is up.
-- A mounted piece: one `<widgetic-ui-module>` element in your container, holding a shadow root. The pieces also add one `<style data-widgetic-ui-document-rules>` to `<head>` with `@font-face` rules for fonts named `Widgetic UI …`, so they cannot collide with yours. The composition editor also adds Google's stylesheet for each font the customer looks at in its font picker. They are all taken away when the piece is unmounted, and your own `<link>`s and `<meta>`s are never touched.
+- A mounted piece: one `<widgetic-ui-module>` element in your container, holding a shadow root. The pieces also add one `<style data-widgetic-ui-document-rules>` to `<head>` with `@font-face` rules for fonts named `Widgetic UI …`, so they cannot collide with yours. That `<style>` is shared by every piece on the page and never added twice, so it stays when a piece is unmounted. The composition editor also adds Google's stylesheet for each font the customer looks at in its font picker; those `<link>`s go when the editor is unmounted. Your own `<link>`s and `<meta>`s are never touched.
 - Never: global CSS or CSS variables, changes to `<html>` or `<body>`, `postMessage`, or removing your own elements.
 
 ## React
