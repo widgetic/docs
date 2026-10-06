@@ -89,8 +89,8 @@ await fileBrowser.unmount();
 | `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. See [Tokens](#tokens). |
 | `version` | `string` | Pin an exact version of the piece, such as `1.2.0`. Default: the newest. Pin it in production. |
 | `theme` | `'light'`, `'dark'`, `'system'`, or `{ preset, mode, colors, radius, font }` | Default `light`. `system` follows the customer's setting. An object gives the piece your colours, corner radius and font. See [Make the pieces look like your product](#make-the-pieces-look-like-your-product). |
-| `locale` | `string` | A BCP 47 tag such as `en` or `de`. The File Browser uses it for plural forms and for how numbers, dates and file sizes are written. The other pieces are in English for now and ignore it. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
-| `messages` | `{ [key]: string }` | File Browser only: the words you want to change. A key you leave out stays English. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
+| `locale` | `string` | A BCP 47 tag such as `en` or `de`. The File Browser and the composition editor use it for plural forms and for how numbers, dates and file sizes are written. The widget creator is in English for now and ignores it. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
+| `messages` | `{ [key]: string }` | File Browser and composition editor: the words you want to change. A key you leave out stays English. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
 | `apiUrl` | `string` | The Widgetic API. Default `https://api.widgetic.com`. |
 | `moduleBaseUrl` | `string` | Where pieces are served from. Default `https://cdn.widgetic.com/modules`. See [Versions and self-hosting](#versions-and-self-hosting). |
 | `on` | `{ [event]: handler }` | Event handlers, connected before the piece starts so you see `ready`. |
@@ -109,7 +109,7 @@ await fileBrowser.unmount();
   on(event, handler): () => void;                // returns a function that unsubscribes
   off(event, handler): void;
   setTheme(theme): void;                         // this piece's look alone
-  setLanguage({ locale?, messages? }): void;     // this piece's language alone (the File Browser; others say they have none)
+  setLanguage({ locale?, messages? }): void;     // this piece's language alone (not the widget creator yet: it says it has none)
   unmount(): Promise<void>;                      // takes the piece and its listeners down
 }
 ```
@@ -205,13 +205,13 @@ A font can only be defined by the page itself, never from inside a piece. Give t
 ### What a theme cannot do yet
 
 - **The widget creator takes a theme's mode, neutral colours, brand colour and font, but not yet its corners.** A dark `mode`, or colours of your own for `background`, `foreground`, `muted`, `mutedForeground` and `border`, restyle its panels, toolbar, menus, dialogs and chat, and the `font` applies to all of its text. Every text of it stays readable in a dark look, for each built-in preset and for neutral colours of your own. Your `primary` colour is the creator's accent: the selected tool, the sliders, the buttons that act, the chat's Send button and what is on them, darker under the pointer (lighter on a dark surface). The text and icons on an accent are your `primaryForeground` when you give one, else white or a dark ink, whichever reads on your colour, so a light yellow gets dark text. Without a `primary` the accents are Widgetic's own green and blue. The canvas board and the live widget previews stay light on purpose (they show the widget as your customers will see it), and the chat's message bubbles keep their own light colours. The handles the canvas draws on its board, a few accents the creator sets in script and the colours of a status (the green of a published widget, the red of an error) do not take your brand colour, and most of its corners are Widgetic's own, so `radius` changes very little of it. The console says what stays light when a creator gets a dark theme. The File Browser and the composition editor follow a dark theme.
-- **No layout or icons.** The components are Widgetic's. The words of the File Browser can be changed (see the next section); the other pieces are in English.
+- **No layout or icons.** The components are Widgetic's. The words of the File Browser and of the composition editor can be changed (see the next section); the widget creator is in English.
 - **Colours the piece can read as they are.** No CSS variables, gradients or images.
 - **The old `ThemeConfig` shape is gone.** `{ mode, colors: { secondary, surface, text }, spacing }` never changed anything in a piece and `theme` no longer takes it. Use the settings above.
 
 ## Show the pieces in your customers' language
 
-The File Browser can speak your customers' language. Every word it shows is a message with a key. You hand over the words you want to change, and every key you leave out stays English, so you can add a language one screen at a time. The composition editor and the widget creator are in English for now: they take `locale` and ignore it.
+The File Browser and the composition editor can speak your customers' language. Every word they show is a message with a key. You hand over the words you want to change, and every key you leave out stays English, so you can add a language one screen at a time. The widget creator is in English for now: it takes `locale` and ignores it. The examples are the File Browser's; [The composition editor](#the-composition-editor) says what is different.
 
 ```javascript
 const fileBrowser = await mountModule('file-browser', {
@@ -260,10 +260,42 @@ The File Browser answers a rename, a delete, a new folder and a pick with a smal
 
 Two habits come with the pop-up library. It moves focus to the newest pop-up when someone presses Alt+T anywhere on the page while one is shown, and a pop-up goes away by itself after about three seconds. You cannot move the pop-ups or switch them off yet.
 
+### The composition editor
+
+The composition editor takes the same `locale`, `messages` and `setLanguage`, and its `module.defaultMessages` and `module.checkMessages(messages)` work as above. One thing is different: **one `messages` object covers the whole editor.** The editor is made of three parts with words of their own, and it splits what you give between them, so you never need to know which part says a word:
+
+- the editor's own words, the `editor.` keys: the Design and Content tabs, every control, the save button, the dates and the failures it explains;
+- the file picker that opens from its file fields, which is the File Browser: the keys above (`action.`, `upload.`, `dialog.` and so on), with the same `locale` and `messages`;
+- the rich text editor of its text fields, the `shadEditor.` keys. The editor draws its own text toolbar, so these words are not on screen today and a translation can leave them out.
+
+`editor.module.defaultMessages` lists them all, with their English text: more than 500. A key that is in none of the three is said once in the console as `[Editor] ...`, with the nearest real key, and ignored.
+
+```javascript
+const editor = await mountModule('composition-editor', {
+  container: document.querySelector('#editor'),
+  compositionId,
+  getToken,
+  locale: 'de',
+  messages: {
+    'editor.props.save': 'Speichern', // a word of the editor
+    'action.cancel': 'Abbrechen', // a word of its file picker
+  },
+});
+
+// labels and buttons change at once, and what the customer typed stays
+editor.setLanguage({ locale: 'pl', messages: polishMessages });
+```
+
+- **Dates follow `locale` without your help.** The names of the months and weekdays in its calendars, and the way a date is written, come from the browser. Only the names of the calendars and of their buttons (what a screen reader says) are messages. Two limits: a calendar cuts the weekday names to two letters, and the date range control writes its dates as `DD/MM/YY` in every language.
+- **A change of language reaches what is on screen.** Labels and buttons change at once, and so do the banners of a composition that could not be opened and of a save that failed. A sentence the editor said once, such as why there is no preview, keeps its language until the editor says something new.
+- **No pop-ups from its file picker yet.** The File Browser piece draws the pop-ups of a rename, a delete and a new folder. Inside the composition editor they are not drawn, so the `toast.` keys are on no screen there.
+
 ### What stays as it is
 
 - **Words that belong to someone else.** What your own media library says (the message of an error you throw), your file names and your library's `label`, the names of folders a customer made, and a sentence Widgetic's API sends back are shown as they arrive.
 - **`error` events.** Their `message` is English: it is for your logs.
+- **What is saved with a composition.** The title of a new item ("Item 03"), "Untitled Composition" and the names a font weight or a position is saved under ("ExtraBold", "top-left") are written into the composition when they are made, so they stay English. The editor shows the weights and the positions in your language.
+- **The widget author's words.** The names, labels, descriptions and placeholders of a widget's settings, its default texts and the names of typefaces are shown as the author wrote them.
 - **Right to left.** Arabic and Hebrew words show, and numbers and dates follow the locale, but the layout does not flip.
 
 ## Tokens

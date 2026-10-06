@@ -180,6 +180,8 @@ await editor.unmount();
 | `mediaLibrary` | Your own media library for the file pickers. |
 | `googleFontsApiKey` | A Google Fonts Web Fonts API key for the font picker's list. Without one the picker lists a short set of popular families. |
 | `autosaveDelayMs` | How long after the last change the editor saves by itself. Default 2500. `0` turns autosave off. |
+| `locale` | A BCP 47 tag such as `de`: plural forms, numbers and dates, and the names of the months and weekdays in its calendars. |
+| `messages` | The editor's words in your language: one object for the editor, its file picker and its rich text editor. A key you leave out stays English. See [Show the pieces in your customers' language](/docs/partners/ui-components#show-the-pieces-in-your-customers-language). |
 
 - **Saving.** The editor saves by itself shortly after the last change. `editor.module.save()` saves what is unsaved now, `editor.module.flush()` saves everything unsaved and waits until it is (both resolve `true` when nothing is left unsaved), and `editor.module.isDirty()` tells whether anything is unsaved. A save is safe to retry: it carries an `Idempotency-Key`.
 - **`unmount()` saves first**, for up to 10 seconds, so closing the editor never loses the last edits. If some could not be saved you hear an `error` with the code `UNSAVED_ON_UNMOUNT`. `editor.module.unmount({ discard: true })` throws unsaved edits away instead.
