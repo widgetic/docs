@@ -254,11 +254,16 @@ A message is text. `{name}` is a value the File Browser puts in; a number is wri
 
 A message that cannot be used never breaks the screen: the English text of that key is shown and the console says so once. A value of the wrong shape (`messages: 'Anuluj'`, `locale: 5`) is a mistake in your code and is refused where you wrote it: `setLanguage` throws a `TypeError` that names the option and changes nothing, and a mount call fails with `MOUNT_FAILED` and the `TypeError` as its `cause`.
 
+### Pop-ups
+
+The File Browser answers a rename, a delete, a new folder and a pick with a small pop-up in the bottom right corner of the box you gave it, in the piece's theme and in your language. Their words are messages like the rest: the `toast.` keys, with `toast.regionLabel` (the name of the region a screen reader announces them in) and `toast.closeLabel` (the name of the close button). After a pick the piece says "Files selected", not the Widgetic site's "Added 2 files to the editor". The sentence under "Rename failed" or "Failed to delete" is your library's own and is shown as it arrives.
+
+Two habits come with the pop-up library. It moves focus to the newest pop-up when someone presses Alt+T anywhere on the page while one is shown, and a pop-up goes away by itself after about three seconds. You cannot move the pop-ups or switch them off yet.
+
 ### What stays as it is
 
 - **Words that belong to someone else.** What your own media library says (the message of an error you throw), your file names and your library's `label`, the names of folders a customer made, and a sentence Widgetic's API sends back are shown as they arrive.
 - **`error` events.** Their `message` is English: it is for your logs.
-- **Pop-ups.** The File Browser module draws none yet, so a `rename` or `delete` that your library refuses shows the customer nothing: your page gets the `error` event (`action` is `rename` or `delete`) and should show its own message. A list that cannot be read and an upload that fails are shown.
 - **Right to left.** Arabic and Hebrew words show, and numbers and dates follow the locale, but the layout does not flip.
 
 ## Tokens
@@ -307,7 +312,7 @@ const fileBrowser = await mountModule('file-browser', {
 });
 ```
 
-- A failure inside your functions is reported through the `error` event with `fatal: false`. The File Browser shows the customer a list that cannot be read (with "Try again") and an upload that fails (in the upload panel), but not yet a `rename` or `delete` that your library refuses: the file stays as it was and only your page hears of it, so show your own message when the event arrives. The code is `MEDIA_LIBRARY_` plus `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `NETWORK`, `INVALID_RESPONSE`, `NOT_SUPPORTED` or `FAILED`, and `action` says what the customer was doing (`load`, `upload`, `rename` or `delete`). Throw an error with a `status` property (a failed `fetch` response) and it is sorted for you.
+- A failure inside your functions is reported through the `error` event with `fatal: false`. The File Browser shows the customer a list that cannot be read (with "Try again"), an upload that fails (in the upload panel) and a `rename` or `delete` that your library refuses (in a pop-up, with your library's sentence under it): the file stays as it was, and your page hears of it as well, so use the event for your log, not for a second message. The code is `MEDIA_LIBRARY_` plus `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `NETWORK`, `INVALID_RESPONSE`, `NOT_SUPPORTED` or `FAILED`, and `action` says what the customer was doing (`load`, `upload`, `rename` or `delete`). Throw an error with a `status` property (a failed `fetch` response) and it is sorted for you.
 - Everything your functions return is checked before it is shown. A file without an id, a name or a usable address is skipped with a console warning rather than breaking the list.
 - The `url` of a file is what a widget stores and shows. Once your customer saves or publishes, everyone who sees the widget loads that address, not only the customer who picked it: give one that stays valid and needs no sign-in. A link that expires after a few minutes, or one that checks a cookie, breaks the published widget. Widgetic keeps the `id` with the file only so that the picker shows it as selected when it is opened again.
 - The composition editor and the widget creator take the same `mediaLibrary`: their file pickers then show your files.
