@@ -89,12 +89,14 @@ await fileBrowser.unmount();
 | `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. See [Tokens](#tokens). |
 | `version` | `string` | Pin an exact version of the piece, such as `1.2.0`. Default: the newest. Pin it in production. |
 | `theme` | `'light'`, `'dark'`, `'system'`, or `{ preset, mode, colors, radius, font }` | Default `light`. `system` follows the customer's setting. An object gives the piece your colours, corner radius and font. See [Make the pieces look like your product](#make-the-pieces-look-like-your-product). |
-| `locale` | `string` | A BCP 47 tag such as `en` or `de`. Accepted, but it changes nothing yet: the pieces are in English for now. |
+| `locale` | `string` | A BCP 47 tag such as `en` or `de`. The File Browser uses it for plural forms and for how numbers, dates and file sizes are written. The other pieces are in English for now and ignore it. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
+| `messages` | `{ [key]: string }` | File Browser only: the words you want to change. A key you leave out stays English. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
 | `apiUrl` | `string` | The Widgetic API. Default `https://api.widgetic.com`. |
 | `moduleBaseUrl` | `string` | Where pieces are served from. Default `https://cdn.widgetic.com/modules`. See [Versions and self-hosting](#versions-and-self-hosting). |
 | `on` | `{ [event]: handler }` | Event handlers, connected before the piece starts so you see `ready`. |
 | `signal` | `AbortSignal` | Cancels the mount, for components that can go away before the piece is up. |
 | `placeholder` | `boolean` | `false` skips the loading spinner shown while the piece downloads. |
+| `loadingLabel` | `string` | The words a screen reader says for that spinner. Default `Loading`. |
 | anything else | | Handed to the piece. File Browser: `maxSelections`, `initialFilter`, `selectLabel`, `mediaLibrary`. |
 
 `mountModule` resolves with a handle once the piece is on screen:
@@ -107,6 +109,7 @@ await fileBrowser.unmount();
   on(event, handler): () => void;                // returns a function that unsubscribes
   off(event, handler): void;
   setTheme(theme): void;                         // this piece's look alone
+  setLanguage({ locale?, messages? }): void;     // this piece's language alone (the File Browser; others say they have none)
   unmount(): Promise<void>;                      // takes the piece and its listeners down
 }
 ```
@@ -139,7 +142,7 @@ await ui.destroy();                                            // unmounts whate
 
 ## Make the pieces look like your product
 
-A piece can wear your colours, the roundness of your corners and your typeface. The components, the layout and the wording stay Widgetic's: only the look follows your design system. Each piece has a theme of its own, so the File Browser, the composition editor and the widget creator can look the same or different.
+A piece can wear your colours, the roundness of your corners and your typeface. The components and the layout stay Widgetic's: only the look follows your design system. The words can follow your language too (see [below](#show-the-pieces-in-your-customers-language)). Each piece has a theme of its own, so the File Browser, the composition editor and the widget creator can look the same or different.
 
 ```javascript
 const ui = new WidgeticUI({
@@ -202,9 +205,61 @@ A font can only be defined by the page itself, never from inside a piece. Give t
 ### What a theme cannot do yet
 
 - **The widget creator's dark look is partial.** Some of its panels write their text as fixed greys, which stay dark on a dark surface. Light themes, colours, radius and font apply everywhere in the creator, and the console says so when a creator gets a dark theme. The File Browser and the composition editor follow a dark theme fully.
-- **No layout, icons or wording.** The components and their text are Widgetic's. `locale` is not applied yet.
+- **No layout or icons.** The components are Widgetic's. The words of the File Browser can be changed (see the next section); the other pieces are in English.
 - **Colours the piece can read as they are.** No CSS variables, gradients or images.
 - **The old `ThemeConfig` shape is gone.** `{ mode, colors: { secondary, surface, text }, spacing }` never changed anything in a piece and `theme` no longer takes it. Use the settings above.
+
+## Show the pieces in your customers' language
+
+The File Browser can speak your customers' language. Every word it shows is a message with a key. You hand over the words you want to change, and every key you leave out stays English, so you can add a language one screen at a time. The composition editor and the widget creator are in English for now: they take `locale` and ignore it.
+
+```javascript
+const fileBrowser = await mountModule('file-browser', {
+  container: document.querySelector('#media-library'),
+  getToken,
+  locale: 'pl', // plural forms, numbers, dates and file sizes
+  messages: {
+    'action.cancel': 'Anuluj',
+    'action.addToEditor': 'Wybierz', // the button that hands the pick to your page
+    'toolbar.deleteMany': '{count, plural, one {Usuń # plik} few {Usuń # pliki} many {Usuń # plików} other {Usuń # pliku}}',
+  },
+});
+
+// later, while the piece is on screen, without mounting it again:
+fileBrowser.setLanguage({ locale: 'de', messages: germanMessages });
+```
+
+| Setting | |
+|---------|---|
+| `locale` | A BCP 47 tag (`de`, `pt-BR`). It decides the plural forms and how numbers, dates ("2 days ago") and file sizes are written. It translates nothing. Blank or left out is English. `new WidgeticUI({ locale })` hands it to every piece of the page. |
+| `messages` | The words you want to change, as `{ 'action.cancel': 'Anuluj', ... }`. |
+| `selectLabel` | The text of the button that hands the pick to your page, for a page that only wants to rename that button (default `Select`). `messages['action.addToEditor']` does the same and wins when both are given. |
+| `setLanguage({ locale?, messages? })` | Changes the language at once, with no new mount. A value you leave out keeps what it was. The `messages` you give **replace** all the earlier ones: a page that switches from German to French passes the French only, and `setLanguage({ locale: '', messages: {} })` goes back to English. |
+
+### Which keys there are
+
+`fileBrowser.module.defaultMessages` is an object of every key and its English text: a few hundred messages, grouped by where the words appear (`action.`, `upload.`, `dialog.`, `preview.` and so on). It always matches the version of the piece you load, and it is the list to hand to a translator.
+
+```javascript
+console.log(JSON.stringify(fileBrowser.module.defaultMessages, null, 2));
+```
+
+### Writing a message
+
+A message is text. `{name}` is a value the File Browser puts in; a number is written the way the locale writes numbers. `{count, plural, one {# file} other {# files}}` picks the form that fits the number in your customer's language: `other` is required, `=0 {none}` matches exactly 0, `#` is the number, and a language with more forms says so (Polish has `one`, `few`, `many` and `other`). `\{`, `\}`, `\#` and `\\` write the character itself. A translation keeps the `{names}` of the English message, in any order, and cannot ask for a value the message is never given.
+
+### Checking your words
+
+`fileBrowser.module.checkMessages(messages)` says what is wrong without showing anything: one sentence for each key that does not exist (with the nearest real one), value that is not text, message that does not parse, or `{name}` the message is never given. An empty list means every message will be used. Put it in a test of your page.
+
+A message that cannot be used never breaks the screen: the English text of that key is shown and the console says so once. A value of the wrong shape (`messages: 'Anuluj'`, `locale: 5`) is a mistake in your code and is refused where you wrote it: `setLanguage` throws a `TypeError` that names the option and changes nothing, and a mount call fails with `MOUNT_FAILED` and the `TypeError` as its `cause`.
+
+### What stays as it is
+
+- **Words that belong to someone else.** What your own media library says (the message of an error you throw), your file names and your library's `label`, the names of folders a customer made, and a sentence Widgetic's API sends back are shown as they arrive.
+- **`error` events.** Their `message` is English: it is for your logs.
+- **Pop-ups.** The File Browser module draws none yet, so a `rename` or `delete` that your library refuses shows the customer nothing: your page gets the `error` event (`action` is `rename` or `delete`) and should show its own message. A list that cannot be read and an upload that fails are shown.
+- **Right to left.** Arabic and Hebrew words show, and numbers and dates follow the locale, but the layout does not flip.
 
 ## Tokens
 
@@ -250,7 +305,7 @@ const fileBrowser = await mountModule('file-browser', {
 });
 ```
 
-- A failure inside your functions is shown to the customer, with "Try again" where that helps, and reported through the `error` event with `fatal: false`. The code is `MEDIA_LIBRARY_` plus `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `NETWORK`, `INVALID_RESPONSE`, `NOT_SUPPORTED` or `FAILED`, and `action` says what the customer was doing (`load`, `upload`, `rename` or `delete`). Throw an error with a `status` property (a failed `fetch` response) and it is sorted for you.
+- A failure inside your functions is reported through the `error` event with `fatal: false`. The File Browser shows the customer a list that cannot be read (with "Try again") and an upload that fails (in the upload panel), but not yet a `rename` or `delete` that your library refuses: the file stays as it was and only your page hears of it, so show your own message when the event arrives. The code is `MEDIA_LIBRARY_` plus `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `NETWORK`, `INVALID_RESPONSE`, `NOT_SUPPORTED` or `FAILED`, and `action` says what the customer was doing (`load`, `upload`, `rename` or `delete`). Throw an error with a `status` property (a failed `fetch` response) and it is sorted for you.
 - Everything your functions return is checked before it is shown. A file without an id, a name or a usable address is skipped with a console warning rather than breaking the list.
 - The `url` of a file is what a widget stores and shows. Once your customer saves or publishes, everyone who sees the widget loads that address, not only the customer who picked it: give one that stays valid and needs no sign-in. A link that expires after a few minutes, or one that checks a cookie, breaks the published widget. Widgetic keeps the `id` with the file only so that the picker shows it as selected when it is opened again.
 - The composition editor and the widget creator take the same `mediaLibrary`: their file pickers then show your files.
