@@ -206,7 +206,7 @@ Sending the same key again replaces the preset, so the call is safe to repeat an
 There are two ways. The first needs no copy.
 
 - **A composition**, for the composition editor. Create it on the preset's widget with `POST /compositions`, naming the customer as in [Filing Content Under a Managed User](#filing-content-under-a-managed-user). The widget stays yours and the composition is the customer's own content. The widget needs a published version before the composition can be shown on a page.
-- **A copy to build on**, for the widget creator. `POST /managed-users/{id}/presets/{key}/copy` gives the customer a widget of their own on a new canvas, filed under them. It needs an `Idempotency-Key`. The optional `name` (up to 120 characters) names the copy; without it the copy takes the preset's title, then the widget's own name.
+- **A copy to build on**, for the widget creator. `POST /managed-users/{id}/presets/{key}/copy` gives the customer a widget of their own on a new canvas, filed under them. It needs an `Idempotency-Key`. The optional `name` (up to 120 characters) names the copy; without it the copy takes the preset's title, then the widget's own name. If you mount the widget creator in your page, you do not need to make this call yourself: the creator offers your presets to a customer who has made nothing yet and makes the copy for them (see [Offer your presets to a new customer](/docs/partners/canvas-embedding#offer-your-presets-to-a-new-customer)). Make it yourself when you draw your own picker, and give the copy's `canvasId` and `widgetId` to the creator.
 
 ```bash
 curl -sS -X POST "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID/presets/rating/copy" \

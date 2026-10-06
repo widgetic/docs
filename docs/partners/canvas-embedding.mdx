@@ -61,6 +61,9 @@ await creator.unmount();
 | `canvasId` | The canvas to open, as `canvasChanged` gave it to you. It has to be this customer's. Without one the creator opens the customer's latest canvas, or makes a new one when they have none. |
 | `widgetId` | The widget of that canvas to open (needs `canvasId`). |
 | `startWithNewWidget` | Start from an empty canvas with a new widget instead of the latest canvas. |
+| `presets` | `'pick'` (the default) or `'off'`. A customer who has made nothing yet is shown your [presets](/docs/partners/managed-users#preset-widgets) before the creator opens, and gets a copy of the one they pick. `'off'` never shows them. See [Offer your presets to a new customer](#offer-your-presets-to-a-new-customer). |
+| `startFromPreset` | The key of one of your presets. A customer who has made nothing yet gets a copy of it without being asked, and the creator opens on it. |
+| `presetLabels` | The words of the picker, for a language or a tone of your own: `{ heading, intro, startFromScratch, startFromScratchHint, copying, copyFailed, presetGone, checking }`. Any you leave out stay English. |
 | `mediaLibrary` | Your own media library for the file pickers of the settings panel. See [Show your own media library](/docs/partners/ui-components#show-your-own-media-library). Pictures dropped on the canvas and the chat's attachments do not use it: they go through Widgetic's upload call into your own storage, which a session with the `files` surface requires (see [The files surface needs your own storage](/docs/partners/editor-sessions#the-files-surface-needs-your-own-storage)). |
 | `widgetBuilderUrl` | The origin the live previews of widgets are served from. Default: Widgetic's. |
 | `theme` | As for every piece: a mode, or your colours, corner radius and font. See [Make the pieces look like your product](/docs/partners/ui-components#make-the-pieces-look-like-your-product). |
@@ -70,7 +73,8 @@ await creator.unmount();
 
 | Event | Payload | |
 |-------|---------|---|
-| `ready` | `{ canvasId }` | The canvas is on screen. `canvasId` is `null` for a new, empty one. |
+| `ready` | `{ canvasId }` | The canvas is on screen. `canvasId` is `null` for a new, empty one. For a customer who is shown the picker it comes after they chose. |
+| `presetChosen` | `{ key, canvasId, widgetId, widgetName, warnings, automatic }` | A starting point was chosen, by the customer or by your `startFromPreset`. See [Offer your presets to a new customer](#offer-your-presets-to-a-new-customer). |
 | `canvasChanged` | `{ canvasId }` | The creator opened a canvas or made one. Keep the id and give it back as `canvasId` next time. |
 | `widgetRenamed` | `{ widgetId, name }` | The main widget has this name. Said when the canvas opens and each time the customer renames it, never twice in a row for the same name, so you can keep a title for the customer's work. |
 | `widgetPublished` | `{ widgetId, version? }` | The customer published a version of a widget. |
@@ -79,6 +83,20 @@ await creator.unmount();
 | `error` | `{ message, code?, fatal, during?, sessionEnded? }` | See [When something goes wrong](#when-something-goes-wrong). |
 
 Methods on `creator.module`: `getCanvasId()` (the canvas that is open now, or `null`). `creator.setTheme(theme)` changes its look (a mode, or settings: see [Make the pieces look like your product](/docs/partners/ui-components#make-the-pieces-look-like-your-product)). `creator.unmount()` takes the creator away.
+
+### Offer your presets to a new customer
+
+A customer who has made nothing yet would meet an empty canvas. When you have made [presets](/docs/partners/managed-users#preset-widgets), the creator shows them first: a page of cards (a thumbnail, a title and a line about it, in your order) and a *Start from scratch* button. A pick is **copied** into the customer's own work, as a canvas with one widget built on a fork of the preset's code, and the creator opens on the copy. The customer changes the copy, never your preset.
+
+- **Who sees it.** Only a customer with no canvas, on a page that gives no `canvasId` and does not ask for `startWithNewWidget`. A customer who has work goes straight to their latest canvas, and costs one question to the API. A page that gives `canvasId` back, as `canvasChanged` asks, or sets `presets: 'off'`, asks nothing at all.
+- **What your page hears.** `presetChosen` carries the copy: `key`, `canvasId`, `widgetId` and `widgetName` are `null` when the customer chose *Start from scratch*, `automatic` is `true` for `startFromPreset`, and `warnings` are the sentences the copy answered with for you (a part that could not be copied exactly). The creator then reports the copy's canvas with its own `canvasChanged`, and `ready` when it is open.
+- **A starting point for everyone.** `startFromPreset: 'welcome-quiz'` copies that preset for a customer with nothing, with no picker. When it cannot be had (the key is not one of your presets any more, the API is not answering), the picker is shown, or the plain creator when `presets` is `'off'`, and your page hears the `error` below.
+- **Never in the way.** Whatever goes wrong while looking for starting points (you have none, a request is refused or lost), the creator opens as it always did and your page hears one `error` with `fatal: false` and `during: 'presets'`. A session that is over is the creator's to announce, once, as `fatal`. A copy that fails keeps the picker on the screen with a sentence for the customer, and pressing again sends the same `Idempotency-Key`, so a copy whose answer was lost is not made twice. A preset you took away meanwhile leaves the picker with its own sentence.
+- **Words and look.** The picker is drawn with the piece's `theme`, and every word is in `presetLabels`. A word that is not a non-empty text, a `presets` that is not `'pick'` or `'off'` and a `startFromPreset` that is not a preset key are refused when the creator is made, with a message that says which.
+- **Thumbnails** are the `thumbnailUrl` you gave the preset, and only `http` and `https` addresses are drawn. They load from your page, so a strict Content-Security-Policy needs their origin in `img-src`. What does not load is replaced by the first letter of the title.
+- **What a copy costs.** Each copy forks a repository and there is no limit per customer on how many a customer makes: the API's ordinary rate limit for the customer's address is the only brake.
+
+The picker calls two routes that exist for editor sessions only, so they are not in the public API or the SDKs. If you want a picker of your own, read the list with `listPartnerPresets` and make the copy with `copyPresetForManagedUser` from your server (see [Preset Widgets](/docs/partners/managed-users#preset-widgets)), and give the copy's `canvasId` and `widgetId` to the creator.
 
 ### Remember where the customer was
 
@@ -125,7 +143,7 @@ The creator shows a problem to the customer itself. The `error` event is for you
 - **The session is over** (`sessionEnded: true`, for example `EDITOR_SESSION_EXPIRED` or `EDITOR_SESSION_REVOKED`). Mount again, with a new token from `getToken`.
 - **The `canvasId` you gave is not this customer's** (`during: 'canvas'`, code `NOT_FOUND`). Mount again without it.
 
-Either way no `ready` comes, and the creator stops asking the API. With `fatal: false` the creator carries on (a failed token refresh that will be retried, for example).
+Either way no `ready` comes, and the creator stops asking the API. With `fatal: false` the creator carries on (a failed token refresh that will be retried, or the starting points not working: `during: 'presets'`, see [Offer your presets to a new customer](#offer-your-presets-to-a-new-customer)).
 
 ### What it leaves alone
 

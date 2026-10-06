@@ -271,6 +271,8 @@ A message that cannot be used never breaks the screen: the English text of that 
 
 Return the token itself, or `{ token, expiresAt }` (an ISO string, epoch milliseconds or a `Date`). With `expiresAt` the piece renews the token in time and the customer is never interrupted. The answer of your own endpoint can pass on what Widgetic gave you.
 
+When your `getToken` answers an `'expired'` call with the very token the API had refused, the piece takes it that you have no better one. It does not ask again for five seconds, whatever asks, so a session that was ended is reported once and not once per request.
+
 An `apiKey` option is refused with `API_KEY_NOT_ALLOWED`. The key must stay on your server.
 
 ## Show your own media library
