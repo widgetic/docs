@@ -286,7 +286,7 @@ const editor = await mountModule('composition-editor', {
 editor.setLanguage({ locale: 'pl', messages: polishMessages });
 ```
 
-- **Dates follow `locale` without your help.** The names of the months and weekdays in its calendars, and the way a date is written, come from the browser. Only the names of the calendars and of their buttons (what a screen reader says) are messages. Two limits: a calendar cuts the weekday names to two letters, and the date range control writes its dates as `DD/MM/YY` in every language.
+- **Dates follow `locale` without your help.** The names of the months and weekdays in its calendars, and the way a date is written, come from the browser. Only the names of the calendars and of their buttons (what a screen reader says) are messages. The date range control shows and accepts dates the way the language writes them; typed `DD/MM/YY` still parses. Values saved in the composition stay structured dates.
 - **A change of language reaches what is on screen.** Labels and buttons change at once, and so do the banners of a composition that could not be opened and of a save that failed. A sentence the editor said once, such as why there is no preview, keeps its language until the editor says something new.
 - **Pop-ups from its file picker.** A rename, a delete, a new folder and a pick raise a small pop-up inside the module's box, in your language (`toast.` keys, including `toast.regionLabel` and `toast.closeLabel`). After a pick the module says "Files selected", not "Added … to the editor".
 
@@ -329,7 +329,7 @@ creator.setLanguage({ locale: 'de', messages: germanMessages });
 - **`error` events.** Their `message` is English: it is for your logs.
 - **What is saved with a composition.** The title of a new item ("Item 03"), "Untitled Composition" and the names a font weight or a position is saved under ("ExtraBold", "top-left") are written into the composition when they are made, so they stay English. The editor shows the weights and the positions in your language.
 - **The widget author's words.** The names, labels, descriptions and placeholders of a widget's settings, its default texts and the names of typefaces are shown as the author wrote them.
-- **What the customer and the AI write.** The prompts, the answers, the names of widgets and the code are the customer's and the AI's. In the widget creator, the few lines it writes into the conversation itself when a generation fails ("Code generation failed: ...") stay English, and the `message` of its `limitReached` event does too (use `code`).
+- **What the customer and the AI write.** The prompts, the answers, the names of widgets and the code are the customer's and the AI's. In the widget creator, lines the creator saved into the chat stay English in the API; on screen it translates known lines (a failed generation, a restore) at display time. The `message` of its `limitReached` event stays English (use `code`).
 - **What a session never draws.** The widget creator's sign-in screen, its standalone header, its debug panels, the preset **Libraries** section of the brand kit, its list of keyboard shortcuts and its composition steps are not shown in a session, so they are not translated.
 - **Right to left.** Arabic and Hebrew words show, and numbers and dates follow the locale, but the layout does not flip.
 
