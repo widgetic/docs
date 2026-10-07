@@ -294,7 +294,7 @@ editor.setLanguage({ locale: 'pl', messages: polishMessages });
 
 The widget creator takes the same `locale`, `messages` and `setLanguage`, and its `module.defaultMessages` and `module.checkMessages(messages)` work as above. Like the composition editor, **one `messages` object covers the whole creator.** It is made of parts with words of their own, and it splits what you give between them, so you never need to know which part says a word:
 
-- the creator's own words, the `creator.` keys: the widget's panel, publishing and versions, the brand kit and libraries, the limits it explains, the lines of its status bar;
+- the creator's own words, the `creator.` keys: the widget's panel, publishing and versions, the brand kit (colors, fonts and icon sources), the limits it explains, the lines of its status bar; the preset **Libraries** toggle and its add-library control appear only in creator debug mode, which the widget creator module does not turn on, but their messages stay in the catalog for hosts that do;
 - the chat's words (`chat.` keys) and the canvas's (`canvas.` keys: the toolbar, the zoom controls, the context menu, the properties panel, the words the shapes draw on the canvas);
 - the words of the starting-point picker that a customer with nothing yet is shown, the `presetPicker.` keys (`presetPicker.heading`, `presetPicker.intro`, `presetPicker.startFromScratch` and so on), and the two words of the region its pop-ups are announced in, `toast.regionLabel` and `toast.closeLabel`, which are the File Browser's keys of the same names, so one translation serves both;
 - the composition editor with its file picker and its rich text editor (the `editor.` keys, the File Browser's and `shadEditor.`). The creator's composition steps are off in a session, so these are on no screen today and a translation can leave them out.
@@ -330,7 +330,7 @@ creator.setLanguage({ locale: 'de', messages: germanMessages });
 - **What is saved with a composition.** The title of a new item ("Item 03"), "Untitled Composition" and the names a font weight or a position is saved under ("ExtraBold", "top-left") are written into the composition when they are made, so they stay English. The editor shows the weights and the positions in your language.
 - **The widget author's words.** The names, labels, descriptions and placeholders of a widget's settings, its default texts and the names of typefaces are shown as the author wrote them.
 - **What the customer and the AI write.** The prompts, the answers, the names of widgets and the code are the customer's and the AI's. In the widget creator, the few lines it writes into the conversation itself when a generation fails ("Code generation failed: ...") stay English, and the `message` of its `limitReached` event does too (use `code`).
-- **What a session never draws.** The widget creator's sign-in screen, its standalone header, its debug panels, its list of keyboard shortcuts and its composition steps are not shown in a session, so they are not translated.
+- **What a session never draws.** The widget creator's sign-in screen, its standalone header, its debug panels, the preset **Libraries** section of the brand kit, its list of keyboard shortcuts and its composition steps are not shown in a session, so they are not translated.
 - **Right to left.** Arabic and Hebrew words show, and numbers and dates follow the locale, but the layout does not flip.
 
 ## Tokens
