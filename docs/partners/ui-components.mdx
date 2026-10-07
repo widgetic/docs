@@ -288,7 +288,7 @@ editor.setLanguage({ locale: 'pl', messages: polishMessages });
 
 - **Dates follow `locale` without your help.** The names of the months and weekdays in its calendars, and the way a date is written, come from the browser. Only the names of the calendars and of their buttons (what a screen reader says) are messages. Two limits: a calendar cuts the weekday names to two letters, and the date range control writes its dates as `DD/MM/YY` in every language.
 - **A change of language reaches what is on screen.** Labels and buttons change at once, and so do the banners of a composition that could not be opened and of a save that failed. A sentence the editor said once, such as why there is no preview, keeps its language until the editor says something new.
-- **No pop-ups from its file picker yet.** The File Browser piece draws the pop-ups of a rename, a delete and a new folder. Inside the composition editor they are not drawn, so the `toast.` keys are on no screen there.
+- **Pop-ups from its file picker.** A rename, a delete, a new folder and a pick raise a small pop-up inside the module's box, in your language (`toast.` keys, including `toast.regionLabel` and `toast.closeLabel`). After a pick the module says "Files selected", not "Added … to the editor".
 
 ### The widget creator
 
