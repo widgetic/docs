@@ -63,7 +63,8 @@ await creator.unmount();
 | `startWithNewWidget` | Start from an empty canvas with a new widget instead of the latest canvas. |
 | `presets` | `'pick'` (the default) or `'off'`. A customer who has made nothing yet is shown your [presets](/docs/partners/managed-users#preset-widgets) before the creator opens, and gets a copy of the one they pick. `'off'` never shows them. See [Offer your presets to a new customer](#offer-your-presets-to-a-new-customer). |
 | `startFromPreset` | The key of one of your presets. A customer who has made nothing yet gets a copy of it without being asked, and the creator opens on it. |
-| `presetLabels` | The words of the picker, for a language or a tone of your own: `{ heading, intro, startFromScratch, startFromScratchHint, copying, copyFailed, presetGone, checking }`. Any you leave out stay English. |
+| `presetLabels` | The words of the picker, for a tone of your own: `{ heading, intro, startFromScratch, startFromScratchHint, copying, copyFailed, presetGone, checking }`. A shortcut for the eight `presetPicker.` messages: a word that `messages` also says is `messages`'s. Any word neither says stays English. |
+| `locale`, `messages` | The creator's language: the plural forms, numbers and dates, and the words as **one** object of message keys and texts for the whole creator (its own words, the chat's, the canvas's and the picker's). A key you leave out stays English. `creator.setLanguage({ locale?, messages? })` changes them while it is on screen. See [The widget creator](/docs/partners/ui-components#the-widget-creator). |
 | `mediaLibrary` | Your own media library for the file pickers of the settings panel. See [Show your own media library](/docs/partners/ui-components#show-your-own-media-library). Pictures dropped on the canvas and the chat's attachments do not use it: they go through Widgetic's upload call into your own storage, which a session with the `files` surface requires (see [The files surface needs your own storage](/docs/partners/editor-sessions#the-files-surface-needs-your-own-storage)). |
 | `widgetBuilderUrl` | The origin the live previews of widgets are served from. Default: Widgetic's. |
 | `theme` | As for every piece: a mode, or your colours, corner radius and font. The creator follows the mode, your neutral colours, your brand colour and the font; its corners are not themed yet (see [Not there yet](#not-there-yet)). See [Make the pieces look like your product](/docs/partners/ui-components#make-the-pieces-look-like-your-product). |
@@ -82,7 +83,7 @@ await creator.unmount();
 | `reloadRequested` | | The creator would have reloaded the page to recover. Unmount it and mount a new one. |
 | `error` | `{ message, code?, fatal, during?, sessionEnded? }` | See [When something goes wrong](#when-something-goes-wrong). |
 
-Methods on `creator.module`: `getCanvasId()` (the canvas that is open now, or `null`). `creator.setTheme(theme)` changes its look (a mode, or settings: see [Make the pieces look like your product](/docs/partners/ui-components#make-the-pieces-look-like-your-product)). `creator.unmount()` takes the creator away.
+Methods on `creator.module`: `getCanvasId()` (the canvas that is open now, or `null`). `creator.setTheme(theme)` changes its look (a mode, or settings: see [Make the pieces look like your product](/docs/partners/ui-components#make-the-pieces-look-like-your-product)). `creator.setLanguage({ locale?, messages? })` changes its language, and `creator.module.defaultMessages` and `creator.module.checkMessages(messages)` list its messages and check yours (see [The widget creator](/docs/partners/ui-components#the-widget-creator)). `creator.unmount()` takes the creator away.
 
 ### Offer your presets to a new customer
 

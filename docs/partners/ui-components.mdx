@@ -89,8 +89,8 @@ await fileBrowser.unmount();
 | `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. See [Tokens](#tokens). |
 | `version` | `string` | Pin an exact version of the piece, such as `1.2.0`. Default: the newest. Pin it in production. |
 | `theme` | `'light'`, `'dark'`, `'system'`, or `{ preset, mode, colors, radius, font }` | Default `light`. `system` follows the customer's setting. An object gives the piece your colours, corner radius and font. See [Make the pieces look like your product](#make-the-pieces-look-like-your-product). |
-| `locale` | `string` | A BCP 47 tag such as `en` or `de`. The File Browser and the composition editor use it for plural forms and for how numbers, dates and file sizes are written. The widget creator is in English for now and ignores it. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
-| `messages` | `{ [key]: string }` | File Browser and composition editor: the words you want to change. A key you leave out stays English. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
+| `locale` | `string` | A BCP 47 tag such as `en` or `de`. Every piece uses it for plural forms and for how numbers, dates and file sizes are written. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
+| `messages` | `{ [key]: string }` | The words you want to change, in the File Browser, the composition editor and the widget creator. A key you leave out stays English. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
 | `apiUrl` | `string` | The Widgetic API. Default `https://api.widgetic.com`. |
 | `moduleBaseUrl` | `string` | Where pieces are served from. Default `https://cdn.widgetic.com/modules`. See [Versions and self-hosting](#versions-and-self-hosting). |
 | `on` | `{ [event]: handler }` | Event handlers, connected before the piece starts so you see `ready`. |
@@ -109,7 +109,7 @@ await fileBrowser.unmount();
   on(event, handler): () => void;                // returns a function that unsubscribes
   off(event, handler): void;
   setTheme(theme): void;                         // this piece's look alone
-  setLanguage({ locale?, messages? }): void;     // this piece's language alone (not the widget creator yet: it says it has none)
+  setLanguage({ locale?, messages? }): void;     // this piece's language alone
   unmount(): Promise<void>;                      // takes the piece and its listeners down
 }
 ```
@@ -211,7 +211,7 @@ A font can only be defined by the page itself, never from inside a piece. Give t
 
 ## Show the pieces in your customers' language
 
-The File Browser and the composition editor can speak your customers' language. Every word they show is a message with a key. You hand over the words you want to change, and every key you leave out stays English, so you can add a language one screen at a time. The widget creator is in English for now: it takes `locale` and ignores it. The examples are the File Browser's; [The composition editor](#the-composition-editor) says what is different.
+The File Browser, the composition editor and the widget creator can speak your customers' language. Every word they show is a message with a key. You hand over the words you want to change, and every key you leave out stays English, so you can add a language one screen at a time. The examples are the File Browser's; [The composition editor](#the-composition-editor) and [The widget creator](#the-widget-creator) say what is different.
 
 ```javascript
 const fileBrowser = await mountModule('file-browser', {
@@ -290,12 +290,47 @@ editor.setLanguage({ locale: 'pl', messages: polishMessages });
 - **A change of language reaches what is on screen.** Labels and buttons change at once, and so do the banners of a composition that could not be opened and of a save that failed. A sentence the editor said once, such as why there is no preview, keeps its language until the editor says something new.
 - **No pop-ups from its file picker yet.** The File Browser piece draws the pop-ups of a rename, a delete and a new folder. Inside the composition editor they are not drawn, so the `toast.` keys are on no screen there.
 
+### The widget creator
+
+The widget creator takes the same `locale`, `messages` and `setLanguage`, and its `module.defaultMessages` and `module.checkMessages(messages)` work as above. Like the composition editor, **one `messages` object covers the whole creator.** It is made of parts with words of their own, and it splits what you give between them, so you never need to know which part says a word:
+
+- the creator's own words, the `creator.` keys: the widget's panel, publishing and versions, the brand kit and libraries, the limits it explains, the lines of its status bar;
+- the chat's words (`chat.` keys) and the canvas's (`canvas.` keys: the toolbar, the zoom controls, the context menu, the properties panel, the words the shapes draw on the canvas);
+- the words of the starting-point picker that a customer with nothing yet is shown, the `presetPicker.` keys (`presetPicker.heading`, `presetPicker.intro`, `presetPicker.startFromScratch` and so on), and the two words of the region its pop-ups are announced in, `toast.regionLabel` and `toast.closeLabel`, which are the File Browser's keys of the same names, so one translation serves both;
+- the composition editor with its file picker and its rich text editor (the `editor.` keys, the File Browser's and `shadEditor.`). The creator's composition steps are off in a session, so these are on no screen today and a translation can leave them out.
+
+`creator.module.defaultMessages` lists them all, with their English text: more than 1,300.
+
+```javascript
+const creator = await mountModule('widget-creator', {
+  container: document.querySelector('#creator'),
+  getToken,
+  locale: 'pl',
+  messages: {
+    'canvas.tool.select': 'Zaznacz', // a word of the canvas
+    'chat.input.placeholder': 'Wpisz wiadomość...', // a word of the chat
+    'creator.common.setLive': 'Ustaw jako aktywną', // a word of the creator
+    'presetPicker.heading': 'Od czego chcesz zacząć?', // a word of the picker
+  },
+});
+
+// everything that is open changes at once, and what the customer made stays
+creator.setLanguage({ locale: 'de', messages: germanMessages });
+```
+
+- **Dates follow `locale` without your help.** The date and time of a version are written the way the language writes them (`10/01/2026 14:05` in English, `01.10.2026 14:05` in Polish, `2026/10/01 14:05` in Japanese). Only the words around them are messages.
+- **A change of language reaches what is on screen.** The canvas, the chat, the panels, the menus, the picker and the pop-ups change at once, with no new mount. As for the other pieces, `setLanguage` keeps what you leave out and replaces the messages.
+- **`presetLabels` still works.** It is a shortcut for the picker's eight messages and sits under `messages`: when both say a word, `messages` wins, and it stays in force after `setLanguage` for the words the new messages leave out.
+- **A mistake never breaks the screen.** A key that none of the parts has is said once in the console as `[Creator] ...`, with the nearest real key. A text that cannot be used is said once by the part that owns the key (`[Creator]`, `[Chat]`, `[Canvas]`, `[Editor]`, `[FileBrowser]`, `[ShadEditor]`, or `[WidgetCreatorModule]` for the picker and the pop-up region), and the English text of that message is shown.
+
 ### What stays as it is
 
 - **Words that belong to someone else.** What your own media library says (the message of an error you throw), your file names and your library's `label`, the names of folders a customer made, and a sentence Widgetic's API sends back are shown as they arrive.
 - **`error` events.** Their `message` is English: it is for your logs.
 - **What is saved with a composition.** The title of a new item ("Item 03"), "Untitled Composition" and the names a font weight or a position is saved under ("ExtraBold", "top-left") are written into the composition when they are made, so they stay English. The editor shows the weights and the positions in your language.
 - **The widget author's words.** The names, labels, descriptions and placeholders of a widget's settings, its default texts and the names of typefaces are shown as the author wrote them.
+- **What the customer and the AI write.** The prompts, the answers, the names of widgets and the code are the customer's and the AI's. In the widget creator, the few lines it writes into the conversation itself when a generation fails ("Code generation failed: ...") stay English, and the `message` of its `limitReached` event does too (use `code`).
+- **What a session never draws.** The widget creator's sign-in screen, its standalone header, its debug panels, its list of keyboard shortcuts and its composition steps are not shown in a session, so they are not translated.
 - **Right to left.** Arabic and Hebrew words show, and numbers and dates follow the locale, but the layout does not flip.
 
 ## Tokens
