@@ -170,38 +170,6 @@ app.post('/webhooks/widgetic', (req, res) => {
 });
 ```
 
-## Zapier
-
-Zapier connects Widgetic to other apps. The Zapier page in your Widgetic account (Integrations → Zapier) shows the current setup steps and the link to the Widgetic app in Zapier.
-
-<Note>
-  The Widgetic app is not listed in Zapier's public app directory yet. The account behind the key needs a paid plan: a key from a trial or free account is refused with `403` and the code `AUTHZ_PLAN_RESTRICTION`.
-</Note>
-
-### Setup
-
-1. Copy your API key from the API Keys page of your Widgetic account (create one there if you need a new one)
-2. In Zapier, choose "Connect Widgetic Account" and enter the key when asked
-3. Create a Zap with a trigger and an action, test it, and turn it on
-
-### Triggers
-
-- **Widget Interaction**: when users interact with a widget
-- **Milestone Reached**: when widgets reach completion thresholds
-- **Engagement Threshold**: when user engagement exceeds a level
-- **Content Updated**: when widget content is modified
-
-### Actions
-
-- **Update Widget Content**: change the content of a widget
-- **Trigger Widget Actions**: run a widget-specific function
-- **Broadcast Messages**: send a message to several widgets
-- **Trigger Overlays**: show an overlay with custom content
-
-<Note>
-  Widgetic sends at most 60 events a minute to one Zap. Events over that are not sent.
-</Note>
-
 ## Other Languages
 
 Widgetic does not publish a Python or PHP package. Any language that can send HTTPS requests can call the REST API, and every endpoint in the [API Reference](/api-reference/introduction) has request samples in several languages. For TypeScript, use the [API SDK](/resources/sdks).
