@@ -74,7 +74,7 @@ AI generations are also held to a usage budget per hour and per day, and to a nu
 
 One credit pays for one AI generation. See [Credits & Billing](/docs/partners/credits-billing#what-a-credit-costs) for what spends credits.
 
-**Largest single file.** On Solo and Teams, a file can be up to 250 MB, whether it is uploaded in the app or saved to the media library by an AI assistant. On Free and Partner, a file saved by an assistant or sent in one request can be up to 10 MB, and a resumable upload from the app up to 100 MB. `GET /uploads/limits` returns the limit for the account that asks (`tus_max_bytes`).
+**Largest single file.** The same on every plan: a file can be up to 250 MB, whether it is uploaded from the app (a resumable upload) or saved to the media library by an AI assistant. A file sent in one API request (`POST /uploads`) can be up to 10 MB. `GET /uploads/limits` returns both limits (`multipart_max_bytes` for one request, `tus_max_bytes` for a resumable upload).
 
 ### Checking Your Credits
 
