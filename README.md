@@ -24,13 +24,15 @@ npm install
 npm run dev
 ```
 
-This starts the Mintlify dev server at `http://localhost:3000`.
+This starts the Mintlify dev server at `http://localhost:3003`.
 
 ### Building
 
 ```bash
 npm run build
 ```
+
+Mintlify's v4 CLI has no `build` command; `npm run build` runs `mintlify validate`, the strict check that parses every page and fails on a broken one. Mintlify itself builds the site on deploy.
 
 ## Syncing OpenAPI Spec
 
