@@ -338,6 +338,158 @@
         ]
       }
     },
+    "/widgets/{id}/composition": {
+      "post": {
+        "operationId": "createCompositionFromWidget",
+        "summary": "Create a composition for a widget in one call",
+        "description": "After a managed user publishes a widget from the creator, call this with the widget id, the customer's\nmanaged user (when the widget is not already filed under one), and optional content, design, embed settings\nand locale. Every input is validated before a single insert; a failure never leaves a half-made composition.\n\nWhen the widget is already tagged with a managed user, you may omit `managed_user_id`. When you send it, it\nmust match that tag.\n\nThe widget must be published. The `Idempotency-Key` header is required.\n",
+        "tags": [
+          "Widgets"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The widget id"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyRequired"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "object"
+                  },
+                  "design": {
+                    "type": "object",
+                    "nullable": true
+                  },
+                  "embed_settings": {
+                    "type": "object"
+                  },
+                  "locale": {
+                    "type": "string"
+                  },
+                  "managed_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              },
+              "example": {
+                "name": "Published widget embed",
+                "managed_user_id": "123e4567-e89b-12d3-a456-426614174000",
+                "locale": "de-DE"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Composition created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Composition"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (`VALIDATION_ERROR`)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Widget or managed user not found"
+          },
+          "409": {
+            "description": "Managed user inactive or widget not published"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -X POST 'https://api.widgetic.com/v1/widgets/123e4567-e89b-12d3-a456-426614174000/composition' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H \"Idempotency-Key: $(uuidgen)\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  \"name\": \"Published widget embed\",\n  \"managed_user_id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"locale\": \"de-DE\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "Node.js",
+            "source": "import { randomUUID } from 'node:crypto';\nimport { WidgetsApi } from '@widgetic/api-sdk';\n\nconst api = new WidgetsApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.createCompositionFromWidget({\n    id: '123e4567-e89b-12d3-a456-426614174000',\n    createCompositionFromWidgetRequest: {\n      name: 'Published widget embed',\n      managed_user_id: '123e4567-e89b-12d3-a456-426614174000',\n      locale: 'de-DE'\n    },\n    idempotencyKey: randomUUID()\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import uuid\nimport requests\n\npayload = r\"\"\"\n{\n  \"name\": \"Published widget embed\",\n  \"managed_user_id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"locale\": \"de-DE\"\n}\n\"\"\"\n\nheaders = {\n    \"Authorization\": \"Bearer YOUR_API_KEY\",\n    \"Content-Type\": \"application/json\",\n    \"Idempotency-Key\": str(uuid.uuid4()),\n}\n\nresponse = requests.request(\"POST\", \"https://api.widgetic.com/v1/widgets/123e4567-e89b-12d3-a456-426614174000/composition\", headers=headers, data=payload)\nprint(response.status_code)\nprint(response.text)"
+          },
+          {
+            "lang": "go",
+            "label": "Go",
+            "source": "package main\n\nimport (\n    \"fmt\"\n    \"io\"\n    \"net/http\"\n    \"strings\"\n    \"time\"\n)\n\nfunc main() {\n    payload := strings.NewReader(`{\n  \"name\": \"Published widget embed\",\n  \"managed_user_id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"locale\": \"de-DE\"\n}`)\n    request, err := http.NewRequest(\"POST\", \"https://api.widgetic.com/v1/widgets/123e4567-e89b-12d3-a456-426614174000/composition\", payload)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    request.Header.Set(\"Authorization\", \"Bearer YOUR_API_KEY\")\n    request.Header.Set(\"Content-Type\", \"application/json\")\n    request.Header.Set(\"Idempotency-Key\", fmt.Sprintf(\"example-%d\", time.Now().UnixNano()))\n\n    response, err := http.DefaultClient.Do(request)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    defer response.Body.Close()\n\n    body, _ := io.ReadAll(response.Body)\n    fmt.Println(response.StatusCode, string(body))\n}"
+          },
+          {
+            "lang": "ruby",
+            "label": "Ruby",
+            "source": "require 'net/http'\nrequire 'securerandom'\n\nuri = URI('https://api.widgetic.com/v1/widgets/123e4567-e89b-12d3-a456-426614174000/composition')\nrequest = Net::HTTP::Post.new(uri)\nrequest['Authorization'] = 'Bearer YOUR_API_KEY'\nrequest['Content-Type'] = 'application/json'\nrequest['Idempotency-Key'] = SecureRandom.uuid\nrequest.body = <<~'JSON'\n  {\n    \"name\": \"Published widget embed\",\n    \"managed_user_id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"locale\": \"de-DE\"\n  }\nJSON\n\nresponse = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }\nputs response.code\nputs response.body"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n\n$payload = <<<'JSON'\n{\n  \"name\": \"Published widget embed\",\n  \"managed_user_id\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"locale\": \"de-DE\"\n}\nJSON;\n\n$curl = curl_init('https://api.widgetic.com/v1/widgets/123e4567-e89b-12d3-a456-426614174000/composition');\ncurl_setopt_array($curl, [\n    CURLOPT_CUSTOMREQUEST => 'POST',\n    CURLOPT_RETURNTRANSFER => true,\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer YOUR_API_KEY',\n        'Content-Type: application/json',\n        'Idempotency-Key: ' . bin2hex(random_bytes(16)),\n    ],\n    CURLOPT_POSTFIELDS => $payload,\n]);\n\n$response = curl_exec($curl);\nif ($response === false) {\n    echo 'Error: ' . curl_error($curl);\n} else {\n    echo curl_getinfo($curl, CURLINFO_HTTP_CODE) . \"\\n\" . $response;\n}\ncurl_close($curl);"
+          },
+          {
+            "lang": "java",
+            "label": "Java",
+            "source": "import java.net.URI;\nimport java.net.http.HttpClient;\nimport java.net.http.HttpRequest;\nimport java.net.http.HttpResponse;\nimport java.util.UUID;\n\npublic class Example {\n    public static void main(String[] args) throws Exception {\n        HttpRequest request = HttpRequest.newBuilder()\n            .uri(URI.create(\"https://api.widgetic.com/v1/widgets/123e4567-e89b-12d3-a456-426614174000/composition\"))\n            .header(\"Authorization\", \"Bearer YOUR_API_KEY\")\n            .header(\"Content-Type\", \"application/json\")\n            .header(\"Idempotency-Key\", UUID.randomUUID().toString())\n            .method(\"POST\", HttpRequest.BodyPublishers.ofString(\"{\\n  \\\"name\\\": \\\"Published widget embed\\\",\\n  \\\"managed_user_id\\\": \\\"123e4567-e89b-12d3-a456-426614174000\\\",\\n  \\\"locale\\\": \\\"de-DE\\\"\\n}\"))\n            .build();\n\n        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());\n        System.out.println(response.statusCode() + \" \" + response.body());\n    }\n}"
+          },
+          {
+            "lang": "csharp",
+            "label": "C#",
+            "source": "using System;\nusing System.Net.Http;\nusing System.Text;\n\nusing var client = new HttpClient();\nvar request = new HttpRequestMessage(HttpMethod.Post, \"https://api.widgetic.com/v1/widgets/123e4567-e89b-12d3-a456-426614174000/composition\");\nrequest.Headers.Add(\"Authorization\", \"Bearer YOUR_API_KEY\");\nrequest.Headers.Add(\"Idempotency-Key\", Guid.NewGuid().ToString());\nrequest.Content = new StringContent(\"{\\n  \\\"name\\\": \\\"Published widget embed\\\",\\n  \\\"managed_user_id\\\": \\\"123e4567-e89b-12d3-a456-426614174000\\\",\\n  \\\"locale\\\": \\\"de-DE\\\"\\n}\", Encoding.UTF8, \"application/json\");\n\nvar response = await client.SendAsync(request);\nConsole.WriteLine($\"{(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}\");"
+          }
+        ]
+      }
+    },
     "/widgets/batch": {
       "post": {
         "operationId": "getWidgetsBatch",
@@ -3822,6 +3974,221 @@
         ]
       }
     },
+    "/partners/{partnerId}/design-defaults": {
+      "get": {
+        "operationId": "getPartnerDesignDefaults",
+        "summary": "Read partner-wide design defaults",
+        "tags": [
+          "Partners"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "partner",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "partnerId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The stored default, or null when unset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "design": {
+                          "type": "object",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Partner not found"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -X GET 'https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults' \\\n  -H 'Authorization: Bearer YOUR_API_KEY'"
+          },
+          {
+            "lang": "javascript",
+            "label": "Node.js",
+            "source": "import { PartnersApi } from '@widgetic/api-sdk';\n\nconst api = new PartnersApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.getPartnerDesignDefaults({\n    partnerId: '123e4567-e89b-12d3-a456-426614174000'\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\nheaders = {\n    \"Authorization\": \"Bearer YOUR_API_KEY\",\n}\n\nresponse = requests.request(\"GET\", \"https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults\", headers=headers)\nprint(response.status_code)\nprint(response.text)"
+          },
+          {
+            "lang": "go",
+            "label": "Go",
+            "source": "package main\n\nimport (\n    \"fmt\"\n    \"io\"\n    \"net/http\"\n)\n\nfunc main() {\n    request, err := http.NewRequest(\"GET\", \"https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults\", nil)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    request.Header.Set(\"Authorization\", \"Bearer YOUR_API_KEY\")\n\n    response, err := http.DefaultClient.Do(request)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    defer response.Body.Close()\n\n    body, _ := io.ReadAll(response.Body)\n    fmt.Println(response.StatusCode, string(body))\n}"
+          },
+          {
+            "lang": "ruby",
+            "label": "Ruby",
+            "source": "require 'net/http'\n\nuri = URI('https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults')\nrequest = Net::HTTP::Get.new(uri)\nrequest['Authorization'] = 'Bearer YOUR_API_KEY'\n\nresponse = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }\nputs response.code\nputs response.body"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n\n$curl = curl_init('https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults');\ncurl_setopt_array($curl, [\n    CURLOPT_CUSTOMREQUEST => 'GET',\n    CURLOPT_RETURNTRANSFER => true,\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer YOUR_API_KEY',\n    ],\n]);\n\n$response = curl_exec($curl);\nif ($response === false) {\n    echo 'Error: ' . curl_error($curl);\n} else {\n    echo curl_getinfo($curl, CURLINFO_HTTP_CODE) . \"\\n\" . $response;\n}\ncurl_close($curl);"
+          },
+          {
+            "lang": "java",
+            "label": "Java",
+            "source": "import java.net.URI;\nimport java.net.http.HttpClient;\nimport java.net.http.HttpRequest;\nimport java.net.http.HttpResponse;\n\npublic class Example {\n    public static void main(String[] args) throws Exception {\n        HttpRequest request = HttpRequest.newBuilder()\n            .uri(URI.create(\"https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults\"))\n            .header(\"Authorization\", \"Bearer YOUR_API_KEY\")\n            .method(\"GET\", HttpRequest.BodyPublishers.noBody())\n            .build();\n\n        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());\n        System.out.println(response.statusCode() + \" \" + response.body());\n    }\n}"
+          },
+          {
+            "lang": "csharp",
+            "label": "C#",
+            "source": "using System;\nusing System.Net.Http;\n\nusing var client = new HttpClient();\nvar request = new HttpRequestMessage(HttpMethod.Get, \"https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults\");\nrequest.Headers.Add(\"Authorization\", \"Bearer YOUR_API_KEY\");\n\nvar response = await client.SendAsync(request);\nConsole.WriteLine($\"{(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}\");"
+          }
+        ]
+      },
+      "put": {
+        "operationId": "setPartnerDesignDefaults",
+        "summary": "Set or clear partner-wide design defaults",
+        "description": "Send `{ \"design\": { ... } }` or `{ \"design\": null }` to remove. New compositions merge this layer over the\nwidget base and under each managed user's default and the request body.\n",
+        "tags": [
+          "Partners"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "partner",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "partnerId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "design"
+                ],
+                "properties": {
+                  "design": {
+                    "type": "object",
+                    "nullable": true
+                  }
+                }
+              },
+              "example": {
+                "design": {
+                  "theme": {
+                    "radius": 12
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Defaults saved"
+          },
+          "400": {
+            "description": "Invalid design document (`VALIDATION_ERROR`)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Partner not found"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -X PUT 'https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  \"design\": {\n    \"theme\": {\n      \"radius\": 12\n    }\n  }\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "Node.js",
+            "source": "import { PartnersApi } from '@widgetic/api-sdk';\n\nconst api = new PartnersApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.setPartnerDesignDefaults({\n    partnerId: '123e4567-e89b-12d3-a456-426614174000',\n    setPartnerDesignDefaultsRequest: {\n      design: {\n        theme: {\n          radius: 12\n        }\n      }\n    }\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\npayload = r\"\"\"\n{\n  \"design\": {\n    \"theme\": {\n      \"radius\": 12\n    }\n  }\n}\n\"\"\"\n\nheaders = {\n    \"Authorization\": \"Bearer YOUR_API_KEY\",\n    \"Content-Type\": \"application/json\",\n}\n\nresponse = requests.request(\"PUT\", \"https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults\", headers=headers, data=payload)\nprint(response.status_code)\nprint(response.text)"
+          },
+          {
+            "lang": "go",
+            "label": "Go",
+            "source": "package main\n\nimport (\n    \"fmt\"\n    \"io\"\n    \"net/http\"\n    \"strings\"\n)\n\nfunc main() {\n    payload := strings.NewReader(`{\n  \"design\": {\n    \"theme\": {\n      \"radius\": 12\n    }\n  }\n}`)\n    request, err := http.NewRequest(\"PUT\", \"https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults\", payload)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    request.Header.Set(\"Authorization\", \"Bearer YOUR_API_KEY\")\n    request.Header.Set(\"Content-Type\", \"application/json\")\n\n    response, err := http.DefaultClient.Do(request)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    defer response.Body.Close()\n\n    body, _ := io.ReadAll(response.Body)\n    fmt.Println(response.StatusCode, string(body))\n}"
+          },
+          {
+            "lang": "ruby",
+            "label": "Ruby",
+            "source": "require 'net/http'\n\nuri = URI('https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults')\nrequest = Net::HTTP::Put.new(uri)\nrequest['Authorization'] = 'Bearer YOUR_API_KEY'\nrequest['Content-Type'] = 'application/json'\nrequest.body = <<~'JSON'\n  {\n    \"design\": {\n      \"theme\": {\n        \"radius\": 12\n      }\n    }\n  }\nJSON\n\nresponse = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }\nputs response.code\nputs response.body"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n\n$payload = <<<'JSON'\n{\n  \"design\": {\n    \"theme\": {\n      \"radius\": 12\n    }\n  }\n}\nJSON;\n\n$curl = curl_init('https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults');\ncurl_setopt_array($curl, [\n    CURLOPT_CUSTOMREQUEST => 'PUT',\n    CURLOPT_RETURNTRANSFER => true,\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer YOUR_API_KEY',\n        'Content-Type: application/json',\n    ],\n    CURLOPT_POSTFIELDS => $payload,\n]);\n\n$response = curl_exec($curl);\nif ($response === false) {\n    echo 'Error: ' . curl_error($curl);\n} else {\n    echo curl_getinfo($curl, CURLINFO_HTTP_CODE) . \"\\n\" . $response;\n}\ncurl_close($curl);"
+          },
+          {
+            "lang": "java",
+            "label": "Java",
+            "source": "import java.net.URI;\nimport java.net.http.HttpClient;\nimport java.net.http.HttpRequest;\nimport java.net.http.HttpResponse;\n\npublic class Example {\n    public static void main(String[] args) throws Exception {\n        HttpRequest request = HttpRequest.newBuilder()\n            .uri(URI.create(\"https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults\"))\n            .header(\"Authorization\", \"Bearer YOUR_API_KEY\")\n            .header(\"Content-Type\", \"application/json\")\n            .method(\"PUT\", HttpRequest.BodyPublishers.ofString(\"{\\n  \\\"design\\\": {\\n    \\\"theme\\\": {\\n      \\\"radius\\\": 12\\n    }\\n  }\\n}\"))\n            .build();\n\n        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());\n        System.out.println(response.statusCode() + \" \" + response.body());\n    }\n}"
+          },
+          {
+            "lang": "csharp",
+            "label": "C#",
+            "source": "using System;\nusing System.Net.Http;\nusing System.Text;\n\nusing var client = new HttpClient();\nvar request = new HttpRequestMessage(HttpMethod.Put, \"https://api.widgetic.com/v1/partners/123e4567-e89b-12d3-a456-426614174000/design-defaults\");\nrequest.Headers.Add(\"Authorization\", \"Bearer YOUR_API_KEY\");\nrequest.Content = new StringContent(\"{\\n  \\\"design\\\": {\\n    \\\"theme\\\": {\\n      \\\"radius\\\": 12\\n    }\\n  }\\n}\", Encoding.UTF8, \"application/json\");\n\nvar response = await client.SendAsync(request);\nConsole.WriteLine($\"{(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}\");"
+          }
+        ]
+      }
+    },
     "/partners/{partnerId}/storage/usage": {
       "get": {
         "operationId": "getPartnerStorageUsage",
@@ -7301,6 +7668,380 @@
             "lang": "csharp",
             "label": "C#",
             "source": "using System;\nusing System.Net.Http;\nusing System.Text;\n\nusing var client = new HttpClient();\nvar request = new HttpRequestMessage(HttpMethod.Post, \"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/presets/example/copy\");\nrequest.Headers.Add(\"Authorization\", \"Bearer YOUR_API_KEY\");\nrequest.Headers.Add(\"Idempotency-Key\", Guid.NewGuid().ToString());\nrequest.Content = new StringContent(\"{\\n  \\\"name\\\": \\\"Example name\\\"\\n}\", Encoding.UTF8, \"application/json\");\n\nvar response = await client.SendAsync(request);\nConsole.WriteLine($\"{(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}\");"
+          }
+        ]
+      }
+    },
+    "/managed-users/{id}/presets/{key}/composition": {
+      "post": {
+        "operationId": "createCompositionFromPreset",
+        "summary": "Create a composition from one of your presets in one call",
+        "description": "Validates the name, optional content, design, embed settings and locale, then creates a draft composition\nfiled under the managed user, built on the preset's widget, in a single insert. A failure never leaves a\nhalf-made composition.\n\nThe preset's widget must be published. The managed user must be yours and active.\n\nThe `Idempotency-Key` header is required (`400` without it). Send the same key when you retry, so one\ncomposition is created, not two.\n",
+        "tags": [
+          "Managed Users"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyRequired"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "object"
+                  },
+                  "design": {
+                    "type": "object",
+                    "nullable": true
+                  },
+                  "embed_settings": {
+                    "type": "object"
+                  },
+                  "locale": {
+                    "type": "string",
+                    "description": "BCP-47 language tag stored on embed settings for the widget runtime"
+                  }
+                }
+              },
+              "example": {
+                "name": "Customer rating page",
+                "embed_settings": {
+                  "width": 640,
+                  "height": 480
+                },
+                "locale": "fr-FR"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Composition created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Composition"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed (`VALIDATION_ERROR`)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Managed user not found (`MANAGED_USER_NOT_FOUND`) or preset not found (`PRESET_NOT_FOUND`)"
+          },
+          "409": {
+            "description": "Managed user inactive (`MANAGED_USER_INACTIVE`) or widget not published (`WIDGET_NOT_PUBLISHED`)"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -X POST 'https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/presets/example/composition' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H \"Idempotency-Key: $(uuidgen)\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  \"name\": \"Customer rating page\",\n  \"embed_settings\": {\n    \"width\": 640,\n    \"height\": 480\n  },\n  \"locale\": \"fr-FR\"\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "Node.js",
+            "source": "import { randomUUID } from 'node:crypto';\nimport { ManagedUsersApi } from '@widgetic/api-sdk';\n\nconst api = new ManagedUsersApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.createCompositionFromPreset({\n    id: '123e4567-e89b-12d3-a456-426614174000',\n    key: 'example',\n    createCompositionFromPresetRequest: {\n      name: 'Customer rating page',\n      embed_settings: {\n        width: 640,\n        height: 480\n      },\n      locale: 'fr-FR'\n    },\n    idempotencyKey: randomUUID()\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import uuid\nimport requests\n\npayload = r\"\"\"\n{\n  \"name\": \"Customer rating page\",\n  \"embed_settings\": {\n    \"width\": 640,\n    \"height\": 480\n  },\n  \"locale\": \"fr-FR\"\n}\n\"\"\"\n\nheaders = {\n    \"Authorization\": \"Bearer YOUR_API_KEY\",\n    \"Content-Type\": \"application/json\",\n    \"Idempotency-Key\": str(uuid.uuid4()),\n}\n\nresponse = requests.request(\"POST\", \"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/presets/example/composition\", headers=headers, data=payload)\nprint(response.status_code)\nprint(response.text)"
+          },
+          {
+            "lang": "go",
+            "label": "Go",
+            "source": "package main\n\nimport (\n    \"fmt\"\n    \"io\"\n    \"net/http\"\n    \"strings\"\n    \"time\"\n)\n\nfunc main() {\n    payload := strings.NewReader(`{\n  \"name\": \"Customer rating page\",\n  \"embed_settings\": {\n    \"width\": 640,\n    \"height\": 480\n  },\n  \"locale\": \"fr-FR\"\n}`)\n    request, err := http.NewRequest(\"POST\", \"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/presets/example/composition\", payload)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    request.Header.Set(\"Authorization\", \"Bearer YOUR_API_KEY\")\n    request.Header.Set(\"Content-Type\", \"application/json\")\n    request.Header.Set(\"Idempotency-Key\", fmt.Sprintf(\"example-%d\", time.Now().UnixNano()))\n\n    response, err := http.DefaultClient.Do(request)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    defer response.Body.Close()\n\n    body, _ := io.ReadAll(response.Body)\n    fmt.Println(response.StatusCode, string(body))\n}"
+          },
+          {
+            "lang": "ruby",
+            "label": "Ruby",
+            "source": "require 'net/http'\nrequire 'securerandom'\n\nuri = URI('https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/presets/example/composition')\nrequest = Net::HTTP::Post.new(uri)\nrequest['Authorization'] = 'Bearer YOUR_API_KEY'\nrequest['Content-Type'] = 'application/json'\nrequest['Idempotency-Key'] = SecureRandom.uuid\nrequest.body = <<~'JSON'\n  {\n    \"name\": \"Customer rating page\",\n    \"embed_settings\": {\n      \"width\": 640,\n      \"height\": 480\n    },\n    \"locale\": \"fr-FR\"\n  }\nJSON\n\nresponse = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }\nputs response.code\nputs response.body"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n\n$payload = <<<'JSON'\n{\n  \"name\": \"Customer rating page\",\n  \"embed_settings\": {\n    \"width\": 640,\n    \"height\": 480\n  },\n  \"locale\": \"fr-FR\"\n}\nJSON;\n\n$curl = curl_init('https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/presets/example/composition');\ncurl_setopt_array($curl, [\n    CURLOPT_CUSTOMREQUEST => 'POST',\n    CURLOPT_RETURNTRANSFER => true,\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer YOUR_API_KEY',\n        'Content-Type: application/json',\n        'Idempotency-Key: ' . bin2hex(random_bytes(16)),\n    ],\n    CURLOPT_POSTFIELDS => $payload,\n]);\n\n$response = curl_exec($curl);\nif ($response === false) {\n    echo 'Error: ' . curl_error($curl);\n} else {\n    echo curl_getinfo($curl, CURLINFO_HTTP_CODE) . \"\\n\" . $response;\n}\ncurl_close($curl);"
+          },
+          {
+            "lang": "java",
+            "label": "Java",
+            "source": "import java.net.URI;\nimport java.net.http.HttpClient;\nimport java.net.http.HttpRequest;\nimport java.net.http.HttpResponse;\nimport java.util.UUID;\n\npublic class Example {\n    public static void main(String[] args) throws Exception {\n        HttpRequest request = HttpRequest.newBuilder()\n            .uri(URI.create(\"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/presets/example/composition\"))\n            .header(\"Authorization\", \"Bearer YOUR_API_KEY\")\n            .header(\"Content-Type\", \"application/json\")\n            .header(\"Idempotency-Key\", UUID.randomUUID().toString())\n            .method(\"POST\", HttpRequest.BodyPublishers.ofString(\"{\\n  \\\"name\\\": \\\"Customer rating page\\\",\\n  \\\"embed_settings\\\": {\\n    \\\"width\\\": 640,\\n    \\\"height\\\": 480\\n  },\\n  \\\"locale\\\": \\\"fr-FR\\\"\\n}\"))\n            .build();\n\n        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());\n        System.out.println(response.statusCode() + \" \" + response.body());\n    }\n}"
+          },
+          {
+            "lang": "csharp",
+            "label": "C#",
+            "source": "using System;\nusing System.Net.Http;\nusing System.Text;\n\nusing var client = new HttpClient();\nvar request = new HttpRequestMessage(HttpMethod.Post, \"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/presets/example/composition\");\nrequest.Headers.Add(\"Authorization\", \"Bearer YOUR_API_KEY\");\nrequest.Headers.Add(\"Idempotency-Key\", Guid.NewGuid().ToString());\nrequest.Content = new StringContent(\"{\\n  \\\"name\\\": \\\"Customer rating page\\\",\\n  \\\"embed_settings\\\": {\\n    \\\"width\\\": 640,\\n    \\\"height\\\": 480\\n  },\\n  \\\"locale\\\": \\\"fr-FR\\\"\\n}\", Encoding.UTF8, \"application/json\");\n\nvar response = await client.SendAsync(request);\nConsole.WriteLine($\"{(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}\");"
+          }
+        ]
+      }
+    },
+    "/managed-users/{id}/design-defaults": {
+      "get": {
+        "operationId": "getManagedUserDesignDefaults",
+        "summary": "Read design defaults for one managed user",
+        "tags": [
+          "Managed Users"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "partner",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The stored default, or null when unset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "design": {
+                          "type": "object",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Managed user not found (`MANAGED_USER_NOT_FOUND`)"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -X GET 'https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults' \\\n  -H 'Authorization: Bearer YOUR_API_KEY'"
+          },
+          {
+            "lang": "javascript",
+            "label": "Node.js",
+            "source": "import { ManagedUsersApi } from '@widgetic/api-sdk';\n\nconst api = new ManagedUsersApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.getManagedUserDesignDefaults({\n    id: '123e4567-e89b-12d3-a456-426614174000'\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\nheaders = {\n    \"Authorization\": \"Bearer YOUR_API_KEY\",\n}\n\nresponse = requests.request(\"GET\", \"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults\", headers=headers)\nprint(response.status_code)\nprint(response.text)"
+          },
+          {
+            "lang": "go",
+            "label": "Go",
+            "source": "package main\n\nimport (\n    \"fmt\"\n    \"io\"\n    \"net/http\"\n)\n\nfunc main() {\n    request, err := http.NewRequest(\"GET\", \"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults\", nil)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    request.Header.Set(\"Authorization\", \"Bearer YOUR_API_KEY\")\n\n    response, err := http.DefaultClient.Do(request)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    defer response.Body.Close()\n\n    body, _ := io.ReadAll(response.Body)\n    fmt.Println(response.StatusCode, string(body))\n}"
+          },
+          {
+            "lang": "ruby",
+            "label": "Ruby",
+            "source": "require 'net/http'\n\nuri = URI('https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults')\nrequest = Net::HTTP::Get.new(uri)\nrequest['Authorization'] = 'Bearer YOUR_API_KEY'\n\nresponse = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }\nputs response.code\nputs response.body"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n\n$curl = curl_init('https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults');\ncurl_setopt_array($curl, [\n    CURLOPT_CUSTOMREQUEST => 'GET',\n    CURLOPT_RETURNTRANSFER => true,\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer YOUR_API_KEY',\n    ],\n]);\n\n$response = curl_exec($curl);\nif ($response === false) {\n    echo 'Error: ' . curl_error($curl);\n} else {\n    echo curl_getinfo($curl, CURLINFO_HTTP_CODE) . \"\\n\" . $response;\n}\ncurl_close($curl);"
+          },
+          {
+            "lang": "java",
+            "label": "Java",
+            "source": "import java.net.URI;\nimport java.net.http.HttpClient;\nimport java.net.http.HttpRequest;\nimport java.net.http.HttpResponse;\n\npublic class Example {\n    public static void main(String[] args) throws Exception {\n        HttpRequest request = HttpRequest.newBuilder()\n            .uri(URI.create(\"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults\"))\n            .header(\"Authorization\", \"Bearer YOUR_API_KEY\")\n            .method(\"GET\", HttpRequest.BodyPublishers.noBody())\n            .build();\n\n        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());\n        System.out.println(response.statusCode() + \" \" + response.body());\n    }\n}"
+          },
+          {
+            "lang": "csharp",
+            "label": "C#",
+            "source": "using System;\nusing System.Net.Http;\n\nusing var client = new HttpClient();\nvar request = new HttpRequestMessage(HttpMethod.Get, \"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults\");\nrequest.Headers.Add(\"Authorization\", \"Bearer YOUR_API_KEY\");\n\nvar response = await client.SendAsync(request);\nConsole.WriteLine($\"{(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}\");"
+          }
+        ]
+      },
+      "put": {
+        "operationId": "setManagedUserDesignDefaults",
+        "summary": "Set or clear design defaults for one managed user",
+        "description": "Send `{ \"design\": { ... } }` to store a JSON object (at most 64 KB, nesting depth 32), or `{ \"design\": null }`\nto remove the override. New compositions for this customer merge this layer over the partner default and\nunder the request body.\n",
+        "tags": [
+          "Managed Users"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "partner",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "design"
+                ],
+                "properties": {
+                  "design": {
+                    "type": "object",
+                    "nullable": true
+                  }
+                }
+              },
+              "example": {
+                "design": {
+                  "theme": {
+                    "primary": "#336699"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Defaults saved"
+          },
+          "400": {
+            "description": "Invalid design document (`VALIDATION_ERROR`)"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Managed user not found (`MANAGED_USER_NOT_FOUND`)"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -X PUT 'https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults' \\\n  -H 'Authorization: Bearer YOUR_API_KEY' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n  \"design\": {\n    \"theme\": {\n      \"primary\": \"#336699\"\n    }\n  }\n}'"
+          },
+          {
+            "lang": "javascript",
+            "label": "Node.js",
+            "source": "import { ManagedUsersApi } from '@widgetic/api-sdk';\n\nconst api = new ManagedUsersApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.setManagedUserDesignDefaults({\n    id: '123e4567-e89b-12d3-a456-426614174000',\n    setManagedUserDesignDefaultsRequest: {\n      design: {\n        theme: {\n          primary: '#336699'\n        }\n      }\n    }\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\npayload = r\"\"\"\n{\n  \"design\": {\n    \"theme\": {\n      \"primary\": \"#336699\"\n    }\n  }\n}\n\"\"\"\n\nheaders = {\n    \"Authorization\": \"Bearer YOUR_API_KEY\",\n    \"Content-Type\": \"application/json\",\n}\n\nresponse = requests.request(\"PUT\", \"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults\", headers=headers, data=payload)\nprint(response.status_code)\nprint(response.text)"
+          },
+          {
+            "lang": "go",
+            "label": "Go",
+            "source": "package main\n\nimport (\n    \"fmt\"\n    \"io\"\n    \"net/http\"\n    \"strings\"\n)\n\nfunc main() {\n    payload := strings.NewReader(`{\n  \"design\": {\n    \"theme\": {\n      \"primary\": \"#336699\"\n    }\n  }\n}`)\n    request, err := http.NewRequest(\"PUT\", \"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults\", payload)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    request.Header.Set(\"Authorization\", \"Bearer YOUR_API_KEY\")\n    request.Header.Set(\"Content-Type\", \"application/json\")\n\n    response, err := http.DefaultClient.Do(request)\n    if err != nil {\n        fmt.Printf(\"Error: %v\\n\", err)\n        return\n    }\n    defer response.Body.Close()\n\n    body, _ := io.ReadAll(response.Body)\n    fmt.Println(response.StatusCode, string(body))\n}"
+          },
+          {
+            "lang": "ruby",
+            "label": "Ruby",
+            "source": "require 'net/http'\n\nuri = URI('https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults')\nrequest = Net::HTTP::Put.new(uri)\nrequest['Authorization'] = 'Bearer YOUR_API_KEY'\nrequest['Content-Type'] = 'application/json'\nrequest.body = <<~'JSON'\n  {\n    \"design\": {\n      \"theme\": {\n        \"primary\": \"#336699\"\n      }\n    }\n  }\nJSON\n\nresponse = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }\nputs response.code\nputs response.body"
+          },
+          {
+            "lang": "php",
+            "label": "PHP",
+            "source": "<?php\n\n$payload = <<<'JSON'\n{\n  \"design\": {\n    \"theme\": {\n      \"primary\": \"#336699\"\n    }\n  }\n}\nJSON;\n\n$curl = curl_init('https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults');\ncurl_setopt_array($curl, [\n    CURLOPT_CUSTOMREQUEST => 'PUT',\n    CURLOPT_RETURNTRANSFER => true,\n    CURLOPT_HTTPHEADER => [\n        'Authorization: Bearer YOUR_API_KEY',\n        'Content-Type: application/json',\n    ],\n    CURLOPT_POSTFIELDS => $payload,\n]);\n\n$response = curl_exec($curl);\nif ($response === false) {\n    echo 'Error: ' . curl_error($curl);\n} else {\n    echo curl_getinfo($curl, CURLINFO_HTTP_CODE) . \"\\n\" . $response;\n}\ncurl_close($curl);"
+          },
+          {
+            "lang": "java",
+            "label": "Java",
+            "source": "import java.net.URI;\nimport java.net.http.HttpClient;\nimport java.net.http.HttpRequest;\nimport java.net.http.HttpResponse;\n\npublic class Example {\n    public static void main(String[] args) throws Exception {\n        HttpRequest request = HttpRequest.newBuilder()\n            .uri(URI.create(\"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults\"))\n            .header(\"Authorization\", \"Bearer YOUR_API_KEY\")\n            .header(\"Content-Type\", \"application/json\")\n            .method(\"PUT\", HttpRequest.BodyPublishers.ofString(\"{\\n  \\\"design\\\": {\\n    \\\"theme\\\": {\\n      \\\"primary\\\": \\\"#336699\\\"\\n    }\\n  }\\n}\"))\n            .build();\n\n        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());\n        System.out.println(response.statusCode() + \" \" + response.body());\n    }\n}"
+          },
+          {
+            "lang": "csharp",
+            "label": "C#",
+            "source": "using System;\nusing System.Net.Http;\nusing System.Text;\n\nusing var client = new HttpClient();\nvar request = new HttpRequestMessage(HttpMethod.Put, \"https://api.widgetic.com/v1/managed-users/123e4567-e89b-12d3-a456-426614174000/design-defaults\");\nrequest.Headers.Add(\"Authorization\", \"Bearer YOUR_API_KEY\");\nrequest.Content = new StringContent(\"{\\n  \\\"design\\\": {\\n    \\\"theme\\\": {\\n      \\\"primary\\\": \\\"#336699\\\"\\n    }\\n  }\\n}\", Encoding.UTF8, \"application/json\");\n\nvar response = await client.SendAsync(request);\nConsole.WriteLine($\"{(int)response.StatusCode} {await response.Content.ReadAsStringAsync()}\");"
           }
         ]
       }
@@ -13579,8 +14320,8 @@
           "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "domain": "example.com",
-          "createdAt": "2026-10-09T14:40:53.612Z",
-          "updatedAt": "2026-10-09T14:40:53.643Z"
+          "createdAt": "2026-01-15T09:30:00.000Z",
+          "updatedAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "PersonalWorkspaceDomainResult": {
@@ -13688,9 +14429,9 @@
           "keyId": "5f0c1e2a-7a41-4c5e-9f3b-0c2a8b1d6e44",
           "keyPreview": "wgt_prt_ab12...",
           "name": "Production",
-          "createdAt": "2026-10-09T14:40:53.643Z",
-          "expiresAt": "2026-10-09T14:40:53.643Z",
-          "lastUsedAt": "2026-10-09T14:40:53.643Z",
+          "createdAt": "2026-01-15T09:30:00.000Z",
+          "expiresAt": "2026-01-15T09:30:00.000Z",
+          "lastUsedAt": "2026-01-15T09:30:00.000Z",
           "isActive": true,
           "scopes": [
             "Example ApiKeyScope"
@@ -13765,8 +14506,8 @@
           "keyId": "5f0c1e2a-7a41-4c5e-9f3b-0c2a8b1d6e44",
           "keyPreview": "wgt_prt_ab12...",
           "name": "Production",
-          "createdAt": "2026-10-09T14:40:53.643Z",
-          "expiresAt": "2026-10-09T14:40:53.643Z",
+          "createdAt": "2026-01-15T09:30:00.000Z",
+          "expiresAt": "2026-01-15T09:30:00.000Z",
           "isActive": true,
           "scopes": [
             "Example ApiKeyScope"
@@ -13896,7 +14637,7 @@
         "example": {
           "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "keyId": "Example keyId",
-          "timestamp": "2026-10-09T14:40:53.643Z",
+          "timestamp": "2026-01-15T09:30:00.000Z",
           "path": "/v1/widgets",
           "method": "GET",
           "status": 200,
@@ -14112,9 +14853,9 @@
           "status": "Example status",
           "contactEmail": "Example contactEmail",
           "allowedDomains": [],
-          "suspendedAt": "2026-10-09T14:40:53.643Z",
+          "suspendedAt": "2026-01-15T09:30:00.000Z",
           "suspensionReason": "Example suspensionReason",
-          "createdAt": "2026-10-09T14:40:53.643Z"
+          "createdAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "MyPartners": {
@@ -14235,8 +14976,8 @@
           "contractStartDate": "Example contractStartDate",
           "contractEndDate": "Example contractEndDate",
           "isActiveContract": true,
-          "createdAt": "2026-10-09T14:40:53.643Z",
-          "updatedAt": "2026-10-09T14:40:53.643Z"
+          "createdAt": "2026-01-15T09:30:00.000Z",
+          "updatedAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "PartnerStorageDestination": {
@@ -14320,10 +15061,10 @@
           "publicBaseUrl": "https://media.example.com",
           "forcePathStyle": true,
           "accessKeyHint": "4F2A",
-          "verifiedAt": "2026-10-09T14:40:53.643Z",
+          "verifiedAt": "2026-01-15T09:30:00.000Z",
           "lastVerificationError": "Example lastVerificationError",
-          "lastVerificationFailedAt": "2026-10-09T14:40:53.643Z",
-          "updatedAt": "2026-10-09T14:40:53.643Z"
+          "lastVerificationFailedAt": "2026-01-15T09:30:00.000Z",
+          "updatedAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "SetPartnerStorageDestinationRequest": {
@@ -14471,8 +15212,8 @@
           "position": 42,
           "widgetName": "Example widgetName",
           "thumbnailUrl": "Example thumbnailUrl",
-          "createdAt": "2026-10-09T14:40:53.643Z",
-          "updatedAt": "2026-10-09T14:40:53.643Z"
+          "createdAt": "2026-01-15T09:30:00.000Z",
+          "updatedAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "SetPartnerPresetRequest": {
@@ -14577,8 +15318,8 @@
           }
         },
         "example": {
-          "from": "2026-10-09T14:40:53.644Z",
-          "to": "2026-10-09T14:40:53.644Z"
+          "from": "2026-01-15T09:30:00.000Z",
+          "to": "2026-01-15T09:30:00.000Z"
         }
       },
       "PartnerStorageUsageTotals": {
@@ -14685,7 +15426,7 @@
           "totalBytes": 42,
           "widgeticStorageBytes": 42,
           "partnerStorageBytes": 42,
-          "lastUploadAt": "2026-10-09T14:40:53.644Z"
+          "lastUploadAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "PartnerStorageUsage": {
@@ -14860,7 +15601,7 @@
           "views": 42,
           "interactions": 42,
           "visitors": 42,
-          "lastEventAt": "2026-10-09T14:40:53.675Z"
+          "lastEventAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "PartnerAnalyticsByManagedUser": {
@@ -15134,7 +15875,7 @@
           "body": "Example body",
           "tone": "Example tone",
           "data": {},
-          "createdAt": "2026-10-09T14:40:53.685Z"
+          "createdAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "PartnerNotificationPage": {
@@ -15162,7 +15903,7 @@
           "notifications": [
             "Example PartnerNotification"
           ],
-          "nextBefore": "2026-10-09T14:40:53.685Z"
+          "nextBefore": "2026-01-15T09:30:00.000Z"
         }
       },
       "PartnerNotificationDelivery": {
@@ -15272,12 +16013,12 @@
           "target": "Example target",
           "status": "Example status",
           "attemptCount": 42,
-          "nextAttemptAt": "2026-10-09T14:40:53.685Z",
-          "lastAttemptAt": "2026-10-09T14:40:53.685Z",
-          "deliveredAt": "2026-10-09T14:40:53.685Z",
+          "nextAttemptAt": "2026-01-15T09:30:00.000Z",
+          "lastAttemptAt": "2026-01-15T09:30:00.000Z",
+          "deliveredAt": "2026-01-15T09:30:00.000Z",
           "lastStatusCode": 42,
           "lastError": "Example lastError",
-          "createdAt": "2026-10-09T14:40:53.685Z",
+          "createdAt": "2026-01-15T09:30:00.000Z",
           "replayOfDeliveryId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         }
       },
@@ -15468,7 +16209,7 @@
             "Example PartnerNotificationEventType"
           ],
           "webhookSecretSet": true,
-          "webhookSecretRotatedAt": "2026-10-09T14:40:53.685Z",
+          "webhookSecretRotatedAt": "2026-01-15T09:30:00.000Z",
           "webhookSigningAvailable": true,
           "events": [
             "Example PartnerNotificationEvent"
@@ -16017,8 +16758,8 @@
           "surfaces": [],
           "allowedOrigin": "Example allowedOrigin",
           "maxCredits": 42,
-          "expiresAt": "2026-10-09T14:40:53.686Z",
-          "createdAt": "2026-10-09T14:40:53.686Z"
+          "expiresAt": "2026-01-15T09:30:00.000Z",
+          "createdAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "ManagedUserOperationUsage": {
@@ -16127,8 +16868,8 @@
         "example": {
           "managedUserId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "managedUserExternalId": "Example managedUserExternalId",
-          "from": "2026-10-09T14:40:53.686Z",
-          "to": "2026-10-09T14:40:53.686Z",
+          "from": "2026-01-15T09:30:00.000Z",
+          "to": "2026-01-15T09:30:00.000Z",
           "totals": {},
           "operations": [
             "Example ManagedUserOperationUsage"
@@ -16350,17 +17091,17 @@
           "currency": "USD",
           "failureReason": "Example failureReason",
           "status": "Example status",
-          "invoiceDate": "2026-10-09T14:40:53.687Z",
-          "dueDate": "2026-10-09T14:40:53.687Z",
-          "paidDate": "2026-10-09T14:40:53.687Z",
-          "periodStart": "2026-10-09T14:40:53.687Z",
-          "periodEnd": "2026-10-09T14:40:53.687Z",
+          "invoiceDate": "2026-01-15T09:30:00.000Z",
+          "dueDate": "2026-01-15T09:30:00.000Z",
+          "paidDate": "2026-01-15T09:30:00.000Z",
+          "periodStart": "2026-01-15T09:30:00.000Z",
+          "periodEnd": "2026-01-15T09:30:00.000Z",
           "paymentMethod": "Example paymentMethod",
           "hostedInvoiceUrl": "Example hostedInvoiceUrl",
           "pdfUrl": "Example pdfUrl",
           "lineItems": [],
-          "createdAt": "2026-10-09T14:40:53.687Z",
-          "updatedAt": "2026-10-09T14:40:53.687Z"
+          "createdAt": "2026-01-15T09:30:00.000Z",
+          "updatedAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "Entitlement": {
@@ -16512,7 +17253,7 @@
           "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "balance": 42,
           "reservedBalance": 42,
-          "lastUpdated": "2026-10-09T14:40:53.687Z"
+          "lastUpdated": "2026-01-15T09:30:00.000Z"
         }
       },
       "AccountCreditTransaction": {
@@ -16558,7 +17299,7 @@
           "balanceAfter": 42,
           "description": "Example description",
           "referenceId": "Example referenceId",
-          "createdAt": "2026-10-09T14:40:53.687Z"
+          "createdAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "Composition": {
