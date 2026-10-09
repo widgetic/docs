@@ -81,13 +81,13 @@ Every method takes one request object, for example `getWidgets({ page: 1, size: 
 | `EntitlementsApi` | Feature access |
 | `UsersApi` | User management |
 | `ManagedUsersApi` | Partner user management and editor sessions |
-| `PartnersApi` | Partner operations |
+| `PartnersApi` | Partner operations: contract, billing overview, credits, storage, notifications, analytics and presets |
 | `CreditsApi` | Account credit balance and ledger |
 | `InvoicesApi` | Invoices |
 
 ### Sending an Idempotency-Key
 
-Some calls need an `Idempotency-Key` header, such as creating a composition, a widget or a managed user (see [Idempotency](/docs/reference/idempotency)). The SDK's create methods do not send one for you, so add it through the second argument:
+Most calls that make or change something need an `Idempotency-Key` header, such as creating a composition, a widget or a managed user (see [Idempotency](/docs/reference/idempotency)). Send it as `idempotencyKey` in the request object, and send the same one when you retry that call:
 
 ```javascript
 import { randomUUID } from 'node:crypto';
@@ -95,21 +95,31 @@ import { CompositionsApi } from '@widgetic/api-sdk';
 
 const compositions = new CompositionsApi(process.env.WIDGETIC_API_KEY);
 
-const composition = await compositions.createComposition(
-  { newComposition },
-  // Keep the headers the SDK already set, and add the key. Reuse the same key when you retry this call
-  async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': randomUUID() } })
-);
+const composition = await compositions.createComposition({
+  newComposition,
+  // Reuse the same key when you retry this call
+  idempotencyKey: randomUUID()
+});
 ```
 
-### Known Gaps in Version 1.0.22
+The SDK does not insist on it: a call that needs a key and goes without one is answered by the API with `400`.
 
-The version on npm today was generated before some changes to the API. When a call fails or a field is `undefined`, compare it with the [API Reference](/api-reference/introduction):
+### Known Gaps in Version 1.0.29
 
-- A few calls use older addresses, which the API does not serve: the account credit calls (`getUserCreditBalance`, `getUserCreditTransactions`), the entitlement calls (`getManagedUserEntitlements`, `getPartnerEntitlements`) and the invoice calls for one partner or one user (`getInvoicesByPartnerId`, `getInvoicesByUserId`). Use plain HTTP for them, as the [Credits & Billing](/docs/partners/credits-billing) and [Managed Users](/docs/partners/managed-users) pages show.
-- Response types name some fields in snake_case (`external_id`), where the API answers in camelCase (`externalId`). Read the camelCase name at run time.
-- The newer partner calls, such as reading your contract and the billing overview, are not in it. Use plain HTTP.
-- Two calls are typed to return nothing, so the SDK gives you no data from them: `getComponents` and `getComponent`. Use plain HTTP, as the [Components](/docs/api/components) page shows.
+The package is generated from the API description, and this version includes the partner calls for the contract, the billing overview, credits, storage, notifications, analytics and presets. When a call fails or a field is `undefined`, compare it with the [API Reference](/api-reference/introduction):
+
+- **Some calls are typed to return nothing.** The API description gives no shape for their answer, so the SDK hands you no data from them. Among them are `getCurrentUser`, `getComponents`, `getComponent`, `updateWidget`, `getPartnerBillingOverview` and `getPartnerCreditTransactions`. Use the `Raw` twin of the call (the same name with `Raw` at the end), and read the body yourself:
+
+  ```javascript
+  import { PartnersApi } from '@widgetic/api-sdk';
+
+  const partners = new PartnersApi(process.env.WIDGETIC_PARTNER_KEY);
+
+  const response = await partners.getPartnerBillingOverviewRaw({ partnerId });
+  const overview = await response.raw.json();
+  ```
+
+- **A request body and its answer do not name fields the same way.** The body you send to the partner calls names its fields in snake_case (`external_id`, `manager_id`), and the answer names them in camelCase (`externalId`). Read the camelCase name from an answer.
 
 These come from the SDK build, not from the API. When a newer version is published, check this list again.
 

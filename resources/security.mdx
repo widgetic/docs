@@ -35,12 +35,12 @@ This guide covers security best practices when integrating with the Widgetic API
 
 You make and manage your own keys. In the dashboard, open Workspace settings → API keys. With the API, use the key calls below. `{id}` is your own account id, which `GET /tokens/validate` returns as `data.userId`. Your plan must include API access.
 
-- `GET /users/{id}/keys` lists your keys.
-- `POST /users/{id}/keys` makes one (send an `Idempotency-Key`). **Only a person signed in on widgetic.com can make a key**, so make keys in the dashboard: a request made with an API key or an SDK token is refused with `403`. The secret is in the answer once, in `key`, and cannot be shown again. An account can have 25 keys.
+- `GET /users/{id}/keys` lists your keys, with what each is limited to (`preset` and `scopes`).
+- `POST /users/{id}/keys` makes one (send an `Idempotency-Key`). **Only a person signed in on widgetic.com can make a key**, so make keys in the dashboard: a request made with an API key or an SDK token is refused with `403`. The secret is in the answer once, in `key`, and cannot be shown again. An account can have 25 keys. Send a `preset` (`read_only`, `content` or `full_access`) or a list of `scopes` to limit what the key can do, and neither for a key with full access. See [Limit what a key can do](/docs/authentication#limit-what-a-key-can-do).
 - `PUT /users/{id}/keys/{keyId}` renames a key or switches it off with `isActive: false`. Switching a key back on needs a person signed in too. `DELETE /users/{id}/keys/{keyId}` deletes it.
 - `GET /users/{id}/api-keys/{keyId}/logs` shows what a key was used for.
 
-To rotate a key, make the new one in the dashboard, switch your servers over, then delete the old one. A key that is switched off or deleted is refused at once by the server that took the request, and within a minute by the others.
+To rotate a key, make the new one in the dashboard, switch your servers over, then delete the old one. A key that is switched off or deleted is refused at once by the server that took the request, and within a minute by the others. The limit of a key cannot be changed once it is made: to widen or narrow it, rotate the key the same way.
 
 <Warning>
   A key cannot make another key, so a leaked key cannot be used to get back in after you revoke it. If a key leaks, delete it (in the dashboard, or with another key) and make a new one in the dashboard.
@@ -87,11 +87,11 @@ You can limit the websites an embedded widget may appear on. If you list nothing
 
 1. Open Allowed Domains in the dashboard (for a team workspace, use that workspace's settings; only its admins and owners can change the list)
 2. Add each website: `example.com` also covers `www.example.com`, and `*.example.com` covers the domain and every subdomain
-3. Add `localhost` too while you test on your own machine
+3. Leave `localhost` out: a page on your own machine always works, however short the list is (see below)
 
 You can also keep the list with the API, using your own account id as `{id}`. `GET /users/{id}/workspace/domains` reads it, `POST` adds a website with the body `{ "domain": "example.com" }`, `PUT /users/{id}/workspace/domains/{domainId}` changes one, and `DELETE` removes one. A list holds up to 50 websites, and a change applies within about 15 seconds.
 
-Once a list exists, the lookup that returns a widget's content answers `403` with the code `DOMAIN_NOT_ALLOWED` to a page on any other website, and the widget's frame page asks the browser not to show it anywhere else. Widgetic's own sites always work, and a list that cannot be read never blocks a widget.
+Once a list exists, the lookup that returns a widget's content answers `403` with the code `DOMAIN_NOT_ALLOWED` to a page on any other website, and the widget's frame page asks the browser not to show it anywhere else. Widgetic's own sites always work, and so does your own machine. The lookup never refuses a page on `localhost`, on `127.0.0.1` (or any address from `127.0.0.0` to `127.255.255.255`), on `[::1]` or on a name under `.localhost`, on any port, and the widget's frame page may be shown by `localhost`, `127.0.0.1` and names under `.localhost`, on any port, over `http` or `https`. You can build and test an integration without listing your laptop: only the person who runs such a page can see it, so listing it would protect nothing. A list that cannot be read never blocks a widget.
 
 If you use the Partner API, the `allowedDomains` of your partner account is added to the list of the person who administers it, and applies to the widgets made with your API keys.
 

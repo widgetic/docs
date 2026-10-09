@@ -169,6 +169,28 @@ Errors related to business rules and state conflicts.
 | `BUSINESS_WIDGET_ALREADY_PUBLISHED` | 409 | The widget is already published | Unpublish the widget first or create a new version |
 | `BUSINESS_SUBSCRIPTION_REQUIRED` | 402 | A subscription is required to perform this action | Subscribe to a plan to access this feature |
 
+### Partner Errors (402, 403, 404, 409, 422, 429, 502, 503)
+
+Errors a [partner integration](/docs/partners/overview) meets: the standing of the account, its storage, its customers and what they may spend. Branch on `error.code`; `error.details` carries the machine-readable facts. Each page of the guide lists the errors of its own calls too.
+
+| Code | Status | Meaning | Read more |
+|------|--------|---------|-----------|
+| `API_KEY_SCOPE_MISSING` | 403 | The key is limited to some scopes and the request needs more. `details.missingScopes` lists them, and `details.fullAccessRequired` is `true` when only a key with full access would do | [Limit What a Key Can Do](/docs/authentication#limit-what-a-key-can-do) |
+| `PARTNER_SUSPENDED` | 403 | The partner account is paused. `details.partnerStatus` and `details.reason` say why | [Account Status](/docs/partners/account-status) |
+| `PARTNER_INACTIVE` | 403 | The partner account has not been activated yet | [Account Status](/docs/partners/account-status#getting-activated) |
+| `EDITOR_SESSIONS_DISABLED_FOR_PARTNER` | 403 | Widgetic switched editor sessions off for this account alone | [Editor Sessions](/docs/partners/editor-sessions#settings-that-can-differ-for-your-account) |
+| `PARTNER_STORAGE_REQUIRED` | 409 | The call needs the partner's own storage destination and there is none | [Storage](/docs/partners/storage) |
+| `STORAGE_DESTINATION_UNVERIFIED` | 422 | The check of a storage destination failed. `details.step` and `details.reason` say where and why | [Storage](/docs/partners/storage#the-check) |
+| `STORAGE_DESTINATION_WRITE_FAILED` | 502 | The partner's bucket rejected a file | [Storage](/docs/partners/storage) |
+| `STORAGE_DESTINATION_UNAVAILABLE` | 503 | A destination is saved but cannot be used | [Storage](/docs/partners/storage) |
+| `PARTNER_STORAGE_DISABLED` | 503 | Storage destinations are not switched on for the server | [Storage](/docs/partners/storage) |
+| `WEBHOOK_SIGNING_UNAVAILABLE` | 503 | The server cannot sign webhooks yet | [Notifications](/docs/partners/notifications) |
+| `MANAGED_USER_NOT_FOUND` | 404 | The managed user is not one of the partner's | [Managed Users](/docs/partners/managed-users) |
+| `MANAGED_USER_INACTIVE` | 409 | The managed user is switched off | [Managed Users](/docs/partners/managed-users) |
+| `BILLING_INSUFFICIENT_CREDITS` | 402 | The partner account does not have the credits for the action | [Credits & Billing](/docs/partners/credits-billing) |
+| `EDITOR_SESSION_CREDIT_LIMIT_REACHED` | 402 | An editor session spent the `max_credits` it was given | [Editor Sessions](/docs/partners/editor-sessions#a-limit-for-one-session) |
+| `COST_LIMIT_EXCEEDED` | 429 | A customer used up their allowance for the hour or the day | [Editor Sessions](/docs/partners/editor-sessions#credits-and-limits) |
+
 ### External Service Errors (502, 503, 504)
 
 Errors related to third-party dependencies.

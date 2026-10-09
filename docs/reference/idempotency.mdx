@@ -38,9 +38,9 @@ The same key sent to a different endpoint, or by a different account, is a diffe
 
 ## Supported Methods
 
-Idempotency is supported on state-changing requests: `POST` and `PATCH` requests, and `PUT` requests on the endpoints that document it. Where an endpoint requires a key, omitting the header returns `400`.
+A call takes a key when the [API Reference](/api-reference/introduction) lists `Idempotency-Key` among its parameters, and the reference says so for every call that does, including the `PUT` and `PATCH` calls that change something. Where a call requires a key, omitting the header returns `400`.
 
-`GET` requests are naturally idempotent and don't need keys.
+`GET` requests are naturally idempotent and don't need keys, and most deletions don't take one either. The call that makes an [editor session](/docs/partners/editor-sessions) takes none: its answer holds a token that is never stored where a retry could read it back, so a retry makes a new session.
 
 ## Key Requirements
 
@@ -76,9 +76,8 @@ async function createWidgetSafely(name: string, userId: string) {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       return await widgets.createWidget({
-        newWidget: { name, type: 'chart', content: {} }
-      }, {
-        headers: { 'Idempotency-Key': idempotencyKey }
+        newWidget: { name, type: 'chart', content: {} },
+        idempotencyKey
       });
     } catch (error) {
       // The SDK throws a ResponseError for an answer that is not a success; the status is on its response

@@ -47,6 +47,58 @@ Each API endpoint specifies an `x-access-level` that determines which roles can 
   The `x-access-level` is a **role gate**, not a visibility gate. All public endpoints appear in the documentation, but your access depends on your key type.
 </Note>
 
+## Limit What a Key Can Do
+
+A key made without a limit has **full access**: it does everything its owner can, and so does every key made before limits existed. A key you put on a build server, or in a partner's backend, needs only the part of the API it uses. Limit it, and a leaked key can do no more than that.
+
+You choose the limit when you make the key, in the dashboard (Workspace settings → API keys) or with `POST /users/{id}/keys` (see [Security](/resources/security#making-rotating-and-deleting-keys)). Send a `preset` or a list of `scopes`, never both:
+
+| Preset | What the key may do |
+|--------|---------------------|
+| `read_only` | Looks at everything the account holds and changes nothing. It holds `content:read`, `partner:read`, `billing:read` and `account:read`. |
+| `content` | Builds and manages widgets and compositions, and runs the AI. It holds `content:read`, `content:write` and `generate`, and touches no billing, no people and no partners. |
+| `full_access` | Everything the account owner may do. A key made with neither a preset nor scopes is this. |
+
+When a preset is not enough, name the scopes you want:
+
+| Scope | What it lets a key do |
+|-------|-----------------------|
+| `content:read` | Read widgets, compositions, canvases, projects, folders, uploads, translations and the analytics of your content. |
+| `content:write` | Create, change, publish and delete the same. Includes `content:read`. |
+| `generate` | Run the AI that builds widgets and compositions, and follow or cancel what it is doing. This spends credits. |
+| `partner:read` | Read managed users, what they spent, presets, the contract and the storage destination (partners). |
+| `partner:write` | Create, change and delete managed users and presets (partners). Includes `partner:read`. |
+| `billing:read` | Read credits, usage, invoices, subscriptions and payment methods. |
+| `billing:write` | Buy credits, pay invoices, change a subscription or a payment method. Includes `billing:read`. |
+| `account:read` | Read the profile, organizations and members, allowed domains, notices and the names of API keys. |
+| `account:write` | Change the profile, organizations and members, allowed domains and integrations. Includes `account:read`. |
+
+- **Writing includes reading.** Naming `content:write` gives `content:read` too, and the same goes for the other `write` scopes. A list that names every scope makes a key with full access.
+- **Scopes only narrow.** A limited key still needs what its owner needs: the role, the plan and, for a [partner](/docs/partners/account-status), an account in force.
+- **The limit is fixed when the key is made.** To widen it, make a new key and delete the old one.
+- **A limited key cannot make itself a bigger one.** Making, changing and deleting keys, exchanging tokens, signing in and the administration routes need full access.
+- **A partner's backend needs three scopes to start an editor session** for a managed user: `partner:write`, `content:write` and `generate` together. See [Editor Sessions](/docs/partners/editor-sessions#make-a-session).
+
+A request outside the scopes of the key is refused with `403` and the code `API_KEY_SCOPE_MISSING`. `error.details.missingScopes` lists what a new key needs, and `error.details.fullAccessRequired` is `true` when no list of scopes would have been enough:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "API_KEY_SCOPE_MISSING",
+    "message": "This API key may not do this: it lacks the content:write scope (it holds content:read, partner:read, billing:read, account:read). The scopes of a key cannot be changed once it is made, so make a new key that includes them.",
+    "details": {
+      "missingScopes": ["content:write"],
+      "fullAccessRequired": false
+    }
+  }
+}
+```
+
+<Note>
+  These scopes belong to the key and last as long as it does. They are not the `scopes` you send to `POST /tokens/exchange` below, which limit one short-lived token.
+</Note>
+
 ## Token Exchange (Client-Side)
 
 For secure client-side usage, exchange your API key for a short-lived token:
