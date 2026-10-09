@@ -87,7 +87,7 @@ await fileBrowser.unmount();
 |--------|------|---|
 | `container` | element or CSS selector | **Required.** Where the piece is drawn. |
 | `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. See [Tokens](#tokens). |
-| `version` | `string` | Pin an exact version of the piece, such as `1.2.0`. Default: the newest. Pin it in production. |
+| `version` | `string` | Pin an exact version of the piece, such as `1.2.0`. Default: the newest. Pin it in production, and read [what changed](/docs/partners/module-versions) before you move. |
 | `theme` | `'light'`, `'dark'`, `'system'`, or `{ preset, mode, colors, radius, font }` | Default `light`. `system` follows the customer's setting. An object gives the piece your colours, corner radius and font. See [Make the pieces look like your product](#make-the-pieces-look-like-your-product). |
 | `locale` | `string` | A BCP 47 tag such as `en` or `de`. Every piece uses it for plural forms and for how numbers, dates and file sizes are written, and for the `lang` of its elements; a language written right to left also turns each piece around. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
 | `messages` | `{ [key]: string }` | The words you want to change, in the File Browser, the composition editor and the widget creator. A key you leave out stays English. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
@@ -472,11 +472,13 @@ Pieces are static files, so nothing can change under your feet when you pin a ve
 
 ```text
 https://cdn.widgetic.com/modules/<name>/manifest.json            { "name": "file-browser", "version": "1.2.0", "entry": "1.2.0/index.js" }
+https://cdn.widgetic.com/modules/<name>/changelog.json           what changed in each version, up to the one the manifest names, newest first
 https://cdn.widgetic.com/modules/<name>/<version>/index.js       never changes once published
 https://cdn.widgetic.com/modules/<name>/<version>/chunks/<file>.js    the parts a piece fetches later (the PDF viewer); never change either
 ```
 
 - Without `version` the SDK reads the manifest and loads the newest version. With `version: '1.2.0'` it loads that file directly. **Pin the version in production** and upgrade when you have looked at the release.
+- **Read what changed before you move.** Every version has an entry in the changelog, and a version that can break your page is marked `breaking` and is always a new major version (a new minor version while the number starts with `0`). See [Versions & Changelog](/docs/partners/module-versions).
 - To serve the pieces yourself, copy that layout to your own origin (the whole `<version>` folder: `index.js` fetches its `chunks/` files from the folder it was loaded from) and set `moduleBaseUrl`. The manifest's `entry` must be a `.js` file inside the piece's own folder on the same origin.
 - Failed downloads are retried twice (network errors and server errors, not 404). A piece also asks twice more, the same way, when a file it fetches later fails. Requests to the CDN carry no cookies.
 

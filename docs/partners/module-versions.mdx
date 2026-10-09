@@ -1,0 +1,141 @@
+---
+title: Versions & Changelog
+description: Pin the version of a piece, read what changed in each version, and upgrade when you choose
+tag: "Preview"
+---
+
+Every piece of the [UI SDK](/docs/partners/ui-components) (the File Browser, the composition editor and the widget creator) is released in numbered versions. **A version never changes once it is published**, and every version comes with a list of what it changed. So you decide when your page moves to a newer one, and you know what you are moving to.
+
+## Pin a version
+
+Give `mountModule` the `version` you tested:
+
+```javascript
+import { mountModule } from '@widgetic/ui-sdk';
+
+const creator = await mountModule('widget-creator', {
+  container: '#creator',
+  version: '0.1.0', // exactly this version, today and next year
+  getToken,
+});
+
+console.log(creator.version); // the version that was loaded
+```
+
+Without `version`, the SDK loads whatever version Widgetic has made current, and your page changes within a minute of each new release. That is what you want while you build, and not what you want in production: **pin the version in production**, and move when you have read what changed.
+
+<Note>
+  The three pieces are released together: each version number exists for all of them at the same time, and each piece has its own list of changes (a piece that did not change says so). Pin them all to the same number.
+</Note>
+
+## What a version number tells you
+
+A version is three numbers, `major.minor.patch`, such as `1.4.2`.
+
+| A new... | Means | May list breaking changes? |
+|----------|-------|----------------------------|
+| patch (`1.4.2` after `1.4.1`) | Fixes | No |
+| minor (`1.5.0` after `1.4.2`) | New options, events and methods, and other changes | No |
+| major (`2.0.0` after `1.5.0`) | The same, and anything that can break what you built on the piece | Yes: read it first |
+
+A change that can break your page is called a **breaking change**. It is always written down under `breaking`, and a version that has one is always a new major version: Widgetic does not release it any other way.
+
+The pieces are in Preview and their numbers start with `0`. **While the first number is `0`, a new minor version takes the place of a major one**: `0.2.0` is the version that may list breaking changes, and `0.1.1` never does.
+
+A version such as `1.3.0-rc.1` is a release candidate. It is there for you to try by pinning it, and nobody follows it by accident: Widgetic does not make a release candidate the current version.
+
+## Read what changed
+
+Each piece has a changelog at a fixed address:
+
+```text
+https://cdn.widgetic.com/modules/file-browser/changelog.json
+https://cdn.widgetic.com/modules/composition-editor/changelog.json
+https://cdn.widgetic.com/modules/widget-creator/changelog.json
+```
+
+It lists every version up to the current one, newest first. This one is an example, to show the shape (it is not a real release):
+
+```json
+{
+  "name": "widget-creator",
+  "format": 1,
+  "versions": [
+    {
+      "version": "0.2.0",
+      "date": "2026-11-02",
+      "breaking": true,
+      "summary": "The presets option takes a list of keys.",
+      "changes": {
+        "breaking": ["`presets` no longer accepts `'all'`: list the keys you want."],
+        "added": ["The `presetChosen` event says which key was picked."],
+        "changed": [],
+        "deprecated": [],
+        "removed": [],
+        "fixed": ["A preset with no thumbnail no longer shows a broken image."],
+        "security": []
+      }
+    }
+  ]
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `name`, `format` | The piece, and the layout of this file (`1` today: a later layout gets a new number, so check it before you rely on the rest). |
+| `version`, `date` | The version, and the day it was released (`YYYY-MM-DD`). |
+| `breaking` | `true` when the version lists breaking changes: **read these before you move to it**. |
+| `summary` | A sentence or two about the release. It can be empty. |
+| `changes` | Seven lists, always all there: `breaking`, `added`, `changed`, `deprecated`, `removed`, `fixed` and `security`. Each item is one line, and may use `code` formatting. |
+
+The file is public and open to other websites, so you can read it from your own tooling. To see what came after the version you run:
+
+```javascript
+const pinned = '0.1.0';
+const { versions } = await (await fetch('https://cdn.widgetic.com/modules/widget-creator/changelog.json')).json();
+
+const position = versions.findIndex((entry) => entry.version === pinned);
+if (position === -1) throw new Error(`${pinned} is not in the changelog`);
+
+const newer = versions.slice(0, position).reverse(); // the versions after yours, oldest first
+const breaking = newer.filter((entry) => entry.breaking);
+
+console.log(`${newer.length} newer versions, ${breaking.length} with breaking changes`);
+```
+
+The list stops at the version Widgetic has made current, so a candidate you pinned is not in it until it is released.
+
+## Move to a newer version
+
+<Steps>
+  <Step title="Read what changed">
+    Read the entries between your version and the one you want, and the `breaking` list of each. If a version has `breaking: true`, the item says what to change in your page.
+  </Step>
+  <Step title="Change the version and try it">
+    Change `version` and try the piece the way your customers use it. A release candidate is there for this, before the release itself.
+  </Step>
+  <Step title="Ship it">
+    Your customers get the new version when you deploy your page, not before.
+  </Step>
+</Steps>
+
+To go back, pin the earlier version again: a version that was published is still there, byte for byte.
+
+## If you do not pin
+
+A page with no `version` follows the version Widgetic has made current, within a minute of each release. If a release has a problem, Widgetic can point it back at the previous version, and pages that do not pin follow that too. A page that pins is not affected either way.
+
+## Serving the pieces yourself
+
+If you host the pieces on your own origin (`moduleBaseUrl`), copy the whole folder of a version, as described in [Versions and self-hosting](/docs/partners/ui-components#versions-and-self-hosting). The changelog is next to the manifest, in the piece's folder, and is not needed to load a piece: copy it too if you want to read it from your own address.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="UI Components" icon="cube" href="/docs/partners/ui-components">
+    Mount the pieces, and make them look like your product
+  </Card>
+  <Card title="Canvas Embedding" icon="window" href="/docs/partners/canvas-embedding">
+    The widget creator and the composition editor
+  </Card>
+</CardGroup>
