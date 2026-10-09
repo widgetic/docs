@@ -1,0 +1,201 @@
+---
+title: Storage
+description: The bucket your customers' files are kept in, how to set it up, and how to see what each customer keeps
+---
+
+Your customers' files are yours to keep, so they are not kept with Widgetic. Every partner has a **storage destination**: a bucket you own, on any S3-compatible service (Amazon S3, Cloudflare R2, Backblaze B2, Wasabi, MinIO and the like). A file a customer uploads in a Widgetic [editor](/docs/partners/editor-sessions), and a file you upload with your own API key, is written to your bucket and served from the address you name.
+
+Storage is not optional:
+
+- Your account cannot be [activated](/docs/partners/account-status#getting-activated) until it has a storage destination that works.
+- An editor session of any kind cannot be made without one. The call answers `409` with `PARTNER_STORAGE_REQUIRED`.
+- An upload with your own key and no destination is refused the same way. It is never stored with Widgetic instead.
+
+## What You Need
+
+- A bucket on an S3-compatible service.
+- An access key that may put objects into it. It may also delete objects, which lets Widgetic clean up the test file, but that is not required.
+- A public address the stored files are served from: the bucket's own public address, or a CDN in front of it. Your customers' browsers read the files from there, so the bucket, or the CDN, has to be publicly readable.
+
+## Set It Up
+
+You need the id of your partner record (`GET /partners/mine` gives it, see [Account Status](/docs/partners/account-status)) and an API key with full access. Saving a destination is a `PUT`, and it replaces the whole destination, so send every field again, the secret included.
+
+```bash
+curl -sS -X PUT "https://api.widgetic.com/v1/partners/$WIDGETIC_PARTNER_ID/storage" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "endpoint": "https://abc123.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "yourcompany-widgetic-files",
+    "key_prefix": "widgetic/uploads",
+    "public_base_url": "https://files.yourcompany.com",
+    "access_key_id": "YOUR_ACCESS_KEY_ID",
+    "secret_access_key": "YOUR_SECRET_ACCESS_KEY"
+  }'
+```
+
+| Field | What it is |
+|-------|------------|
+| `endpoint` | **Required.** The HTTPS address of the service: scheme and host only, with no path, port or credentials. It must be a host name (not an IP address) that resolves to the public internet |
+| `region` | **Required.** The region the service signs requests for. Use `auto` where the service says so |
+| `bucket` | **Required.** The bucket name |
+| `key_prefix` | A folder inside the bucket to write every file under, such as `widgetic/uploads`. Letters, digits, dots, hyphens and underscores. Without one, files go at the root |
+| `public_base_url` | **Required.** Where the files are served from. The address of a file is this value, a slash and the file's key in the bucket |
+| `force_path_style` | `true` by default: the bucket name goes in the path of a request. Set it to `false` only for a service that needs the bucket name in the host name |
+| `access_key_id` | **Required.** The id of the access key |
+| `secret_access_key` | **Required.** Its secret. It is stored encrypted and is never returned or logged |
+
+The request fields are snake_case, like the rest of the upload calls. The answer is camelCase and never holds the secret. It shows the last four characters of the access key id as `accessKeyHint`, so you can tell which key is set:
+
+```json
+{
+  "success": true,
+  "data": {
+    "partnerId": "7d5f3c1a-2b64-4c0e-9a51-6f1e2d3c4b5a",
+    "endpoint": "https://abc123.r2.cloudflarestorage.com",
+    "region": "auto",
+    "bucket": "yourcompany-widgetic-files",
+    "keyPrefix": "widgetic/uploads/",
+    "publicBaseUrl": "https://files.yourcompany.com",
+    "forcePathStyle": true,
+    "accessKeyHint": "Z9XQ",
+    "verifiedAt": "2026-10-20T09:12:41.000Z",
+    "lastVerificationError": null,
+    "lastVerificationFailedAt": null,
+    "updatedAt": "2026-10-20T09:12:41.000Z"
+  }
+}
+```
+
+If you would rather not call the API yourself, Widgetic's team can enter the destination for you, and it is checked in exactly the same way. Write to [partners@widgetic.com](mailto:partners@widgetic.com) to agree how to hand the key over, and do not send a secret key in a plain email. Give Widgetic a key that can reach this one bucket and nothing else.
+
+## The Check
+
+A destination is checked **before** it is saved, so a destination that does not work is never saved. Widgetic does what an upload will do, in this order:
+
+1. **`endpoint`.** The service host resolves to public addresses only.
+2. **`write`.** A small test file is written under `<key_prefix>widgetic-check/`.
+3. **`public_read`.** The test file is read back from `<public_base_url>/<its key>` and must be exactly what was written. This is what proves the address your customers use serves the file.
+
+Then the test file is deleted. If your key may not delete, the check still passes and the few bytes stay where they are.
+
+When a step fails, nothing is saved, and the answer is `422` with the step, a stable code and the field most likely to be wrong:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "STORAGE_DESTINATION_UNVERIFIED",
+    "message": "The test file was stored but the public address is not allowed to serve it. Make the bucket, or the CDN in front of it, publicly readable.",
+    "param": "public_base_url",
+    "details": {
+      "step": "public_read",
+      "reason": "PUBLIC_URL_FORBIDDEN"
+    }
+  }
+}
+```
+
+`details.step` is `endpoint`, `write` or `public_read`. `details.reason` is the stable code to switch on; the message is a fixed sentence and never repeats anything from your storage's own answer.
+
+| `details.reason` | What to check |
+|------------------|---------------|
+| `ENDPOINT_NOT_PUBLIC`, `ENDPOINT_NOT_FOUND`, `ENDPOINT_UNREACHABLE`, `TIMEOUT`, `TLS_ERROR` | The `endpoint`: it must be a public HTTPS host name that answers |
+| `INVALID_CREDENTIALS` | The access key id and the secret |
+| `WRONG_REGION`, `WRONG_ENDPOINT` | The `region`, and that the bucket lives at this endpoint |
+| `ACCESS_DENIED` | The key needs permission to put objects into the bucket |
+| `NO_SUCH_BUCKET` | The `bucket` name, and the `endpoint` |
+| `RATE_LIMITED` | The service is limiting requests. Try again shortly |
+| `PUBLIC_URL_NOT_PUBLIC`, `PUBLIC_URL_HOST_NOT_FOUND`, `PUBLIC_URL_UNREACHABLE` | The `public_base_url`: it must be a public address that resolves |
+| `PUBLIC_URL_NOT_FOUND` | `public_base_url` followed by a slash and the file's key has to reach the bucket. Check the `key_prefix` and the CDN's origin path |
+| `PUBLIC_URL_FORBIDDEN` | Make the bucket, or the CDN in front of it, publicly readable |
+| `PUBLIC_URL_REDIRECT` | The address redirects. Give the final address as `public_base_url` |
+| `PUBLIC_URL_MISMATCH`, `PUBLIC_URL_ERROR` | The address serves something else, or answers with an error. Open the test file's address in a browser |
+
+## Keep It Healthy
+
+- `GET /partners/{partnerId}/storage` returns the destination without its secret: when it last passed the check (`verifiedAt`) and, if a later check failed, why (`lastVerificationError`). It answers `404` while you have none.
+- `POST /partners/{partnerId}/storage/verify` runs the check again against what is saved. Use it after you rotate a key or change a bucket policy, or when uploads fail with `502` or `503`. A pass refreshes `verifiedAt`. A failure answers `422` as above and is recorded, but it does not remove the destination or stop uploads from using it. You are told about it with a `storage.check_failed` [notification](/docs/partners/notifications), once a day at most however often you run the check.
+- `DELETE /partners/{partnerId}/storage` removes the destination. After that your customers' uploads and your own are refused with `409` `PARTNER_STORAGE_REQUIRED` until you save a destination again, and no editor session can be made. Files already in the bucket are not touched and not moved: they stay where they are, at the addresses they were given, and keep working for as long as the bucket stays publicly readable.
+
+<Warning>
+  Widgetic does not check your bucket on a schedule. If you rotate or delete the access key, or close the bucket to the public, uploads start to fail and you find out from the errors below. Run the check again after any change on your side.
+</Warning>
+
+## What Goes Where
+
+| What | Where it is kept |
+|------|------------------|
+| A file a customer uploads in a Widgetic editor: the file browser, pictures dropped on a canvas, a chat attachment in the widget creator | Your bucket, filed under that customer |
+| A file you upload with `POST /uploads` and your API key or an SDK token | Your bucket |
+| What a session makes for itself, such as a widget's code and its previews | Widgetic |
+| Uploads you make signed in on widgetic.com, resumable uploads (`POST /uploads/tus`) and your account's own media library | Widgetic, against the storage allowance of your contract |
+
+What is kept in your bucket takes none of your storage allowance. The upload call, the customer's own filing and the allowance are described in [Managed Users](/docs/partners/managed-users#uploads) and [Credits & Billing](/docs/partners/credits-billing).
+
+When a destination is set, an upload is never stored with Widgetic instead of in it. If the destination cannot be used, the upload is refused (`503`), and if your bucket rejects the file, the answer is `502`. The customer reads one plain sentence, "This is not available right now. Please try again later.", that names neither your storage nor a limit, because it is your setup and not theirs.
+
+## What Each Customer Keeps
+
+`GET /partners/{partnerId}/storage/usage` says how many files and how many bytes your account keeps: in total, and for each of your managed users, split into what is in your own bucket and what is with Widgetic. The groups are ordered by size, the heaviest first. It is counted when you ask, so it is always current. Use it to see which customers store the most, or to charge them for it.
+
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  "https://api.widgetic.com/v1/partners/$WIDGETIC_PARTNER_ID/storage/usage?limit=20"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "partnerId": "7d5f3c1a-2b64-4c0e-9a51-6f1e2d3c4b5a",
+    "totals": {
+      "fileCount": 412,
+      "totalBytes": 183500800,
+      "widgeticStorageBytes": 5242880,
+      "partnerStorageBytes": 178257920
+    },
+    "managedUsers": [
+      {
+        "managedUserId": "b9a0f1d2-3c4e-4f50-8a61-7b2c3d4e5f60",
+        "externalId": "your-platform-user-123",
+        "name": "Acme Bakery",
+        "isActive": true,
+        "fileCount": 96,
+        "totalBytes": 61865984,
+        "widgeticStorageBytes": 0,
+        "partnerStorageBytes": 61865984,
+        "lastUploadAt": "2026-10-19T16:02:11.000Z"
+      }
+    ],
+    "page": { "limit": 20, "offset": 0, "hasMore": true }
+  }
+}
+```
+
+A file is counted for a customer when it was filed under them: by naming `managed_user_id` or `managed_user_external_id` when you upload it, or because it came through that customer's editor session, which files everything under them. The row whose `managedUserId` is `null` holds the files that are not filed under anyone: your own, and the ones you uploaded without naming a customer. Deleted files are not counted. To list the files of one customer, use the `managed_user_id` filter of `GET /uploads`. The dashboard shows the same figures next to each customer (see [Partner Dashboard](/docs/partners/dashboard)).
+
+The call needs the `partner:read` scope when your key is limited to some scopes (see [Authentication](/docs/authentication#limit-what-a-key-can-do)).
+
+## Errors
+
+| Status | Code | When | What to do |
+|--------|------|------|------------|
+| 400 | `VALIDATION_ERROR` | A field is not usable (`param` names it) | Correct the field |
+| 404 | `NOT_FOUND` | You have no destination to read or verify | Save one |
+| 409 | `PARTNER_STORAGE_REQUIRED` | An upload or an editor session needs a destination and you have none | Save a destination |
+| 422 | `STORAGE_DESTINATION_UNVERIFIED` | The check failed. `details.step` and `details.reason` say where and why | See the table above |
+| 502 | `STORAGE_DESTINATION_WRITE_FAILED` | Your bucket rejected the file | Check the key's permission and the bucket's limits |
+| 503 | `STORAGE_DESTINATION_UNAVAILABLE` | A destination is saved but cannot be used: it is switched off, its credentials cannot be opened, or your account administers two partners that each have one | Save the destination again, and write to Widgetic if it persists |
+| 503 | `PARTNER_STORAGE_DISABLED` | Storage destinations are not switched on for the server | Write to [support@widgetic.com](mailto:support@widgetic.com) |
+
+<CardGroup cols={2}>
+  <Card title="Account Status" icon="shield-check" href="/docs/partners/account-status">
+    Activation needs a storage destination that works
+  </Card>
+  <Card title="Editor Sessions" icon="key" href="/docs/partners/editor-sessions">
+    Where your customers' uploads come from
+  </Card>
+</CardGroup>

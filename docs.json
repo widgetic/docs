@@ -60,12 +60,16 @@
             "group": "Partner Integration",
             "pages": [
               "docs/partners/overview",
+              "docs/partners/account-status",
+              "docs/partners/storage",
               "docs/partners/managed-users",
               "docs/partners/editor-sessions",
               "docs/partners/ui-components",
               "docs/partners/module-versions",
               "docs/partners/canvas-embedding",
-              "docs/partners/credits-billing"
+              "docs/partners/credits-billing",
+              "docs/partners/notifications",
+              "docs/partners/dashboard"
             ]
           },
           {

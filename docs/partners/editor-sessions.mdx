@@ -72,7 +72,7 @@ const session = await managedUsersApi.createManagedUserEditorSession({
 | `surfaces` | Yes | What the session may do. One or more of `files`, `editor` and `creator`. See [Surfaces](#surfaces). |
 | `expires_in_seconds` | No | How long the session lasts: 60 to 14400 (four hours). Default 3600. It cannot be extended: make a new session when it ends. |
 | `allowed_origin` | No | Bind the session to one web page origin, such as `https://app.example.com` (no path; `http` only for `localhost`). See [Bind it to your page](#bind-it-to-your-page). |
-| `max_credits` | No | The most credits this session may spend on the AI: a whole number from 1 to 1000000, refunds taken off. Leave it out for no limit of its own. See [A limit for one session](#a-limit-for-one-session). |
+| `max_credits` | No | The most credits this session may spend on the AI: a whole number from 1 to 1000000, refunds taken off. Leave it out for no limit of its own, unless Widgetic has set a default for your account; send `null` to ask for none. See [A limit for one session](#a-limit-for-one-session). |
 
 The answer is `201`:
 
@@ -96,6 +96,8 @@ The answer is `201`:
 - **The token is shown once.** It starts with `wgt_ses_`, and the answer is sent with `Cache-Control: no-store`. Widgetic keeps only a fingerprint of it, so a lost token cannot be read back: make another session.
 - **`sessionId` is not a credential.** It is only the handle you use to [end the session](#end-a-session).
 - Each call makes a new session. It does not take an `Idempotency-Key`, because a retry cannot be given the token back.
+- A key that is limited to some scopes needs all of `partner:write`, `content:write` and `generate` to make a session, and is refused with `403` `API_KEY_SCOPE_MISSING` without them (see [Limit what a key can do](/docs/authentication#limit-what-a-key-can-do)). A key with full access needs nothing more.
+- A session is made only while your account is in force and your [storage](/docs/partners/storage) works. A paused account is refused with `403` `PARTNER_SUSPENDED`, and an account without a storage destination with `409` `PARTNER_STORAGE_REQUIRED` (see [Every session needs your own storage](#every-session-needs-your-own-storage)).
 
 ### A server endpoint for your page
 
@@ -128,7 +130,7 @@ A session can do only what its surfaces allow. The surfaces do not imply one ano
 
 | Surface | What the session may do | Editor that needs it |
 |---------|------------------------|----------------------|
-| `files` | Upload a file and list the files uploaded for this customer. Every file is filed under this customer and kept in **your own storage**: a session with this surface can be made only once you have set up a storage destination, and a customer's file is never stored with Widgetic. See [The files surface needs your own storage](#the-files-surface-needs-your-own-storage). | File Browser |
+| `files` | Upload a file and list the files uploaded for this customer. Every file is filed under this customer and kept in **your own storage**, and a customer's file is never stored with Widgetic. See [Every session needs your own storage](#every-session-needs-your-own-storage). | File Browser |
 | `editor` | Open one of this customer's compositions, read its content, design, embed settings and schemas, and change its name, content, design and embed settings. | Composition editor |
 | `creator` | Everything the widget creator does for this customer: draw on canvases and save them, make and change widgets, talk to the AI, build, preview and publish a version, and list and make compositions of the widgets it built. | Widget creator |
 
@@ -138,15 +140,15 @@ A session can do only what its surfaces allow. The surfaces do not imply one ano
 
 The calls behind each surface are listed in the [API Reference](/api-reference/introduction), under `createManagedUserEditorSession`.
 
-### The files surface needs your own storage
+### Every session needs your own storage
 
-The files a customer uploads are yours to keep, so a session with the `files` surface is made only when you have set up your own storage destination: a bucket you own, on any S3-compatible service. Widgetic never keeps a customer's uploaded file in its own storage.
+The files a customer uploads are yours to keep, so an editor session is made only when you have set up your own [storage destination](/docs/partners/storage): a bucket you own, on any S3-compatible service. Widgetic never keeps a customer's uploaded file in its own storage. Storage is not optional for a partner, and it does not depend on which surfaces a session asks for.
 
-- **No storage, no session with `files`.** The call that makes the session answers `409` with the code `PARTNER_STORAGE_REQUIRED`. When a destination is saved but cannot be used (it is switched off, its credentials cannot be opened, or your account administers two partners that each have one) it answers `503` with `STORAGE_DESTINATION_UNAVAILABLE`. No session is made, so you hear about it on your server and never from a customer's browser.
-- **A session without `files` needs none.** Ask for `["editor"]` instead of `["editor", "files"]` and give the composition editor your own [media library](/docs/partners/ui-components#show-your-own-media-library): its file pickers then list and upload your files, and nothing is kept with Widgetic. The widget creator attaches its chat pictures through Widgetic's upload call, so it needs `files`, and so your storage.
+- **No storage, no session.** The call that makes the session answers `409` with the code `PARTNER_STORAGE_REQUIRED`, whatever the surfaces are. When a destination is saved but cannot be used (it is switched off, its credentials cannot be opened, or your account administers two partners that each have one) it answers `503` with `STORAGE_DESTINATION_UNAVAILABLE`. No session is made, so you hear about it on your server and never from a customer's browser.
 - **There is no fallback.** If you remove your storage after a session was made, that customer's uploads are refused until you save a destination again. They are never written to Widgetic's storage, and they never count against your storage allowance.
 - **The customer is told one plain sentence:** "This is not available right now. Please try again later." It names neither your storage nor a limit, because it is your setup and not theirs.
-- **It covers your customers' uploads only.** What a session makes for itself, such as a widget's code and its previews, stays with Widgetic. The uploads you send with your own key follow your own choice: your storage when you have set it up, otherwise Widgetic's.
+- **It covers your customers' uploads, and yours.** What a session makes for itself, such as a widget's code and its previews, stays with Widgetic. The uploads you send with your own key are kept in your storage too: without a destination they are refused with the same `409`, and never stored with Widgetic instead.
+- **An account that is not activated yet** cannot make a session at all (`PARTNER_INACTIVE`), and activation needs a storage destination that works. See [Account Status](/docs/partners/account-status#getting-activated).
 
 ### What a session never does
 
@@ -202,9 +204,9 @@ The first answers `200` with the session's id (and `404` `EDITOR_SESSION_NOT_FOU
 
 ## Credits and limits
 
-The AI is paid for by **your account**, as your own calls are: a generation a customer starts uses the same credit as one you start with your key (see [Credits & Billing](/docs/partners/credits-billing)). A customer's uploads do not use your account's storage allowance: they are kept in your own storage (see [The files surface needs your own storage](#the-files-surface-needs-your-own-storage)).
+The AI is paid for by **your account**, as your own calls are: a generation a customer starts uses the same credit as one you start with your key (see [Credits & Billing](/docs/partners/credits-billing)). A customer's uploads do not use your account's storage allowance: they are kept in your own storage (see [Every session needs your own storage](#every-session-needs-your-own-storage)).
 
-- **Each customer has an allowance of their own.** What a customer does with the AI is counted per customer, not per account or per session: one busy customer cannot use up the others' turns, a customer who opens many sessions still has one allowance, and your own calls with your key are counted separately. At the moment a customer can start about 26 generations or builds an hour and about 130 a day. A customer who uses it up is refused with `429`, the code `COST_LIMIT_EXCEEDED` and a `Retry-After` header, and only that customer is. It also keeps a script in one browser from spending your whole wallet. Tell us if your customers need more: the allowance can be raised.
+- **Each customer has an allowance of their own.** What a customer does with the AI is counted per customer, not per account or per session: one busy customer cannot use up the others' turns, a customer who opens many sessions still has one allowance, and your own calls with your key are counted separately. At the moment a customer can start about 26 generations or builds an hour and about 130 a day. A customer who uses it up is refused with `429`, the code `COST_LIMIT_EXCEEDED` and a `Retry-After` header, and only that customer is. It also keeps a script in one browser from spending your whole wallet. Everybody starts with the same allowance, and Widgetic can set it for your account alone: tell us if your customers need more, and see [Settings that can differ for your account](#settings-that-can-differ-for-your-account).
 - **Your credits and plan are yours.** When your account cannot pay, every customer is refused: `402` `BILLING_INSUFFICIENT_CREDITS` (credits) or `403` `AUTHZ_PLAN_RESTRICTION` (your plan does not include it). A customer is never told what your account holds: the message is one plain sentence, "This is not available right now. Please try again later.", with no balance, cost or plan. The same calls made with your key keep the full messages.
 - **The editors tell your page.** The widget creator reports these as a `limitReached` event, once per code in half a minute, so your page can offer more or tell its own team. See [Canvas Embedding](/docs/partners/canvas-embedding#when-a-limit-is-reached).
 - **Ordinary rate limiting** (`RATE_LIMIT_EXCEEDED`) counts the address each request comes from, not your account, so your customers do not share it. It is not a limit your page needs to report.
@@ -225,6 +227,18 @@ curl -sS -X POST "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID/edi
 - **The limit belongs to the session.** A new session starts again from zero. For a cap on what a customer may spend in a day or a month, read [their usage](#what-each-customer-spent) on your server and stop making sessions at your own number.
 - **Only calls that take credits count.** Building a widget takes none, so it is never counted or held back by `max_credits`.
 - **A limit that cannot be checked does not let the call through.** If Widgetic cannot read what the session has spent, the call is refused with `503` and the customer can try again in a moment.
+
+### Settings that can differ for your account
+
+Editor sessions behave the same for every partner by default. If your account needs something different, Widgetic can set any of these three for your account alone, and nothing else about your account changes:
+
+| Setting | What it does | What you see |
+|---------|--------------|--------------|
+| Sessions switched off | Editor sessions are not made for your account. It can only narrow what everybody gets: it never switches on what Widgetic has switched off for all. | A new session is refused with `403` `EDITOR_SESSIONS_DISABLED_FOR_PARTNER`, and a customer's open session is refused the same way |
+| A larger allowance | What one operation of your customers costs against their own allowance is smaller, so each customer can do more before `COST_LIMIT_EXCEEDED` | Customers are refused later. Nothing to change in your calls |
+| A default limit for new sessions | The `max_credits` a session gets when your request does not name one. A request that names its own limit, or `null` for none, keeps it | A session that you made without `max_credits` can still end with `EDITOR_SESSION_CREDIT_LIMIT_REACHED` |
+
+A change reaches every server within about a quarter of a minute. Ask [partners@widgetic.com](mailto:partners@widgetic.com) when you need one.
 
 ### What each customer spent
 
@@ -292,11 +306,13 @@ The browser side of a session answers with these. The editors handle them for yo
 | 401 | `EDITOR_SESSION_REVOKED` | You ended it, or the customer was switched off | Mint a new session if the customer should continue |
 | 401 | `EDITOR_SESSION_USER_UNAVAILABLE` | The managed user no longer exists or is switched off | Do not mint another until the customer is back |
 | 402 | `EDITOR_SESSION_CREDIT_LIMIT_REACHED` | The session has spent the `max_credits` you gave it | Mint a new session if the customer may spend more |
+| 403 | `PARTNER_SUSPENDED`, `PARTNER_INACTIVE` | Your partner account is paused, or not activated yet. The customer reads only: "This service is not available right now. Please contact the website that sent you here." | Nothing for the customer to do. See [Account Status](/docs/partners/account-status) |
+| 403 | `EDITOR_SESSIONS_DISABLED_FOR_PARTNER` | Widgetic switched editor sessions off for your account alone. The customer reads: "Editor sessions are not available for this account." | Write to Widgetic |
 | 403 | `EDITOR_SESSION_ORIGIN_NOT_ALLOWED` | The session is bound to another page | Mint it with this page's `allowed_origin` |
 | 403 | `EDITOR_SESSION_ROUTE_NOT_ALLOWED` | A session cannot make this call | Not a session's job: do it from your server |
 | 403 | `EDITOR_SESSION_FIELD_NOT_ALLOWED` | The request sets a field a session may not set | Remove the field |
 | 404 | `RESOURCE_…_NOT_FOUND`, such as `RESOURCE_WIDGET_NOT_FOUND` | The item is not this customer's, does not exist, or is not even an id | File it under the customer, or check the id |
-| 409 | `PARTNER_STORAGE_REQUIRED` | The customer uploaded a file and you have no storage destination | Set up your own storage (see [The files surface needs your own storage](#the-files-surface-needs-your-own-storage)). The customer reads only the plain sentence |
+| 409 | `PARTNER_STORAGE_REQUIRED` | The customer uploaded a file and you have no storage destination | Set up your own [storage](/docs/partners/storage) (see [Every session needs your own storage](#every-session-needs-your-own-storage)). The customer reads only the plain sentence |
 | 503 | `EDITOR_SESSIONS_DISABLED` | Editor sessions are switched off for the moment | Try again later |
 
 Making a session can also answer: `400` (a surface that does not exist, `expires_in_seconds` or `max_credits` out of range, or `allowed_origin` that is not an origin), `403` (the caller is not a partner), `404` `MANAGED_USER_NOT_FOUND`, `409` `MANAGED_USER_INACTIVE` (switched off managed users get no sessions), `409` `PARTNER_STORAGE_REQUIRED` (the `files` surface, and no storage destination of your own), `429` `EDITOR_SESSION_LIMIT_REACHED`, `503` `STORAGE_DESTINATION_UNAVAILABLE` (the storage you set up cannot be used) and `503` `EDITOR_SESSIONS_DISABLED`.

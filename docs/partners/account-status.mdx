@@ -1,0 +1,132 @@
+---
+title: Account Status
+description: How a partner account is activated, what a pause stops, and how it starts again
+---
+
+A partner account is in one of three states, and only Widgetic changes it. This page says what each state means for you and for your customers, so that a pause never comes as a surprise.
+
+## The Three States
+
+| Status | What it means | Your customers |
+|--------|---------------|----------------|
+| `inactive` | Not activated yet. Every new account starts here, and an account that was deactivated returns here | Cannot use Widgetic through you |
+| `active` | In force | Everything works |
+| `suspended` | Paused by hand by Widgetic. The reason is recorded and you can read it | Their editors stop, and your published widgets are not served |
+
+Read your own state with `GET /partners/mine`. The answer has `standing` for the account as a whole (`inactive`, `active` or `suspended`, or `not_a_partner` for an account that administers no partner) and the `partners` you administer. Each one has its `id`, which the other partner routes ask for, its `status` and, while it is paused, `suspendedAt` and `suspensionReason`.
+
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  "https://api.widgetic.com/v1/partners/mine"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "standing": "suspended",
+    "partners": [
+      {
+        "id": "7d5f3c1a-2b64-4c0e-9a51-6f1e2d3c4b5a",
+        "name": "Your Company",
+        "status": "suspended",
+        "contactEmail": "billing@yourcompany.com",
+        "allowedDomains": [],
+        "suspendedAt": "2026-10-20T09:00:00.000Z",
+        "suspensionReason": "Invoice 2026-0042 is unpaid",
+        "createdAt": "2026-09-01T10:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+<Note>
+  A pause is never automatic. Widgetic reminds you of an unpaid invoice (see [When an invoice is not paid](/docs/partners/credits-billing#when-an-invoice-is-not-paid)) and tells its own team, but however late an invoice is, nothing pauses your account by itself. A person at Widgetic decides, and writes the reason you read here.
+</Note>
+
+## Getting Activated
+
+A partner has no trial. You pay from the first day, and you can use the account only once Widgetic has activated it. Widgetic activates it when two things are in place:
+
+1. **A contract in force.** Widgetic records what was agreed: the price, the credits, the billing cycle and the dates. The dates must cover today.
+2. **Storage that works.** Your own [storage destination](/docs/partners/storage) is saved and has passed its check. This one is yours to do, and it is the part that takes the longest, so start with it.
+
+Until then the account is `inactive`. You can set up your storage and read your contract, invoices and notifications, and you can pay. Everything that makes something is refused with `PARTNER_INACTIVE`. When Widgetic activates the account you get a `partner.activated` [notification](/docs/partners/notifications).
+
+The first invoice is not a requirement for the activation. Widgetic may send it before or right after, and you pay it from the Billing page of your [dashboard](/docs/partners/dashboard) or from the link in the invoice email.
+
+## What a Pause Stops
+
+**For you.** Everything that makes something or starts work is refused with `403`: creating or changing widgets and compositions, publishing, generating with the AI, uploading, and making managed users and their editor sessions. The answer says why:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "PARTNER_SUSPENDED",
+    "message": "This partner account is paused. Billing, invoices, credits and notifications are still available; everything else comes back when Widgetic resumes the account.",
+    "details": {
+      "partnerStatus": "suspended",
+      "reason": "Invoice 2026-0042 is unpaid"
+    }
+  }
+}
+```
+
+`details.partnerStatus` is `suspended` or `inactive`, and `details.reason` is the reason recorded with the pause. Branch on `error.code` (`PARTNER_SUSPENDED` or `PARTNER_INACTIVE`), not on the message.
+
+**What stays open to you.** Reading everything, as before, so that you can see what is paused and why. And what you need to get going again: [billing, invoices and credits](/docs/partners/credits-billing), your contract, your [storage](/docs/partners/storage), your [notifications](/docs/partners/notifications), your API keys (a leaked key can still be revoked) and signing in and out. A generation that is already running can still be stopped, since stopping only saves credits.
+
+**For your customers.** Their [editor sessions](/docs/partners/editor-sessions) stop working at the next call, with `403` and the same code, and no new session can be made. What the customer reads is only:
+
+> This service is not available right now. Please contact the website that sent you here.
+
+It says nothing about money, because the customer did not cause it and cannot fix it. Your published widgets are not served while the account is not in force: their public address answers `404`.
+
+**What a pause keeps.** Nothing is deleted. Your customers, compositions, widgets, uploads, credits and invoices stay as they were, and everything comes back when the account is resumed.
+
+## Getting Going Again
+
+<Steps>
+  <Step title="See why">
+    Read `suspensionReason` in `GET /partners/mine`, the email Widgetic sent (a `partner.paused` notification), or the banner at the top of your dashboard.
+  </Step>
+  <Step title="Put it right">
+    Usually that means paying an open invoice. Billing stays open while the account is paused, so you can pay from the invoice link or from your dashboard.
+  </Step>
+  <Step title="Tell Widgetic">
+    Write to [partners@widgetic.com](mailto:partners@widgetic.com). A person at Widgetic resumes the account; nothing resumes it automatically.
+  </Step>
+  <Step title="Carry on">
+    You get a `partner.resumed` notification. The change takes effect within seconds, for you and for your customers. Resuming is never held up by paperwork.
+  </Step>
+</Steps>
+
+## Hearing About It
+
+Three events tell you about the standing of the account, and all three are emailed whatever your settings say, because they are about money and access:
+
+| Event | When |
+|-------|------|
+| `partner.activated` | Widgetic activated your account |
+| `partner.paused` | Widgetic paused it. `data.reason` has the reason |
+| `partner.resumed` | Widgetic resumed it after a pause |
+
+They are also in the list of your dashboard and, when you have set one up, sent to your [webhook](/docs/partners/notifications#your-own-webhook). Their `data` is `{ "status": "active" | "suspended", "previousStatus": "active" | "inactive" | "suspended" | null, "reason": string | null }`.
+
+## Errors
+
+| Status | Code | When | What to do |
+|--------|------|------|------------|
+| 403 | `PARTNER_SUSPENDED` | The account is paused and the request is not one that stays open | Pay what is due and write to Widgetic. `details.reason` says why it was paused |
+| 403 | `PARTNER_INACTIVE` | The account has not been activated yet | Finish your [storage](/docs/partners/storage) and wait for the activation |
+
+<CardGroup cols={2}>
+  <Card title="Credits & Billing" icon="credit-card" href="/docs/partners/credits-billing">
+    Invoices, tax, reminders and how to pay
+  </Card>
+  <Card title="Storage" icon="database" href="/docs/partners/storage">
+    The bucket your customers' files are kept in
+  </Card>
+</CardGroup>

@@ -1,0 +1,82 @@
+---
+title: Partner Dashboard
+description: What you can see and do for your partner account on widgetic.com, and the API calls behind each screen
+---
+
+Once Widgetic has approved your partner account, the person who administers it gets a dashboard on widgetic.com that is made for a partner: your credits and invoices, your managed users, the preset widgets you offer, and how your customers' widgets are used. Everything on it is also available through the API, so you can build the same views into your own tools.
+
+Sign in with the account that administers the partner, open the settings menu of your personal workspace and choose **Partner dashboard**. An account that administers no partner does not have that entry.
+
+## What the Dashboard Shows for Each Status
+
+A banner at the top says where your account stands (see [Account Status](/docs/partners/account-status)).
+
+| Status | What the dashboard offers |
+|--------|---------------------------|
+| `inactive` | Overview, Billing and credits, Notifications and Settings: what you need to get going, and nothing that needs customers. You can pay, set up your notifications and make your keys |
+| `suspended` | The banner shows the reason Widgetic gave. Everything stays readable, but nothing can be changed. Billing, notifications and your API keys stay open, so you can pay and get going again |
+| `active` | Everything |
+
+## The Tabs
+
+| Tab | What it is for | The API behind it |
+|-----|----------------|-------------------|
+| **Overview** | Where your partner account stands, and where to go next | `GET /partners/mine` |
+| **Billing and credits** | Your credits, what your customers used, your invoices with their tax, and your contract | `GET /partners/{partnerId}/credits/balance`, `GET /partners/{partnerId}/billing-overview`, `GET /partners/{partnerId}/contract` and the invoice routes (see [Credits & Billing](/docs/partners/credits-billing)) |
+| **Managed users** | Your customers: switch them on or off, and see what each one used and keeps in storage | `GET /users/{managerId}/managed-users`, `GET /managed-users/{id}/usage`, `GET /partners/{partnerId}/storage/usage` (see [Managed Users](/docs/partners/managed-users)) |
+| **Presets** | The widgets you offer your customers as starting points | `GET`, `PUT` and `DELETE` on `/partners/{partnerId}/presets` |
+| **Widgets** | The widgets you and your customers made | `GET /widgets`, with `managedUserId` to narrow it to one customer |
+| **Analytics** | How your customers' published compositions are viewed and used | The four routes under `/partners/{partnerId}/analytics` (below) |
+| **Notifications** | What Widgetic told you, and where it is sent | See [Notifications](/docs/partners/notifications) |
+| **Settings** | Your API keys, the domains your widgets can be embedded on, and your contact details | The API keys and domains of your account (see [Authentication](/docs/authentication) and [Security](/resources/security)) |
+
+<Note>
+  Your own storage destination is not set up in the dashboard. You do that with the API (see [Storage](/docs/partners/storage)), or Widgetic's team enters it for you.
+</Note>
+
+## Analytics
+
+The analytics count what the **visitors** of your customers' compositions did, from the events the embedded widgets send while they are shown (the Widgetic embed SDK sends them by itself). Only two things are counted: how many times a composition was **viewed**, and how many times a visitor **interacted** with one, plus how many different **visitors** there were. A visitor is a browsing session.
+
+| Route | What it answers |
+|-------|-----------------|
+| `GET /partners/{partnerId}/analytics/summary` | Views, interactions and visitors in a period, with how many different compositions and managed users were viewed |
+| `GET /partners/{partnerId}/analytics/managed-users` | Every one of your managed users with what their widgets did: views, interactions and visitors, and how many widgets and compositions they have made. A customer nobody viewed is listed too, with zeros. The most viewed come first |
+| `GET /partners/{partnerId}/analytics/top-widgets` | The widgets whose compositions were viewed the most, with views, interactions, visitors and how many of their compositions were viewed |
+| `GET /partners/{partnerId}/analytics/timeline` | Views, interactions and visitors for each day of the period (UTC days), oldest first, for a chart. A day with nothing is all zeros |
+
+The period runs from `startDate` (included) to `endDate` (not included): the 30 days before now when you give neither, and at most 366 days. A date without a time is midnight UTC at the start of that day, so for all of October give `startDate=2026-10-01` and `endDate=2026-11-01`. `summary`, `top-widgets` and `timeline` can be narrowed to one customer with `managedUserId` or `managedUserExternalId` (not both).
+
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  "https://api.widgetic.com/v1/partners/$WIDGETIC_PARTNER_ID/analytics/summary?startDate=2026-10-01&endDate=2026-11-01&managedUserExternalId=your-platform-user-123"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "partnerId": "7d5f3c1a-2b64-4c0e-9a51-6f1e2d3c4b5a",
+    "period": { "from": "2026-10-01T00:00:00.000Z", "to": "2026-11-01T00:00:00.000Z" },
+    "managedUserId": "b9a0f1d2-3c4e-4f50-8a61-7b2c3d4e5f60",
+    "views": 1840,
+    "interactions": 312,
+    "visitors": 904,
+    "compositionsViewed": 7,
+    "managedUsersViewed": 1
+  }
+}
+```
+
+A composition counts for a customer only when it is filed under them: send `managedUserId` or `managedUserExternalId` when you create it, or let the customer's [editor session](/docs/partners/editor-sessions) do it, which files everything under them. What visitors did with a composition that is not filed under anyone is in the summary of the whole account and in no customer's row.
+
+Analytics need the `partner:read` scope when your key is limited to some scopes. The numbers are counted when you ask, so they are always current.
+
+<CardGroup cols={2}>
+  <Card title="Credits & Billing" icon="credit-card" href="/docs/partners/credits-billing">
+    Invoices, tax, payments and credits
+  </Card>
+  <Card title="Managed Users" icon="users" href="/docs/partners/managed-users">
+    Your customers, their presets and what they use
+  </Card>
+</CardGroup>

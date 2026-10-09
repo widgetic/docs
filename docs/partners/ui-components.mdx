@@ -14,14 +14,15 @@ The UI SDK (`@widgetic/ui-sdk`) puts Widgetic's ready-made pieces in your own we
 
 | Module | What your customer can do | The session needs |
 |--------|--------------------------|-------------------|
-| `file-browser` | Browse, upload and pick files, from Widgetic's media library (files kept in your own storage) or from your own | `files`, which needs [your own storage](/docs/partners/editor-sessions#the-files-surface-needs-your-own-storage) (nothing, with your own [media library](#show-your-own-media-library)) |
+| `file-browser` | Browse, upload and pick files, from Widgetic's media library (files kept in your own storage) or from your own | `files` (nothing, with your own [media library](#show-your-own-media-library)) |
 | `composition-editor` | Change the texts, pictures, colours and fonts of a widget beside a live preview, and save | `editor` and `files` |
 | `widget-creator` | The whole Widgetic canvas: draw, describe a widget to the AI, watch it being built, change it and publish it | `creator`, `editor` and `files` |
 
 The File Browser is covered on this page. The composition editor and the widget creator have their own options and events, in [Canvas Embedding](/docs/partners/canvas-embedding).
 
-Three things hold for all of them:
+Four things hold for all of them:
 
+- **They work only for a partner in good standing, with storage.** A session is made only while your account is active and your own [storage](/docs/partners/storage) works (see [Every session needs your own storage](/docs/partners/editor-sessions#every-session-needs-your-own-storage)). While your account is paused, the pieces already on your customers' pages are refused too (see [Account Status](/docs/partners/account-status)).
 - **No API key in the browser.** Your server keeps the key and makes a short-lived [editor session](/docs/partners/editor-sessions) for the customer who is on the page. The page only ever holds that session's token, and it can reach only that customer's content.
 - **Your page stays yours.** A piece is drawn inside a shadow root: your CSS cannot restyle it and its CSS cannot touch your page. The SDK writes nothing to `<html>` or `<body>`, sends no `postMessage` and never clears your container.
 - **Small.** The SDK is a loader of about 30 KB. A piece is downloaded from Widgetic's CDN when you mount it, and only then.
@@ -499,10 +500,6 @@ Every error carries a `code`.
 | `MOUNT_FAILED` | The piece loaded but failed to start. Nothing is left in the container. |
 | `MOUNT_ABORTED` | The mount was cancelled through `signal`. |
 | `INVALID_THEME` | A theme cannot be used: `updateTheme` was given something that is not a mode or settings, or a piece refused the settings (`setTheme`, a mount call). The message names the setting. |
-
-## If you read an older version of this page
-
-The earlier design had `getComponentManifest`, `mountComponent` and the `/ui/components` calls of the API. The calls only kept a record of a mount and showed nothing in your page, so they were removed from the API (and from `UIComponentsApi` in the API SDK, from its next release), and `getComponentManifest` is not in the UI SDK any more. `mountComponent` is still there, but it is now `mountModule` that gives back the id of the instance instead of the module. Use `mountModule` with a `getToken` that returns an editor session. The API key never goes in the browser (`apiKey` is refused with `API_KEY_NOT_ALLOWED`). The `embed-editor` piece does not exist: the composition editor has the embed settings.
 
 ## Next Steps
 

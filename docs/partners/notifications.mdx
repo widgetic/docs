@@ -1,0 +1,317 @@
+---
+title: Notifications
+description: What Widgetic tells you about your account, by email, in your dashboard and as signed calls to your own system
+---
+
+Widgetic tells you what happens to your partner account: an invoice, a payment, credits running low, a pause. The same event reaches you in up to three places, and what you see in each one is the same facts:
+
+- **Email**, to the addresses you choose.
+- **Your dashboard**, as a list (see [Partner Dashboard](/docs/partners/dashboard)). The API returns the same list.
+- **Your own system**, as a signed `POST` to an address you set (a [webhook](#your-own-webhook)), so that your code can act on it: mark an invoice paid, warn your team that credits are low.
+
+## The Events
+
+| Event | When it happens | Email |
+|-------|-----------------|-------|
+| `invoice.issued` | Widgetic issued an invoice to you | Always |
+| `invoice.due_soon` | An invoice is due in three days, or today, and is not paid yet | Always |
+| `invoice.overdue` | An invoice is unpaid three, seven and fourteen days after its due date | Always |
+| `invoice.paid` | An invoice was paid, by you or by Widgetic on your behalf (a bank transfer, for example) | Always |
+| `invoice.failed` | A payment did not go through. The invoice stays open and can be paid again | Always |
+| `credits.low` | Your credits are running out (`low`), or have run out (`empty`) | Your choice |
+| `partner.activated` | Widgetic activated your account | Always |
+| `partner.paused` | Widgetic paused your account, with a reason | Always |
+| `partner.resumed` | Widgetic resumed your account after a pause | Always |
+| `storage.check_failed` | Your [storage](/docs/partners/storage) failed its check, so files cannot be kept there | Your choice |
+| `composition.created` | A composition was created for one of your managed users | Never |
+| `widget.published` | A widget of one of your managed users was published | Never |
+| `upload.created` | A file upload for one of your managed users finished | Never |
+
+Money and the standing of your account are never silent: the events marked **Always** are emailed whatever you choose, and you can narrow only what your own system receives. The three events about your managed users are for your webhook only. They are not emailed and not in the dashboard list, so a busy account is not flooded.
+
+Each event is told once. An invoice that Stripe reports twice, or a reminder that is checked again, does not reach you twice.
+
+## What Each Event Carries
+
+Every notification has a `title` (one line), a `body` (a few sentences that say what happened and what to do about it), a `tone` (`info`, `success`, `warning` or `error`) and its facts in `data`, named in camelCase.
+
+| Events | What is in `data` |
+|--------|-------------------|
+| `invoice.*` | `invoiceNumber`, `subtotal` (the price before tax), `taxAmount` (zero when there is none), `total` (what you pay), `currency` (upper-case ISO 4217 code), `dueDate` and `hostedInvoiceUrl` (the page where it is paid). Amounts are in the invoice's currency, not in cents |
+| `invoice.due_soon` | The invoice facts and `daysUntilDue` (three, or zero on the day) |
+| `invoice.overdue` | The invoice facts and `daysOverdue` (three, seven or fourteen) |
+| `invoice.paid` | The invoice facts and `paidAt` |
+| `invoice.failed` | The invoice facts and `reason`, in the card holder's words |
+| `credits.low` | `band` (`low` or `empty`), `balance` (what you can spend now: the credits you hold less the ones committed to a running job) and `threshold` (the level the warning was raised at) |
+| `partner.activated`, `partner.paused`, `partner.resumed` | `status` (`active` or `suspended`), `previousStatus` and `reason` (set for a pause) |
+| `storage.check_failed` | `reason` and `checkedAt` |
+| `composition.created` | `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId`, `createdAt` |
+| `widget.published` | `widgetId`, `name`, `managedUserId`, `externalId`, `version`, `publishedAt` |
+| `upload.created` | `uploadId`, `name`, `mimeType`, `sizeBytes`, `address`, `managedUserId`, `externalId`, `purpose`, `createdAt` |
+
+## Read Your Notifications
+
+`GET /partners/{partnerId}/notifications` lists them, the newest first. A page holds `limit` notifications (20 by default, at most 100). When there are older ones, `nextBefore` is set: ask again with it as `before`.
+
+```bash
+curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  "https://api.widgetic.com/v1/partners/$WIDGETIC_PARTNER_ID/notifications?limit=20"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "notifications": [
+      {
+        "id": "0f3c9a52-7d41-4e86-b0a3-5c1d2e3f4a5b",
+        "type": "invoice.overdue",
+        "title": "Invoice 2026-0042 is 7 days overdue",
+        "body": "Invoice 2026-0042 for USD 1,190.00 was due on 31 October 2026 and has not been paid. Please pay it as soon as you can. If you paid in the last few days, you can ignore this message. While an invoice stays unpaid, Widgetic may pause your account, and your customers could then no longer see your widgets or make new ones.",
+        "tone": "warning",
+        "data": {
+          "invoiceNumber": "2026-0042",
+          "subtotal": 1000,
+          "taxAmount": 190,
+          "total": 1190,
+          "currency": "USD",
+          "dueDate": "2026-10-31T00:00:00.000Z",
+          "hostedInvoiceUrl": "https://invoice.stripe.com/i/acct_example/test_example",
+          "daysOverdue": 7
+        },
+        "createdAt": "2026-11-07T08:00:04.000Z"
+      }
+    ],
+    "nextBefore": null
+  }
+}
+```
+
+Reading needs the `partner:read` scope when your key is limited to some scopes (see [Authentication](/docs/authentication#limit-what-a-key-can-do)).
+
+## Choose Where They Go
+
+`GET /partners/{partnerId}/notifications/settings` returns where your notifications go now, and `events`, every kind of event there is, for a settings screen. `PUT` on the same address changes it. A key you leave out of the body stays as it was, so send only what changes.
+
+```bash
+curl -sS -X PUT "https://api.widgetic.com/v1/partners/$WIDGETIC_PARTNER_ID/notifications/settings" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "emailRecipients": ["finance@yourcompany.com", "ops@yourcompany.com"],
+    "emailEvents": ["credits.low", "storage.check_failed"],
+    "webhookUrl": "https://yourcompany.com/widgetic/events",
+    "webhookEvents": null
+  }'
+```
+
+| Field | What it does |
+|-------|--------------|
+| `emailRecipients` | The addresses the emails go to, at most five. While the list is empty, the emails about invoices go to the billing emails of your billing profile (your contact email when there are none), and the others to your contact email |
+| `emailEvents` | The events you want by email. `null` means every event. It narrows the events marked **Your choice** above; the others are emailed whatever it says |
+| `webhookUrl` | Where the signed calls go. `null`, or an empty text, switches the webhook off |
+| `webhookEvents` | The events sent to your webhook. `null` means every event, the three about your managed users included |
+
+Changing the settings needs an API key with full access, because they decide where your notifications go. Reading them does not.
+
+## Your Own Webhook
+
+Set `webhookUrl` and Widgetic sends a signed `POST` for each event you subscribed to. The address must be `https` on the standard port, on a public site, and it must not redirect.
+
+The first time you set an address, Widgetic makes a **signing secret** and the answer carries it as `webhookSecret`. **It is shown once, so keep it now.** It looks like `whsec_...`, and it cannot be read again.
+
+```json
+{
+  "success": true,
+  "data": {
+    "settings": {
+      "partnerId": "7d5f3c1a-2b64-4c0e-9a51-6f1e2d3c4b5a",
+      "webhookUrl": "https://yourcompany.com/widgetic/events",
+      "webhookSecretSet": true
+    },
+    "webhookSecret": "whsec_EXAMPLE_SHOWN_ONCE_KEEP_IT_SAFE"
+  }
+}
+```
+
+(The answer also holds the other settings. This one shows only what matters here.)
+
+### What a call looks like
+
+The body is JSON: `{ "id", "type", "createdAt", "partnerId", "data" }`, where `data` is the `data` of the notification.
+
+```json
+{
+  "id": "evt_5f0c2a9e4b7d4c1e8a3b6d9f1c2e4a7b",
+  "type": "invoice.paid",
+  "createdAt": "2026-10-20T09:15:00.000Z",
+  "partnerId": "7d5f3c1a-2b64-4c0e-9a51-6f1e2d3c4b5a",
+  "data": {
+    "invoiceNumber": "2026-0042",
+    "subtotal": 1000,
+    "taxAmount": 190,
+    "total": 1190,
+    "currency": "USD",
+    "dueDate": "2026-10-31T00:00:00.000Z",
+    "hostedInvoiceUrl": "https://invoice.stripe.com/i/acct_example/test_example",
+    "paidAt": "2026-10-20T09:14:52.000Z"
+  }
+}
+```
+
+The headers are the ones of the [Standard Webhooks](https://www.standardwebhooks.com) scheme, so any of its libraries verifies a call. Widgetic adds `x-widgetic-event` (the event type) and a `user-agent` of `WidgeticPartnerEvents/1.0`.
+
+| Header | What it holds |
+|--------|---------------|
+| `webhook-id` | The event's `id`. It is the same on every retry, so use it to drop an event you already handled |
+| `webhook-timestamp` | When the call was signed, in seconds since 1970 |
+| `webhook-signature` | `v1,` and the base64 HMAC-SHA256 of the text `<webhook-id>.<webhook-timestamp>.<the raw body>`, under your secret. While a rotated secret overlaps, two signatures are listed, separated by a space |
+
+### Verify it
+
+Check every call before you trust it, and refuse a `webhook-timestamp` that is more than five minutes old. Take your secret without the `whsec_` prefix and decode it from base64: those bytes are the key. Sign the **raw body**, exactly as it arrived, and not a copy that your framework parsed and wrote out again.
+
+```javascript
+import crypto from 'node:crypto';
+
+const TOLERANCE_IN_SECONDS = 5 * 60;
+
+/**
+ * Checks that a call really comes from Widgetic, and throws when it does not.
+ * `rawBody` is the exact text that arrived, before any JSON parsing.
+ */
+export function verifyWidgeticWebhook(rawBody, headers, webhookSecret) {
+  const eventId = headers['webhook-id'];
+  const timestamp = headers['webhook-timestamp'];
+  const signatureHeader = headers['webhook-signature'];
+  if (!eventId || !timestamp || !signatureHeader) {
+    throw new Error('The call has no webhook headers');
+  }
+
+  // A copied call cannot be sent again later: refuse anything older than five minutes.
+  const ageInSeconds = Math.abs(Date.now() / 1000 - Number(timestamp));
+  if (!Number.isFinite(ageInSeconds) || ageInSeconds > TOLERANCE_IN_SECONDS) {
+    throw new Error('The webhook timestamp is outside the allowed window');
+  }
+
+  // The secret is "whsec_" followed by the key in base64.
+  const signingKey = Buffer.from(webhookSecret.replace(/^whsec_/, ''), 'base64');
+  const expectedSignature = crypto
+    .createHmac('sha256', signingKey)
+    .update(`${eventId}.${timestamp}.${rawBody}`, 'utf8')
+    .digest('base64');
+  const expected = Buffer.from(`v1,${expectedSignature}`);
+
+  // While a rotated secret overlaps, the header holds two signatures separated by a space.
+  const matches = signatureHeader.split(' ').some((candidate) => {
+    const received = Buffer.from(candidate);
+    return received.length === expected.length && crypto.timingSafeEqual(received, expected);
+  });
+  if (!matches) {
+    throw new Error('The webhook signature does not match');
+  }
+}
+```
+
+Here it is in a receiver. It keeps the body as it arrived, verifies it, drops an event it has already handled, and answers quickly:
+
+```javascript
+import express from 'express';
+
+const app = express();
+const handledEventIds = new Set(); // Use your database in production
+
+// Keep the body as bytes: the signature covers exactly what was sent.
+app.post('/widgetic/events', express.raw({ type: 'application/json' }), (request, response) => {
+  const rawBody = request.body.toString('utf8');
+
+  try {
+    verifyWidgeticWebhook(rawBody, request.headers, process.env.WIDGETIC_WEBHOOK_SECRET);
+  } catch (error) {
+    console.warn('Rejected a call to /widgetic/events:', error.message);
+    return response.status(400).send('Invalid signature');
+  }
+
+  const event = JSON.parse(rawBody);
+
+  // Delivery is at least once, so the same event can arrive again with the same id.
+  if (handledEventIds.has(event.id)) {
+    return response.status(200).send('Already handled');
+  }
+  handledEventIds.add(event.id);
+
+  if (event.type === 'invoice.paid') {
+    console.log(`Invoice ${event.data.invoiceNumber} was paid at ${event.data.paidAt}`);
+  } else if (event.type === 'credits.low') {
+    console.log(`Credits are ${event.data.band}: ${event.data.balance} left`);
+  }
+
+  return response.status(200).send('ok');
+});
+```
+
+### Answer and retries
+
+Answer with a `2xx` within ten seconds. Anything else, and no answer, is tried again after 1 minute, 5 minutes, 30 minutes, 2 hours, 6 hours, 12 hours and a day: eight attempts in all, over about two days. Your address is read again at each attempt, so a receiver you mend in the meantime still gets the event. Two answers end the delivery at once: `410 Gone` and `413 Payload Too Large`.
+
+Delivery is **at least once**. If your answer is lost, the same event arrives again with the same `id`. An event is never lost to a slow receiver, but your code has to be able to meet it twice.
+
+An email counts as delivered when it was handed to the mail service. A webhook call counts as delivered when your endpoint answered `2xx`.
+
+### Rotate the secret
+
+`POST /partners/{partnerId}/notifications/webhook-secret` makes a new secret and returns it once as `webhookSecret`. Use it when the secret was lost or may have leaked. The old secret keeps signing for a day, next to the new one, so that your receiver can switch without a call being rejected: for that day each call carries two signatures, and the code above accepts either. Rotating again within the day ends the overlap with the first secret.
+
+Send an `Idempotency-Key` with it, and retry with the **same** key if the answer was lost: you get the same answer, secret included, and no second secret is made. The call needs an API key with full access.
+
+## See What Was Sent
+
+`GET /partners/{partnerId}/notifications/deliveries` lists the sends of your notifications, the newest first: each email to one address and each call to your webhook. It tells you whether it was delivered, when it is tried again, how many attempts it had, the HTTP status your webhook answered with, and why the last attempt failed. Use it to find out why an event did not reach you.
+
+```json
+{
+  "success": true,
+  "data": {
+    "deliveries": [
+      {
+        "deliveryId": "6a1b2c3d-4e5f-4a7b-8c9d-0e1f2a3b4c5d",
+        "notificationId": "0f3c9a52-7d41-4e86-b0a3-5c1d2e3f4a5b",
+        "eventType": "invoice.overdue",
+        "title": "Invoice 2026-0042 is 7 days overdue",
+        "channel": "webhook",
+        "target": "yourcompany.com",
+        "status": "pending",
+        "attemptCount": 2,
+        "nextAttemptAt": "2026-11-07T08:35:04.000Z",
+        "lastAttemptAt": "2026-11-07T08:05:04.000Z",
+        "deliveredAt": null,
+        "lastStatusCode": 502,
+        "lastError": "status 502",
+        "createdAt": "2026-11-07T08:00:04.000Z",
+        "replayOfDeliveryId": null
+      }
+    ]
+  }
+}
+```
+
+`status` is `pending`, `delivered`, `failed` or `cancelled`. `target` is the address of an email, or only the **host** of your webhook, because the whole address may hold a token. `lastError` is a few words from Widgetic, never what your endpoint replied.
+
+To send one webhook delivery again, for example after you fixed your receiver, call `POST /partners/{partnerId}/notifications/deliveries/{deliveryId}/replay`. It sends the event to your **current** address with the same `webhook-id` as the original, so a receiver that remembers ids can ignore a duplicate, with a new `createdAt` and a signature made with your current secret. The attempt is recorded as a new row that points at the delivery you replayed. A handful of replays a minute is enough for this, and more are refused with `429`. It needs an API key with full access.
+
+## Errors
+
+| Status | Code | When | What to do |
+|--------|------|------|------------|
+| 400 | `VALIDATION_ERROR` | A setting is not valid: an address is not `https` on the standard port, there are more than five recipients, or an event name is unknown | Correct it. `param` names the field |
+| 403 | `API_KEY_SCOPE_MISSING` | Your key is limited to some scopes and the call needs more (changing settings, rotating the secret and replaying need full access) | Use a key with full access |
+| 503 | `WEBHOOK_SIGNING_UNAVAILABLE` | This server cannot sign webhooks yet (`webhookSigningAvailable` is `false` in the settings) | Write to [support@widgetic.com](mailto:support@widgetic.com). Email and the dashboard list work meanwhile |
+
+<CardGroup cols={2}>
+  <Card title="Credits & Billing" icon="credit-card" href="/docs/partners/credits-billing">
+    How invoices, tax and reminders work
+  </Card>
+  <Card title="Account Status" icon="shield-check" href="/docs/partners/account-status">
+    Activation, pause and what each one stops
+  </Card>
+</CardGroup>

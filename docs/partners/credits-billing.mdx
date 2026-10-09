@@ -8,9 +8,9 @@ You pay Widgetic **by invoice**, and you spend **credits** on Widgetic's AI. Cre
 ## Overview
 
 1. **Agree your terms** with Widgetic. Your contract sets the price, the billing cycle, and the credits and storage it includes. Read it with `GET /partners/{partnerId}/contract`.
-2. **Pay the invoices.** Widgetic issues an invoice for your contract price, Stripe emails it to your billing contact, and you pay it on the invoice page. Nothing is charged automatically.
+2. **Pay the invoices.** Widgetic issues an invoice for your contract price, with the tax that applies to you, Stripe emails it to your billing contact, and you pay it on the invoice page. Nothing is charged automatically. You pay from the first day: a partner has no trial.
 3. **Spend credits on AI.** Each generation by Widgetic's AI uses 1 credit. Widgetic adds credits to your account when you ask. No API call adds credits.
-4. **Monitor** your balance and your spending with the two account credit calls below.
+4. **Monitor** your balance, your spending and your invoices in your [dashboard](/docs/partners/dashboard), with the calls below, or let [notifications](/docs/partners/notifications) tell you when an invoice is issued, due, overdue or paid, and when your credits run low.
 
 The examples on this page are for your server. Keep the key in an environment variable, such as `WIDGETIC_PARTNER_KEY`, and never put it in a browser.
 
@@ -61,7 +61,7 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
 The values above are an illustration, not real figures. Credits reserved for an operation that is still running cannot be spent, so what a new operation can use is `balance - reservedBalance`. An account that has never held credits reads a balance of 0.
 
 <Note>
-  The `@widgetic/api-sdk` package on npm today (1.0.22) still calls an older address for the two account credit calls, so use plain HTTP as shown here. In a regenerated SDK they are `CreditsApi.getUserCreditBalance` and `CreditsApi.getUserCreditTransactions`.
+  In the TypeScript SDK (`@widgetic/api-sdk`) the two account credit calls are `CreditsApi.getUserCreditBalance` and `CreditsApi.getUserCreditTransactions`.
 </Note>
 
 ## Adding Credits
@@ -69,6 +69,8 @@ The values above are an illustration, not real figures. Credits reserved for an 
 Credits are added by Widgetic, not through the API. Ask your Widgetic contact to add credits to your account, and agree with them how the credits are invoiced. How many credits your contract includes (`customCredits`) and when they are added are matters between you and Widgetic.
 
 When credits run out, an AI action is refused with `402` and the code `BILLING_INSUFFICIENT_CREDITS`. Nothing else stops.
+
+You are warned before that happens. When what you can spend falls below 500 credits, you get a `credits.low` [notification](/docs/partners/notifications) with `band` set to `low`, and another with `band` set to `empty` when nothing is left. A balance that stays low reminds you once a week, not more. The warning level is the same for every partner, and the notification says what it was (`threshold`).
 
 ## Spending History
 
@@ -133,13 +135,32 @@ You can read these terms but not change them: Widgetic changes them.
 
 ## How and When You Pay
 
-1. **Widgetic issues the invoice.** It is a manual step by Widgetic staff, for the contract price (or another amount you and Widgetic agreed), in US dollars. The date depends on your contract and billing cycle, so ask Widgetic for your schedule.
-2. **Stripe emails it** to the billing contact email recorded for your partner account. To change that address, ask Widgetic.
-3. **You pay on the invoice page** (`hostedInvoiceUrl`), using the payment methods that page offers. A PDF is at `pdfUrl`. If you need a way of paying that the page does not offer, such as a bank transfer, ask Widgetic.
-4. **The due date** is the number of days printed on the invoice after it is issued: 30 by default, and Widgetic can choose any number from 1 to 120. It is in `dueDate`.
-5. **When Stripe confirms the payment,** the invoice's `status` becomes `paid`, and `paidDate` and `amountPaid` are filled in.
+1. **Widgetic issues the invoice.** It is a step done by Widgetic staff, for the contract price (or another amount you and Widgetic agreed), in US dollars. The date depends on your contract and billing cycle, so ask Widgetic for your schedule. There is no trial: the first invoice is offered when your account is set up, and you pay it from the first day.
+2. **You are told at once.** Stripe emails the invoice to the billing email of your billing profile, and Widgetic sends an `invoice.issued` [notification](/docs/partners/notifications) to your chosen recipients, your dashboard and your webhook.
+3. **You pay on the invoice page** (`hostedInvoiceUrl`), using the payment methods that page offers. The same link is in the Billing page of your [dashboard](/docs/partners/dashboard). A PDF is at `pdfUrl`. If you need a way of paying that the page does not offer, such as a bank transfer, ask Widgetic: when the money arrives, Widgetic records the payment against the invoice.
+4. **The due date** is the number of days printed on the invoice after it is issued. It follows the payment terms of your billing profile, which are 30 days unless you agreed another number from 1 to 120. It is in `dueDate`.
+5. **When the payment is confirmed,** by Stripe, or recorded by Widgetic for a payment that arrived outside it, the invoice's `status` becomes `paid`, and `paidDate` and `amountPaid` are filled in. You get an `invoice.paid` notification, and Widgetic's own team is told that the payment arrived. **You do not need to tell Widgetic that you paid.**
+6. **If a card payment fails,** the invoice stays payable: its `status` becomes `failed`, `failureReason` says why in the card holder's words, and you get an `invoice.failed` notification. Pay it again from `hostedInvoiceUrl`.
 
-If your account stops being paid, Widgetic can suspend or deactivate your partner account. Your embeds then stop being served: their public address answers 404. Widgetic restores service when the account is reinstated. The terms of that are in your contract.
+### Tax
+
+An invoice shows the price (`subtotal`), the tax on it (`taxAmount`) and what you pay (`total`). Stripe works the tax out from the legal name, the address and the tax ID of your billing profile, so it follows the place your business is in. Where no tax is due, for example under the EU reverse charge, `taxAmount` is `0`.
+
+Widgetic keeps your billing profile: your legal name, up to five billing emails, your address, your tax ID (an EU VAT number or a US EIN, for example) and your payment terms. You cannot change it through the API, so tell Widgetic when one of them changes, before the next invoice is issued.
+
+### When an Invoice Is Not Paid
+
+You are reminded, and Widgetic's team is told. That is all that happens by itself.
+
+| When | What you receive |
+|------|------------------|
+| The invoice is issued | `invoice.issued` |
+| 3 days before the due date, and on the due date | `invoice.due_soon` |
+| 3, 7 and 14 days after the due date | `invoice.overdue` |
+
+Each reminder goes out once, in the morning (08:00 UTC), by email, in your dashboard and to your webhook, and paying the invoice stops them. From 7 days overdue the email says that Widgetic may pause your account.
+
+**Nothing pauses your account by itself, however late an invoice is.** Widgetic's team is told about a payment that is missing, and a person there decides whether to pause the account and writes the reason you read. While the account is paused, your customers cannot use your widgets or editors, and your embeds are not served (their public address answers `404`), but billing stays open so that you can pay. See [Account Status](/docs/partners/account-status) for what a pause stops and how to get going again.
 
 ### Read Your Invoices
 
@@ -150,15 +171,15 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
   "https://api.widgetic.com/v1/invoices/partner/$WIDGETIC_PARTNER_ID?status=open&limit=10"
 ```
 
-`data` is a list. The fields you need are `number`, `description`, `amount`, `amountDue`, `amountPaid`, `currency`, `status`, `invoiceDate`, `dueDate`, `paidDate`, `hostedInvoiceUrl` and `pdfUrl`. Money is in dollars, not cents.
+`data` is a list. The fields you need are `number`, `description`, `subtotal`, `taxAmount`, `total` (`amount` is the same figure), `amountDue`, `amountPaid`, `currency`, `status`, `failureReason`, `invoiceDate`, `dueDate`, `paidDate`, `hostedInvoiceUrl` and `pdfUrl`. Money is in dollars, not cents.
 
-- `status` is one of `draft`, `open`, `pending`, `paid`, `failed`, `void`, `uncollectible`, `refunded` or `canceled`. A contract invoice starts as `open` and moves to `paid`.
+- `status` is one of `draft`, `open`, `pending`, `paid`, `failed`, `void`, `uncollectible`, `refunded` or `canceled`. A contract invoice starts as `open`. `open` waits for payment, and `failed` waits for payment after an attempt was refused (`failureReason` says why, and you can pay again from `hostedInvoiceUrl`). `paid` is settled, and a payment received outside Stripe counts. `void` was cancelled and owes nothing, and `uncollectible` was written off.
+- The list follows the invoice by itself. When Widgetic voids an invoice or writes it off in Stripe, or when you pay it, the `status` changes within moments, and nobody updates it by hand.
 - A request for a partner you do not administer answers 403, whether or not that partner exists.
-- If Widgetic voids an invoice or writes it off in Stripe, your list can keep showing it as `open` until Widgetic updates it by hand. Pay only invoices you have been told to pay, and ask Widgetic if one looks wrong.
 
 ## Storage
 
-Uploads count against the storage included in your contract (`customStorageGb`, or the standard allowance when that is `null`). A full allowance refuses an upload with `413` and the code `QUOTA_STORAGE_EXCEEDED`. Files that go to your own bucket take none of it. The files your customers upload in Widgetic's [editors](/docs/partners/editor-sessions#the-files-surface-needs-your-own-storage) always go to your own bucket, so they never count against it.
+Uploads that Widgetic keeps count against the storage included in your contract (`customStorageGb`, or the standard allowance when that is `null`). A full allowance refuses an upload with `413` and the code `QUOTA_STORAGE_EXCEEDED`. Files that go to your own bucket take none of it, and your customers' files always go there: your own [storage](/docs/partners/storage) is required, so what your customers upload in Widgetic's [editors](/docs/partners/editor-sessions#every-session-needs-your-own-storage) never counts against it. What each customer keeps is in the [storage report](/docs/partners/storage#what-each-customer-keeps).
 
 ## The Partner Wallet
 
@@ -170,9 +191,9 @@ Your partner record also has a separate "wallet", with its own balance and ledge
 ## Not Available Yet
 
 - Buying credits or paying an invoice through the API, or with a card on file.
-- A notification (webhook or email) when an invoice is issued, when credits run low or when a payment fails. Poll the invoice and balance calls instead.
-- Changing your contract, your billing contact or your payment method yourself.
-- Usage per customer for storage, and for the credits you spend with your own key. They are counted for your account as a whole, so your product has to record which of your customers caused what. The credits that a customer's [editor sessions](/docs/partners/editor-sessions#what-each-customer-spent) spend are the exception: you can read them for each customer, and hold one session to a number of them.
+- Changing your contract, your billing profile (name, address, tax ID, billing emails, payment terms) or your payment method yourself. Tell Widgetic.
+- Automatic invoices. Widgetic issues each invoice by hand, so ask for your schedule.
+- Usage per customer for the credits you spend with your own key. They are counted for your account as a whole, so your product has to record which of your customers caused what. The credits that a customer's [editor sessions](/docs/partners/editor-sessions#what-each-customer-spent) spend are the exception: you can read them for each customer, and hold one session to a number of them. What each customer keeps in storage is in the [storage report](/docs/partners/storage#what-each-customer-keeps).
 
 ## Error Handling
 
@@ -180,6 +201,8 @@ Your partner record also has a separate "wallet", with its own balance and ledge
 |--------|------|-------------|
 | 402 | `BILLING_INSUFFICIENT_CREDITS` | Your account does not have enough credits for this AI action |
 | 403 | | The balance, ledger, contract or invoices belong to another account |
+| 403 | `PARTNER_SUSPENDED` | Your account is paused. Billing, invoices and credits stay open to you; most other calls are refused (see [Account Status](/docs/partners/account-status)) |
+| 403 | `PARTNER_INACTIVE` | Your account has not been activated yet |
 | 413 | `QUOTA_STORAGE_EXCEEDED` | An upload would go over the storage included in your contract |
 
 ## Best Practices
@@ -231,8 +254,8 @@ Your partner record also has a separate "wallet", with its own balance and ledge
     An AI action that cannot be paid for answers `402` with the code `BILLING_INSUFFICIENT_CREDITS`. Branch on the code, tell your user that generation is paused, and ask Widgetic to add credits. Nothing else is affected: compositions and embeds keep working.
   </Accordion>
 
-  <Accordion title="Check for New Invoices">
-    There is no notification when an invoice is issued, so list the invoices with `status=open` once a day and alert your finance team.
+  <Accordion title="Let Widgetic Tell You About Invoices">
+    Set an address for [notifications](/docs/partners/notifications) and your own system hears about every invoice when it is issued, when it is due, when it is overdue, when a payment fails and when it is paid, with the figures in `data`. Add the emails of your finance team to `emailRecipients`, so that nobody depends on one mailbox. Listing the invoices with `status=open` once a day is a good second check.
   </Accordion>
 </AccordionGroup>
 
@@ -241,6 +264,12 @@ Your partner record also has a separate "wallet", with its own balance and ledge
 <CardGroup cols={2}>
   <Card title="Partner Overview" icon="handshake" href="/docs/partners/overview">
     Back to partner documentation
+  </Card>
+  <Card title="Notifications" icon="bell" href="/docs/partners/notifications">
+    Be told about invoices, payments and low credits
+  </Card>
+  <Card title="Account Status" icon="shield-check" href="/docs/partners/account-status">
+    Activation, pauses and how to get going again
   </Card>
   <Card title="API Reference" icon="code" href="/api-reference/introduction">
     Find entitlement endpoints and access levels

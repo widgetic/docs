@@ -17,8 +17,17 @@ Partners build widgets for their own customers with the Widgetic API, and show t
   <Card title="Editors in Your Page (preview)" icon="paintbrush" href="/docs/partners/ui-components">
     Mount Widgetic's File Browser, composition editor and AI widget creator in your own page for one customer at a time
   </Card>
-  <Card title="Credits & Billing" icon="credit-card">
-    Pay by invoice and track the AI credits on your account
+  <Card title="Credits & Billing" icon="credit-card" href="/docs/partners/credits-billing">
+    Pay by invoice, with tax, and track the AI credits on your account
+  </Card>
+  <Card title="Your Own Storage" icon="database" href="/docs/partners/storage">
+    Your customers' files are kept in a bucket you own
+  </Card>
+  <Card title="Dashboard and Analytics" icon="chart-line" href="/docs/partners/dashboard">
+    Your credits, invoices, customers and presets, and how their widgets are viewed
+  </Card>
+  <Card title="Notifications" icon="bell" href="/docs/partners/notifications">
+    Invoices, payments, low credits and pauses, by email and as signed webhooks
   </Card>
 </CardGroup>
 
@@ -30,6 +39,12 @@ Partners use API keys with the `wgt_prt_` prefix. These keys have access to:
 - Partner-specific endpoints (managed users, your contract, your invoices and your credits)
 
 A key belongs to the account that administers your partner record. Only a person who is signed in on widgetic.com can make a key: a request made with an API key is refused, so a leaked key cannot be used to make a second one. A key can still list, rename, switch off and delete keys.
+
+A key does everything its account may do, unless you limit it when you make it. A server that only reads your invoices, for example, can hold a key that cannot create anything. See [Limit what a key can do](/docs/authentication#limit-what-a-key-can-do).
+
+## Your Account Status
+
+A partner account starts **inactive** and has no trial: you pay from the first day, and Widgetic activates the account once your contract is in force and your storage works. Widgetic can also pause an account by hand, for example for an unpaid invoice. While the account is paused or not yet active, your customers cannot use your widgets or editors, and what you can change is limited to paying, your storage, your notifications and your keys. Nothing is ever paused automatically. See [Account Status](/docs/partners/account-status).
 
 ## Architecture Overview
 
@@ -96,7 +111,13 @@ You pay Widgetic by invoice. Credits pay for Widgetic's AI: each generation uses
 
 <Steps>
   <Step title="Make Your Partner API Key">
-    Contact our sales team to become a partner. Widgetic sets up your partner account; you then sign in and make your own `wgt_prt_` API key under Workspace settings → API keys. The secret is shown once, so store it when you make it. See [Security](/resources/security) for rotating and deleting keys.
+    Contact our sales team to become a partner. Widgetic sets up your partner account, which stays inactive until it is activated (see below). You then sign in and make your own `wgt_prt_` API key under Workspace settings → API keys. The secret is shown once, so store it when you make it. See [Security](/resources/security) for rotating and deleting keys.
+  </Step>
+  <Step title="Set Up Your Storage">
+    Save a bucket of your own on any S3-compatible service with `PUT /partners/{partnerId}/storage`. It is checked before it is saved, and every editor session and every upload with your key needs it. See [Storage](/docs/partners/storage).
+  </Step>
+  <Step title="Agree Your Billing and Get Activated">
+    Read how [credits and billing](/docs/partners/credits-billing) work, and agree the price, the invoice dates and the credits with Widgetic. Once your contract is in force and your storage works, Widgetic activates your account (see [Account Status](/docs/partners/account-status)). There is no trial, so your first invoice is due as agreed.
   </Step>
   <Step title="Keep Track of Your Customers">
     [Create managed users](/docs/partners/managed-users) for your platform's customers.
@@ -107,8 +128,8 @@ You pay Widgetic by invoice. Credits pay for Widgetic's AI: each generation uses
   <Step title="Put the Editors in Your Page (optional)">
     Make an [editor session](/docs/partners/editor-sessions) for the customer who is on the page, and mount a Widgetic editor with the [UI SDK](/docs/partners/ui-components), so your customers make and change widgets without leaving your product.
   </Step>
-  <Step title="Agree Your Billing">
-    Read how [credits and billing](/docs/partners/credits-billing) work, and agree the price, the invoice dates and the credits with Widgetic.
+  <Step title="Watch Your Account">
+    Open your [dashboard](/docs/partners/dashboard) for your credits, invoices, customers and analytics, and set an address for [notifications](/docs/partners/notifications) so that your own system hears about invoices, low credits and pauses.
   </Step>
 </Steps>
 
@@ -125,7 +146,13 @@ All partner endpoints require a `wgt_prt_` API key. Key endpoints include:
 | `GET /partners/{id}/presets` | List the widgets you offer as presets |
 | `PUT /partners/{id}/presets/{key}` | Offer one of your widgets as a preset, or replace the preset with that key |
 | `POST /managed-users/{id}/presets/{key}/copy` | Give a customer a copy of one of your presets |
+| `GET /partners/mine` | Find the partner you administer, and its status |
 | `GET /partners/{id}/contract` | Read your contract |
+| `PUT /partners/{id}/storage` | Set the bucket your customers' files are kept in |
+| `GET /partners/{id}/storage/usage` | See what each of your customers keeps in storage |
+| `GET /partners/{id}/analytics/summary` | See how your customers' widgets are viewed and used |
+| `GET /partners/{id}/notifications` | List what Widgetic told you |
+| `PUT /partners/{id}/notifications/settings` | Choose where your notifications go, and set your webhook |
 | `GET /invoices/partner/{id}` | List your invoices |
 | `GET /credits/user/{userId}/balance` | Check your AI credit balance |
 
@@ -144,5 +171,8 @@ All partner endpoints require a `wgt_prt_` API key. Key endpoints include:
   </Card>
   <Card title="Credits & Billing" icon="credit-card" href="/docs/partners/credits-billing">
     How you pay and how credits work
+  </Card>
+  <Card title="Account Status" icon="shield-check" href="/docs/partners/account-status">
+    Activation, pauses and what each one stops
   </Card>
 </CardGroup>

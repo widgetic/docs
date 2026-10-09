@@ -56,7 +56,7 @@ curl -sS -X POST "https://api.widgetic.com/v1/managed-users" \
 - Use camelCase keys inside `metadata`. The API converts every key in every answer to camelCase, so `company_name` would come back as `companyName`.
 
 <Note>
-  `POST /managed-users` and `PUT /managed-users/{id}` need an `Idempotency-Key` header (see [Idempotency](/docs/reference/idempotency)). The `ManagedUsersApi` in the `@widgetic/api-sdk` package on npm today (1.0.22) does not add one for you, so call these two with plain HTTP, or pass the header yourself.
+  `POST /managed-users` and `PUT /managed-users/{id}` need an `Idempotency-Key` header (see [Idempotency](/docs/reference/idempotency)). In the `@widgetic/api-sdk` package, send it as `idempotencyKey` in the request object of `createManagedUser` and `updateManagedUser`, and send the same one when you retry.
 </Note>
 
 ## Listing Managed Users
@@ -128,7 +128,9 @@ curl -sS -X POST "https://api.widgetic.com/v1/uploads" \
   -F "managed_user_external_id=your-platform-user-123"
 ```
 
-Files sent in parts through a resumable upload are not filed under a managed user.
+Your uploads with an API key are kept in your own [storage](/docs/partners/storage), which is required: without it `POST /uploads` is refused with `409` `PARTNER_STORAGE_REQUIRED`. A file that came through a customer's [editor session](/docs/partners/editor-sessions) is filed under that customer by itself.
+
+A resumable upload (`POST /uploads/tus`, which needs a signed-in session, not an API key) files a file the same way. Put `managed_user_id` or `managed_user_external_id` in its `Upload-Metadata`, never both. The managed user is checked when the upload is declared, so a wrong one is refused before any byte is sent, and again when the file is stored. The finished file carries `managedUserId`, is found with the `managed_user_id` filter of `GET /uploads`, and is counted for that customer in the [storage report](/docs/partners/storage#what-each-customer-keeps).
 
 ### What Widgetic checks
 
@@ -139,7 +141,7 @@ Files sent in parts through a resumable upload are not filed under a managed use
 - A copy of a composition that you duplicate is filed under the same managed user as the original.
 
 <Note>
-  Filing under a managed user does not change who owns the item or who your key may reach. The item belongs to your account, your key reaches all of them, and it counts against your account's credits and storage. What filing does decide is what an [editor session](/docs/partners/editor-sessions) for that managed user can open: only the items filed under it.
+  Filing under a managed user does not change who owns the item or who your key may reach. The item belongs to your account, your key reaches all of them, and the credits it spends are your account's. What filing does decide is what an [editor session](/docs/partners/editor-sessions) for that managed user can open: only the items filed under it.
 </Note>
 
 ## Preset Widgets
@@ -236,6 +238,7 @@ What a copy is:
 
 - It is a draft widget in your account, filed under that customer, and no other customer's editor can reach it.
 - It carries the preset's code, its Content and Design schemas, its content and its thumbnail, and it starts from a fork of the code, so the customer's chat edits begin where yours left off. It does not carry the preset's database, its compositions or its chat history. It is private and a draft, and it is not a preset itself.
+- There is no limit on copies. A customer can have as many copies of a preset as you give them, and each one is its own draft. Call again with a new `Idempotency-Key` for another copy; the same key gives you the first answer back.
 - A change you make to a preset's widget later reaches the compositions you make from it and the copies you make afterwards. Copies made earlier are not touched.
 - Read `warnings`. When the preset's code could not be forked, the copy opens as a preview and its code history starts empty, and `warnings` says so.
 
@@ -306,6 +309,10 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
 
 The answer has the credits in total and for each operation, with the generations that were refunded counted apart. It covers what editor sessions spent, from the day Widgetic first recorded it; what you spend with your own key is not in it. The period, the answer and the limit you can put on a single session are on [Editor Sessions](/docs/partners/editor-sessions#credits-and-limits).
 
+## What a Managed User Keeps
+
+The files a customer keeps are counted for them too. `GET /partners/{partnerId}/storage/usage` says how many files and how many bytes each of your managed users has, split into what is in your own [storage](/docs/partners/storage) and what is with Widgetic, with the heaviest first. A file counts for a customer when it was filed under them (an upload that names the managed user, or one that came through their editor session). The answer is counted when you ask, so it is always current. See [What Each Customer Keeps](/docs/partners/storage#what-each-customer-keeps) for the answer and an example.
+
 ## Keep Your Own Mapping
 
 Widgetic records which managed user a composition, a widget or an upload was filed under, but it does not know your customers' permissions: which of them may open which composition is decided by your platform. Keep a small mapping of your own, and use the filter for listing:
@@ -375,7 +382,7 @@ Widgetic stores this object and gives it back. It does not act on it: a `role` h
 
 - Signing in as, or getting a key for, a managed user. A managed user's browser can use Widgetic's editors with an [editor session](/docs/partners/editor-sessions), and nothing more.
 - Moving a composition, a widget or an upload to another managed user, or taking its label off, after it was created.
-- Filing a resumable upload, or a charge for storage, under a managed user. The credits an editor session spends are noted for its customer (see [What a Managed User Spent](#what-a-managed-user-spent)); the credits you spend with your own key are not.
+- A charge for storage per customer. What each customer keeps is counted (see [What a Managed User Keeps](#what-a-managed-user-keeps)), and what you charge for it is yours to decide. The credits an editor session spends are noted for its customer (see [What a Managed User Spent](#what-a-managed-user-spent)); the credits you spend with your own key are not.
 - Searching managed users by `external_id` in `GET /managed-users`. To file or list by your own id, send `managedUserExternalId`.
 - A picker of preset widgets inside Widgetic's editors. Your page draws the picker and your server makes the copy (see [Preset Widgets](#preset-widgets)).
 - Changing entitlements yourself.
