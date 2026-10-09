@@ -51,9 +51,26 @@ async function readSourceOrThrow() {
   return readFileOrThrow(localSourcePath);
 }
 
+// The docs add code samples to their copy after the sync (`npm run generate-code-samples`). They come from the
+// description itself, so they are not drift: without this, the check failed on every copy that had samples.
+const KEYS_THE_DOCS_ADD = ['x-codeSamples', 'x-code-samples'];
+
+function withoutKeysTheDocsAdd(node) {
+  if (Array.isArray(node)) return node.map(withoutKeysTheDocsAdd);
+  if (node && typeof node === 'object') {
+    const keptEntries = {};
+    for (const [key, value] of Object.entries(node)) {
+      if (KEYS_THE_DOCS_ADD.includes(key)) continue;
+      keptEntries[key] = withoutKeysTheDocsAdd(value);
+    }
+    return keptEntries;
+  }
+  return node;
+}
+
 function normalizeJson(text) {
-  // Normalize formatting only; preserves content semantics
-  return JSON.stringify(JSON.parse(text));
+  // Normalize formatting only, and leave out what the docs add themselves; preserves content semantics
+  return JSON.stringify(withoutKeysTheDocsAdd(JSON.parse(text)));
 }
 
 async function main() {
