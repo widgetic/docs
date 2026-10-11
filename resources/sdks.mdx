@@ -84,6 +84,16 @@ Every method takes one request object, for example `getWidgets({ page: 1, size: 
 | `PartnersApi` | Partner operations: contract, billing overview, credits, storage, notifications, analytics and presets |
 | `CreditsApi` | Account credit balance and ledger |
 | `InvoicesApi` | Invoices |
+| `PartnerApi` | The calls a partner integration uses, gathered in one class. Most of them also exist on the class of their own area |
+| `PublicEmbedApi` | The public routes behind the embed script: embed state, frame, status and entries. These routes are not under `/v1`, so build it with the API address as its base path (below) |
+
+The public embed routes are at `https://api.widgetic.com/embed`. The SDK's default base path ends in `/v1`, so pass the address without it:
+
+```javascript
+import { Configuration, PublicEmbedApi } from '@widgetic/api-sdk';
+
+const embed = new PublicEmbedApi(new Configuration({ basePath: 'https://api.widgetic.com' }));
+```
 
 ### Sending an Idempotency-Key
 
@@ -104,9 +114,9 @@ const composition = await compositions.createComposition({
 
 The SDK does not insist on it: a call that needs a key and goes without one is answered by the API with `400`.
 
-### Known Gaps in Version 1.0.29
+### Known Gaps in Version 1.0.31
 
-The package is generated from the API description, and this version includes the partner calls for the contract, the billing overview, credits, storage, notifications, analytics and presets. When a call fails or a field is `undefined`, compare it with the [API Reference](/api-reference/introduction):
+The package is generated from the API description, and this version includes the partner calls for the contract, the billing overview, credits, storage, notifications, analytics and presets, the one-call composition routes, content items, data sources, entries, managed-user limits and design defaults, and the public embed routes. When a call fails or a field is `undefined`, compare it with the [API Reference](/api-reference/introduction):
 
 - **Some calls are typed to return nothing.** The API description gives no shape for their answer, so the SDK hands you no data from them. Among them are `getCurrentUser`, `getComponents`, `getComponent`, `updateWidget`, `getPartnerBillingOverview` and `getPartnerCreditTransactions`. Use the `Raw` twin of the call (the same name with `Raw` at the end), and read the body yourself:
 
