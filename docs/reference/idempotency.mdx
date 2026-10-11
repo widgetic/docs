@@ -19,12 +19,13 @@ curl -X POST "https://api.widgetic.com/v1/widgets" \
 
 ## Behavior
 
-1. **First Request**: Processed normally. A successful (`2xx`) response is stored for 24 hours
+1. **First Request**: Processed normally. A successful (`2xx`) response is stored, encrypted, for 24 hours
 2. **Retry with Same Key**: Returns the stored response with an `X-Idempotency-Cached: true` header. The operation is **not** run again
 3. **Retry While the First Is Still Running**: Returns `409 Conflict` with a `Retry-After` header. The operation is not run a second time; wait, then retry with the **same** key (see [Retrying a request that is still running](#retrying-a-request-that-is-still-running))
 4. **Retry After a Failure**: Only successful responses are stored. If the first attempt failed (any non-`2xx` response), retrying with the same key runs the operation again
-5. **Same Key, Different Body**: Returns `422`. A key names exactly one request
-6. **Different Key**: Processed as new request
+5. **Retry When the Stored Response Is Gone**: In the rare case the first request is known to have succeeded but its response can no longer be returned, the retry returns `409 Conflict` and the operation is **not** run again (see [When the stored response is no longer available](#when-the-stored-response-is-no-longer-available))
+6. **Same Key, Different Body**: Returns `422`. A key names exactly one request
+7. **Different Key**: Processed as new request
 
 ## What Counts as the Same Request
 
@@ -144,6 +145,44 @@ async function postWithRetry(url: string, body: unknown, idempotencyKey: string)
 <Note>
   A request that is interrupted (for example, the server restarts mid-request) frees its key within about a minute, so a retry is never blocked for long.
 </Note>
+
+## When the Stored Response Is No Longer Available
+
+A stored response is kept encrypted, and only for the request that produced it. In the rare case the first request is known to have succeeded but its response can no longer be returned (for example, it was written while our storage was being reconfigured), the retry is refused instead of running the operation a second time:
+
+```http
+HTTP/1.1 409 Conflict
+X-Idempotency-Cached: true
+```
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "CONFLICT_IDEMPOTENCY_ANSWER_UNAVAILABLE",
+    "message": "This request was already carried out under this idempotency key, but its answer was not kept, so it cannot be replayed",
+    "details": {
+      "conflictType": "answer_unavailable",
+      "originalStatusCode": 201
+    }
+  }
+}
+```
+
+There is no `Retry-After`: waiting does not help, and the same key will never return that response. `details.originalStatusCode` is the status the first attempt answered, when it is known. Do not send the request again under the same key.
+
+- **Read what the request changed.** If it created something (a widget, an API key), list or fetch it instead of creating it again. A response that showed a secret once, such as a new API key, cannot be shown again: create a new one and remove the old one.
+- **Repeat it under a new key** only when repeating is safe, that is, when running the operation twice would not do harm.
+
+```typescript
+if (response.status === 409) {
+  const { error } = await response.clone().json();
+  if (error?.code === 'CONFLICT_IDEMPOTENCY_ANSWER_UNAVAILABLE') {
+    // The operation ran once. Look at its result; do not retry with this key.
+    return readCurrentState();
+  }
+}
+```
 
 ## When to Use Idempotency
 
