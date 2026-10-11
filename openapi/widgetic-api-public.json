@@ -6277,6 +6277,7 @@
         "summary": "Send a test event to your webhook",
         "description": "Sends ONE signed call, right now, to the webhook address you saved under notification settings, with a sample\nof what an event of the type you name carries, and answers how it went: whether your receiver answered with a\n2xx status, which status, how long it took, and why not when it did not arrive. Use it to write and try your\nreceiver (above all the signature check) before a real event happens.\n\nThe call is made like every other: it is signed with your current secret (and the previous one while a\nrotation overlaps), it carries the headers `webhook-id`, `webhook-timestamp`, `webhook-signature` and\n`x-widgetic-event` (the event type), and its body is `{ \"id\", \"type\", \"createdAt\", \"partnerId\", \"data\" }`.\nThree things differ. `id` starts with `evt_test_` and is new every time, so a receiver that remembers ids can\ntell a test from an event and drop it. `data` holds made-up values of the shape a real event of that type\ncarries (`PartnerNotification` describes each), never anything about your account. And the call is made once:\nit is not tried again, nothing is stored, and it appears neither in the delivery log nor in the notification\nlist.\n\nIt is sent whatever `webhookEvents` says: a test is not filtered by what you subscribed to. The answer is 200\nwhether or not your receiver took the call (read `delivered`); a call that gets no answer within ten seconds\nis given up and reported as a `timeout`.\n\nA webhook address and a signing secret must be saved first (`updatePartnerNotificationSettings`); until then\nthe answer is 409. This needs an API key with full access, and `Idempotency-Key` is required: a retry with the\nsame key gets the first answer back and no second call is made. The caller must be the person who\nadministers the partner, or a Widgetic administrator. Five tests a minute.\n",
         "tags": [
+          "Partner",
           "Partners"
         ],
         "security": [
@@ -6358,7 +6359,7 @@
           {
             "lang": "javascript",
             "label": "Node.js",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { PartnersApi } from '@widgetic/api-sdk';\n\nconst api = new PartnersApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.sendPartnerNotificationTestEvent({\n    partnerId: '123e4567-e89b-12d3-a456-426614174000',\n    partnerNotificationTestEventRequest: {\n      eventType: 'invoice.paid'\n    },\n    idempotencyKey: randomUUID()\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { PartnerApi } from '@widgetic/api-sdk';\n\nconst api = new PartnerApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.sendPartnerNotificationTestEvent({\n    partnerId: '123e4567-e89b-12d3-a456-426614174000',\n    partnerNotificationTestEventRequest: {\n      eventType: 'invoice.paid'\n    },\n    idempotencyKey: randomUUID()\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
           },
           {
             "lang": "python",
@@ -6399,6 +6400,7 @@
         "summary": "See how the context of your embeds is signed",
         "description": "Says whether you have a secret to sign the `context` of your embeds with, when it was made, whether the secret\nit replaced is still accepted, and whether an entry without a valid signature is refused (`required`). The\nsecret itself is never part of the answer: it is shown once, when it is made\n(`rotatePartnerEntryContextSecret`, which also explains what signing is for and how to sign).\n\nSigning covers the entries written through the gateway into the compositions of your managed users and into\nthose of your own account. The caller must be the person who administers the partner (an API key of that\naccount works, with the `partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
+          "Partner",
           "Partners"
         ],
         "security": [
@@ -6464,7 +6466,7 @@
           {
             "lang": "javascript",
             "label": "Node.js",
-            "source": "import { PartnersApi } from '@widgetic/api-sdk';\n\nconst api = new PartnersApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.getPartnerEntryContextSigning({\n    partnerId: '123e4567-e89b-12d3-a456-426614174000'\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
+            "source": "import { PartnerApi } from '@widgetic/api-sdk';\n\nconst api = new PartnerApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.getPartnerEntryContextSigning({\n    partnerId: '123e4567-e89b-12d3-a456-426614174000'\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
           },
           {
             "lang": "python",
@@ -6503,6 +6505,7 @@
         "summary": "Require a signed context, or stop requiring it",
         "description": "Chooses what the gateway does with an entry whose `context` carries no valid signature.\n\nWith `required: false` (the default) an entry that carries a signature is checked and refused when the\nsignature is wrong or out of date, and an entry that carries none is accepted, as it always was. With\n`required: true` an entry without a valid signature is refused with 403 `CONTEXT_SIGNATURE_REQUIRED`: use it\nonce every page of yours that embeds a composition signs its context.\n\nSignatures cannot be required before you have made a secret (`rotatePartnerEntryContextSecret`): the answer\nis 409, so that you cannot lock your own compositions out of taking entries. The change reaches every part of\nthe gateway within a minute.\n\nSaving the same choice twice leaves the same state, so a retry is harmless and `Idempotency-Key` is optional.\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator.\n",
         "tags": [
+          "Partner",
           "Partners"
         ],
         "security": [
@@ -6582,7 +6585,7 @@
           {
             "lang": "javascript",
             "label": "Node.js",
-            "source": "import { PartnersApi } from '@widgetic/api-sdk';\n\nconst api = new PartnersApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.updatePartnerEntryContextSigning({\n    partnerId: '123e4567-e89b-12d3-a456-426614174000',\n    updatePartnerEntryContextSigningRequest: {\n      required: true\n    }\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
+            "source": "import { PartnerApi } from '@widgetic/api-sdk';\n\nconst api = new PartnerApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.updatePartnerEntryContextSigning({\n    partnerId: '123e4567-e89b-12d3-a456-426614174000',\n    updatePartnerEntryContextSigningRequest: {\n      required: true\n    }\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
           },
           {
             "lang": "python",
@@ -6623,6 +6626,7 @@
         "summary": "Make a secret to sign the context of your embeds",
         "description": "Makes a secret to sign the `context` of your embeds with, and returns it in `secret`: **keep it now, it is\nshown once** and cannot be read again. Keep it on your server only: whoever holds it can write contexts your\ncompositions accept. Call this again to make a new secret; the one it replaces is still accepted for a day, so\nthat your server can switch without an entry being refused (making another within that day ends the overlap\nwith the first).\n\n**What signing is for.** `<widgetic composition-id=\"...\" context='{\"customerId\":\"c_42\"}'>` hands attribution to\na widget, which sends it with every entry it saves. The page is yours but the browser is the visitor's:\nanybody can change that attribute and file an entry under another customer's id. When your server signs the\ncontext, the gateway refuses an entry whose context was changed, and the entries you keep hold attribution\nyour server wrote.\n\n**How to sign** (on your server, for each page you render):\n\n1. Take the context to give the widget. It may hold text and whole numbers only (within ±2^53, written without\n   a fraction or an exponent).\n2. Choose when the signature stops being good: `widgetic_exp`, in seconds since 1970 (UTC), no more than\n   seven days from now. A minute of difference between clocks is forgiven.\n3. Write the text to sign, with no spaces except those inside values:\n   `widgetic-context.v1.<compositionId>.<widgetic_exp>.<json>`. `<compositionId>` is the id of the composition\n   in lower case. `<json>` is the context as JSON with the keys in character-code order (so `Z` comes before\n   `a`, and `10` before `9`), no spaces, strings escaped as JSON escapes them, and the two keys of the\n   signature left out.\n4. Sign that text: HMAC-SHA256 with the 32 bytes the secret stands for (the base64 text after `ctxsec_`), and\n   write the result as base64url without padding.\n5. Give the widget the context with two keys added: `widgetic_exp` and `widgetic_sig` (the signature). The whole\n   attribute, the two keys included, stays within the limits of any context: at most 20 keys, 2048 bytes of\n   JSON, strings up to 500 characters. The two keys take two of the 20 keys and 87 bytes of the 2048.\n\nA test vector, to check your code against before you rely on it. Secret\n`ctxsec_AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=` (the bytes 0 to 31), composition\n`7c9e6679-7425-40de-944b-e07fc1f90ae7`, `widgetic_exp` 1792000000 and context\n`{\"customerId\":\"c_42\",\"plan\":\"pro\",\"seats\":3}` sign the text\n`widgetic-context.v1.7c9e6679-7425-40de-944b-e07fc1f90ae7.1792000000.{\"customerId\":\"c_42\",\"plan\":\"pro\",\"seats\":3}`\nand give the signature `j6g7151F54tl9C8oEY9levaYSppHME4fAPZ7WPwL8C8`. (The secret is the example's, not a\nreal one.)\n\n**What the gateway does with an entry.** When you have a secret, an entry whose context carries a signature is\nchecked: a signature that does not match is refused with 403 `CONTEXT_SIGNATURE_INVALID`, and one that is past\n`widgetic_exp` with 403 `CONTEXT_SIGNATURE_EXPIRED`. When you also require signatures\n(`updatePartnerEntryContextSigning`) an entry whose context carries none is refused with 403\n`CONTEXT_SIGNATURE_REQUIRED`. The two keys are taken out before the entry is stored or announced: your entries\nand your `entry.created` events hold the context you wrote. A change you make reaches every part of the\ngateway within a minute.\n\n**What it does not do.** A signed context that has been seen (a page's source is public) can be sent again by\nanyone until `widgetic_exp`; when you must not accept the same context twice, put a value that is new for each\npage view in it (a `submissionId` you made up) and keep the ones you have seen. The signature covers the\nentries that reach Widgetic's gateway: a widget that writes straight into its own database does not pass\nthrough it.\n\nRetry this call with the same `Idempotency-Key` if its answer was lost: the answer, secret included, is then\ngiven again, and no second secret is made. This needs an API key with full access. The caller must be the\nperson who administers the partner, or a Widgetic administrator.\n",
         "tags": [
+          "Partner",
           "Partners"
         ],
         "security": [
@@ -6686,7 +6690,7 @@
           {
             "lang": "javascript",
             "label": "Node.js",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { PartnersApi } from '@widgetic/api-sdk';\n\nconst api = new PartnersApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.rotatePartnerEntryContextSecret({\n    partnerId: '123e4567-e89b-12d3-a456-426614174000',\n    idempotencyKey: randomUUID()\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { PartnerApi } from '@widgetic/api-sdk';\n\nconst api = new PartnerApi('YOUR_API_KEY');\n\ntry {\n  const result = await api.rotatePartnerEntryContextSecret({\n    partnerId: '123e4567-e89b-12d3-a456-426614174000',\n    idempotencyKey: randomUUID()\n  });\n  console.log(result);\n} catch (error) {\n  console.error('Error:', error.message);\n}"
           },
           {
             "lang": "python",
