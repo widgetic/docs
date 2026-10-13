@@ -36,7 +36,7 @@ This guide covers security best practices when integrating with the Widgetic API
 You make and manage your own keys. In the dashboard, open Workspace settings → API keys. With the API, use the key calls below. `{id}` is your own account id, which `GET /tokens/validate` returns as `data.userId`. Your plan must include API access.
 
 - `GET /users/{id}/keys` lists your keys, with what each is limited to (`preset` and `scopes`).
-- `POST /users/{id}/keys` makes one (send an `Idempotency-Key`). **Only a person signed in on widgetic.com can make a key**, so make keys in the dashboard: a request made with an API key or an SDK token is refused with `403`. The secret is in the answer once, in `key`, and cannot be shown again. An account can have 25 keys. Send a `preset` (`read_only`, `content` or `full_access`) or a list of `scopes` to limit what the key can do, and neither for a key with full access. See [Limit what a key can do](/docs/authentication#limit-what-a-key-can-do).
+- `POST /users/{id}/keys` makes one (send an `Idempotency-Key`). **Only a person signed in on widgetic.com can make a key**, so make keys in the dashboard: a request made with an API key or an SDK token is refused with `403`. The secret is in the answer once, in `key`, and cannot be shown again. An account can have 25 keys, except a partner account, which has no limit. Send a `preset` (`read_only`, `content` or `full_access`) or a list of `scopes` to limit what the key can do, and neither for a key with full access. See [Limit what a key can do](/docs/authentication#limit-what-a-key-can-do).
 - `PUT /users/{id}/keys/{keyId}` renames a key or switches it off with `isActive: false`. Switching a key back on needs a person signed in too. `DELETE /users/{id}/keys/{keyId}` deletes it.
 - `GET /users/{id}/api-keys/{keyId}/logs` shows what a key was used for.
 
@@ -48,10 +48,10 @@ To rotate a key, make the new one in the dashboard, switch your servers over, th
 
 ## Client-Side Authentication
 
-For browser applications, use the token exchange flow:
+A browser must never hold an API key. If a page of your own has to call the API, keep the key on your server and give the page a short-lived token from the token exchange:
 
 ```typescript
-// Server-side: Exchange API key for limited token
+// Server-side: Exchange API key for a short-lived token
 app.get('/api/widgetic-token', async (req, res) => {
   const tokens = new TokensApi(process.env.WIDGETIC_API_KEY);
   
@@ -75,11 +75,11 @@ const api = new WidgetsApi({
 });
 ```
 
-The scopes are recorded in the token, but the API does not check them on each call yet, so treat the token as having the access of the key that made it until it expires. See [Authentication](/docs/authentication) for the scopes you can ask for.
+The scopes are recorded in the token, but the API does not check them on each call yet, so the token has the access of the key that made it until it expires. What the exchange gives you is a lifetime: a leaked token stops working when it expires (an hour at most), while a leaked key works until you delete it. See [Authentication](/docs/authentication) for the scopes you can ask for.
 
-<Note>
-  To run Widgetic's own editors in a browser for one of your customers, use an [editor session](/docs/partners/editor-sessions) rather than this flow. A session reaches only that customer's content, only the calls the editors need, and can be bound to your page and ended at any time.
-</Note>
+<Warning>
+  Because the token is as strong as the key, never send one to your customers' browsers, and never send a partner key, or a token made with one: that is your whole partner account. To run Widgetic's own editors in a browser for one of your customers, use an [editor session](/docs/partners/editor-sessions) instead. A session reaches only that customer's content, only the calls the editors need, and can be bound to your page and ended at any time.
+</Warning>
 
 ## Domain Validation
 
