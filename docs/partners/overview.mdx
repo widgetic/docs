@@ -111,7 +111,7 @@ You pay Widgetic by invoice, and Widgetic issues each invoice by itself: one for
 
 <Steps>
   <Step title="Make Your Partner API Key">
-    Contact our sales team to become a partner. Widgetic sets up your partner account, which stays inactive until it is activated (see below). You then sign in and make your own `wgt_prt_` API key under Workspace settings → API keys. The secret is shown once, so store it when you make it. See [Security](/resources/security) for rotating and deleting keys.
+    Contact our sales team to become a partner, and tell them the website where you will integrate Widgetic, such as `acme.com`. Widgetic sets up your partner account and records that website as your platform domain, so it and all of its subdomains can always show your widgets (see [Security](/resources/security#your-platform-is-always-allowed)). The account stays inactive until it is activated (see below). You then sign in and make your own `wgt_prt_` API key under Workspace settings → API keys. The secret is shown once, so store it when you make it. See [Security](/resources/security) for rotating and deleting keys.
   </Step>
   <Step title="Set Up Your Storage">
     Save a bucket of your own on any S3-compatible service with `PUT /partners/{partnerId}/storage`. It is checked before it is saved, and every editor session and every upload with your key needs it. See [Storage](/docs/partners/storage).
@@ -146,7 +146,7 @@ All partner endpoints require a `wgt_prt_` API key. Key endpoints include:
 | `GET /partners/{id}/presets` | List the widgets you offer as presets |
 | `PUT /partners/{id}/presets/{key}` | Offer one of your widgets as a preset, or replace the preset with that key |
 | `POST /managed-users/{id}/presets/{key}/copy` | Give a customer a copy of one of your presets |
-| `GET /partners/mine` | Find the partner you administer, and its status |
+| `GET /partners/mine` | Find the partner you administer, its status and its platform domain |
 | `GET /partners/{id}/contract` | Read your contract |
 | `PUT /partners/{id}/storage` | Set the bucket your customers' files are kept in |
 | `GET /partners/{id}/storage/usage` | See what each of your customers keeps in storage |

@@ -91,9 +91,18 @@ You can limit the websites an embedded widget may appear on. If you list nothing
 
 You can also keep the list with the API, using your own account id as `{id}`. `GET /users/{id}/workspace/domains` reads it, `POST` adds a website with the body `{ "domain": "example.com" }`, `PUT /users/{id}/workspace/domains/{domainId}` changes one, and `DELETE` removes one. A list holds up to 50 websites, and a change applies within about 15 seconds.
 
-Once a list exists, the lookup that returns a widget's content answers `403` with the code `DOMAIN_NOT_ALLOWED` to a page on any other website, and the widget's frame page asks the browser not to show it anywhere else. Widgetic's own sites always work, and so does your own machine. The lookup never refuses a page on `localhost`, on `127.0.0.1` (or any address from `127.0.0.0` to `127.255.255.255`), on `[::1]` or on a name under `.localhost`, on any port, and the widget's frame page may be shown by `localhost`, `127.0.0.1` and names under `.localhost`, on any port, over `http` or `https`. You can build and test an integration without listing your laptop: only the person who runs such a page can see it, so listing it would protect nothing. A list that cannot be read never blocks a widget.
+Once a list exists, the lookup that returns a widget's content answers `403` with the code `DOMAIN_NOT_ALLOWED` to a page on any other website, and the widget's frame page asks the browser not to show it anywhere else. Widgetic's own sites always work, and so does your own machine. If you are a partner, your platform's website always works too ([see below](#your-platform-is-always-allowed)). The lookup never refuses a page on `localhost`, on `127.0.0.1` (or any address from `127.0.0.0` to `127.255.255.255`), on `[::1]` or on a name under `.localhost`, on any port, and the widget's frame page may be shown by `localhost`, `127.0.0.1` and names under `.localhost`, on any port, over `http` or `https`. You can build and test an integration without listing your laptop: only the person who runs such a page can see it, so listing it would protect nothing. A list that cannot be read never blocks a widget.
 
 If you use the Partner API, the `allowedDomains` of your partner account is added to the list of the person who administers it, and applies to the widgets made with your API keys.
+
+### Your platform is always allowed
+
+If you are a partner, the website where you integrate Widgetic is always allowed, with all of its subdomains. Tell Widgetic which website that is when your partner account is set up, for example `acme.com`, and Widgetic records it as your **platform domain**. `acme.com` and every subdomain of it (`app.acme.com`, `learn.eu.acme.com`) can then always show your widgets, and the entries their visitors send (such as votes or form answers) are always accepted from them, whatever your list holds. The widgets your customers make through you are covered too, because they belong to your account.
+
+- **You never have to list it, and a list can never lock it out.** It is not an entry of your list, so adding websites to the list, or removing them all, never changes it.
+- **It never narrows anything.** If you list nothing, your widgets still work on every website, not only on your platform.
+- **Widgetic sets it, you read it.** `GET /partners/mine` gives it as `platformDomain` for each partner you administer, and it is `null` until Widgetic has set one. To change it, write to [partners@widgetic.com](mailto:partners@widgetic.com).
+- **It is one website.** Give Widgetic the bare name, such as `acme.com`; an address like `https://www.acme.com/pricing` is shortened to it. A different website that also shows your widgets, such as a separate marketing site, is not covered: put it on your list when you keep one.
 
 <Note>
   A domain list keeps your widgets off other people's pages. It is not access control: the content of a published widget can still be requested by anyone who has its ID, using a plain HTTP request that names no website for the check to read. Do not rely on it to keep content private.
@@ -200,6 +209,7 @@ Deleting the record removes the managed user, not what you filed under it. The c
 - [ ] Token exchange for browser apps
 - [ ] Short token expiration (a token lasts at most 1 hour)
 - [ ] Domain validation enabled
+- [ ] Partner accounts: your platform domain is set (`platformDomain` in `GET /partners/mine`)
 - [ ] CSP headers configured
 </Accordion>
 

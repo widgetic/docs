@@ -144,7 +144,7 @@ const { compositions: batchCompositions, errors } = await compositions.getCompos
 ```
 
 <Note>
-  The batch endpoint is designed for use by the embed script and includes domain validation. If a composition's owner has listed the websites it may appear on and the request comes from another website, that composition is left out of `compositions` and reported in `errors` as `Domain access denied: <reason>`; the others are still returned.
+  The batch endpoint is designed for use by the embed script and includes domain validation. If a composition's owner has listed the websites it may appear on and the request comes from another website, that composition is left out of `compositions` and reported in `errors` as `Domain access denied: <reason>`; the others are still returned. A partner's platform website, with all of its subdomains, is never refused for that partner's compositions (see [Security](/resources/security#your-platform-is-always-allowed)).
 </Note>
 
 ## Embedding Compositions

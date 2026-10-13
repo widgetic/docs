@@ -14,7 +14,7 @@ A partner account is in one of four states. Widgetic decides three of them. The 
 | `suspended` | Paused by hand by Widgetic. The reason is recorded and you can read it | Their editors stop, and your published widgets are not served |
 | `payment_arrears` | An invoice of your contract is unpaid after its due date. It starts the day after the due date (UTC) and ends when the invoice is paid | The same as a pause: their editors stop, and your published widgets are not served |
 
-Read your own state with `GET /partners/mine`. The answer has `standing` for the account as a whole (`inactive`, `active`, `suspended` or `payment_arrears`, or `not_a_partner` for an account that administers no partner), `overdueSince` and the `partners` you administer. `overdueSince` is the due date of the oldest unpaid invoice of your contract while `standing` is `payment_arrears`, and `null` otherwise. Each partner has its `id`, which the other partner routes ask for, its `status` and, while it is paused, `suspendedAt` and `suspensionReason`.
+Read your own state with `GET /partners/mine`. The answer has `standing` for the account as a whole (`inactive`, `active`, `suspended` or `payment_arrears`, or `not_a_partner` for an account that administers no partner), `overdueSince` and the `partners` you administer. `overdueSince` is the due date of the oldest unpaid invoice of your contract while `standing` is `payment_arrears`, and `null` otherwise. Each partner has its `id`, which the other partner routes ask for, its `status`, its `platformDomain` (the website where you integrate Widgetic, which can always show your widgets, with its subdomains: see [Security](/resources/security#your-platform-is-always-allowed)) and, while it is paused, `suspendedAt` and `suspensionReason`.
 
 ```bash
 curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
@@ -34,6 +34,7 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
         "status": "suspended",
         "contactEmail": "billing@yourcompany.com",
         "allowedDomains": [],
+        "platformDomain": "yourcompany.com",
         "suspendedAt": "2026-10-20T09:00:00.000Z",
         "suspensionReason": "Contract under review",
         "createdAt": "2026-09-01T10:00:00.000Z"
