@@ -103,43 +103,17 @@ If you use the Partner API, the `allowedDomains` of your partner account is adde
   The `<widgetic>` embed script stops at the refusal: it draws nothing, sets `data-widgetic-refused="DOMAIN_NOT_ALLOWED"` on the element, and writes one warning to the browser console for each widget. It does not fall back to a copy of the widget on Widgetic's CDN.
 </Note>
 
-## Request Signing
+## Webhook Signatures
 
-<Warning>
-  **Not available yet.** Widgetic does not send webhooks to your server today (see [Integrations](/resources/integrations#webhooks)), so there is no signature to check. The sketch below shows the check you would write once it does.
-</Warning>
+Partner accounts can have Widgetic call their own server when something happens, for example when an invoice is paid. No other kind of account receives webhooks. Every call is signed, with the [Standard Webhooks](https://www.standardwebhooks.com) headers `webhook-id`, `webhook-timestamp` and `webhook-signature`, under a secret that only you hold.
 
-For webhook callbacks, verify the signature:
+Before you act on a call:
 
-```typescript
-import crypto from 'crypto';
+- Check the signature over the raw body, with a Standard Webhooks library or the short check in [Notifications](/docs/partners/notifications#verify-it).
+- Refuse a call whose `webhook-timestamp` is more than five minutes old.
+- Keep the `webhook-id` of every event you handled and drop a repeat: delivery is at least once.
 
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string
-): boolean {
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expected)
-  );
-}
-
-app.post('/webhook', (req, res) => {
-  const signature = req.headers['x-webhook-signature'];
-  
-  if (!verifyWebhookSignature(req.body, signature, WEBHOOK_SECRET)) {
-    return res.status(401).send('Invalid signature');
-  }
-  
-  // Process webhook
-});
-```
+If the secret leaks, make a new one with `POST /partners/{partnerId}/notifications/webhook-secret`. The old one keeps signing for a day, so your receiver can switch without a call being rejected. See [Your Own Webhook](/docs/partners/notifications#your-own-webhook).
 
 ## Rate Limiting
 
@@ -197,15 +171,7 @@ async function logApiCall(
 }
 ```
 
-## Compliance
-
-### GDPR
-
-When handling EU user data:
-
-- Implement data deletion on user request
-- Provide data export functionality
-- Document data processing purposes
+## Your Customers' Data
 
 If you keep [managed users](/docs/partners/managed-users) for your customers, Widgetic holds a record for each one. You can read a record and delete it:
 
@@ -220,10 +186,6 @@ curl -sS -X DELETE -H "Authorization: Bearer $WIDGETIC_API_KEY" \
 ```
 
 Deleting the record removes the managed user, not what you filed under it. The compositions, widgets and uploads stay in your account, and lose only their `managedUserId` label. To erase a customer's content as well, list it with the `managedUserId` filter and delete it first, then delete the record (see [Managed Users](/docs/partners/managed-users#filing-content-under-a-managed-user)).
-
-### SOC 2
-
-Widgetic maintains SOC 2 Type II compliance. For compliance documentation, contact [security@widgetic.com](mailto:security@widgetic.com).
 
 ## Security Checklist
 
@@ -241,19 +203,14 @@ Widgetic maintains SOC 2 Type II compliance. For compliance documentation, conta
 - [ ] CSP headers configured
 </Accordion>
 
-<Accordion title="Webhook Security (not available yet)">
-- [ ] Signature verification implemented
-- [ ] HTTPS only
-- [ ] Idempotency for retries
-- [ ] Timeout handling
+<Accordion title="Webhooks (partner accounts)">
+- [ ] Signature checked on the raw body
+- [ ] Calls older than five minutes refused
+- [ ] Repeats dropped by `webhook-id`
+- [ ] A `2xx` answer within ten seconds, with the slow work done afterwards
+- [ ] Secret kept out of git, and replaced if it leaks
 </Accordion>
 
 ## Reporting Vulnerabilities
 
-Found a security issue? Report it responsibly:
-
-- Email: [security@widgetic.com](mailto:security@widgetic.com)
-- PGP key available on request
-- Response within 48 hours
-
-We appreciate responsible disclosure and may offer bug bounties for significant findings.
+Found a security problem in Widgetic? Write to [support@widgetic.com](mailto:support@widgetic.com), say that it is a security report, and give the steps to reproduce it.
