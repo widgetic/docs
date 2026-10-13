@@ -19,17 +19,27 @@ Widgetic tells you what happens to your partner account: an invoice, a payment, 
 | `invoice.paid` | An invoice was paid, by you or by Widgetic on your behalf (a bank transfer, for example) | Always |
 | `invoice.failed` | A payment did not go through. The invoice stays open and can be paid again | Always |
 | `credits.low` | Your credits are running out (`low`), or have run out (`empty`) | Your choice |
+| `credits.managed_user_cap_reached` | One of your managed users used all of its monthly credits (the cap you set with `PUT /managed-users/{id}/limits`), and a request was refused | Never |
 | `partner.activated` | Widgetic activated your account | Always |
 | `partner.paused` | Your account was stopped: Widgetic paused it, with a reason, or an invoice of your contract is unpaid after its due date | Always |
 | `partner.resumed` | Your account is served again: Widgetic resumed it after a pause, or the overdue invoice was paid | Always |
 | `storage.check_failed` | Your [storage](/docs/partners/storage) failed its check, so files cannot be kept there | Your choice |
 | `composition.created` | A composition was created for one of your managed users | Never |
+| `composition.updated` | A composition of one of your managed users was saved | Never |
 | `widget.published` | A widget of one of your managed users was published | Never |
 | `upload.created` | A file upload for one of your managed users finished | Never |
+| `entry.created` | A visitor saved an entry in a composition of one of your managed users | Never |
 
-Money and the standing of your account are never silent: the events marked **Always** are emailed whatever you choose, and you can narrow only what your own system receives. The three events about your managed users are for your webhook only. They are not emailed and not in the dashboard list, so a busy account is not flooded.
+Money and the standing of your account are never silent: the events marked **Always** are emailed whatever you choose, and you can narrow only what your own system receives. The six events about your managed users are for your webhook only. They are not emailed and not in the dashboard list, so a busy account is not flooded.
 
 Each event is told once. An invoice that Stripe reports twice, or a reminder that is checked again, does not reach you twice.
+
+Two events about your managed users are told sparingly, so that one busy customer does not flood your system:
+
+- `composition.updated` is told for the **first save** of a composition in each five minutes, so one composition is told at most 12 times an hour, whatever the number of saves. It does not carry the content: read the composition for its current state. Changing only the status of a composition is not a save.
+- `credits.managed_user_cap_reached` is told **once for each customer each month**. It is told again in the same month only if you change the customer's cap and the customer reaches the new one. The request that was refused is still refused, with the same `402`, whether or not you have a webhook. If you set your address after a customer reached its cap, you may not be told about that customer until next month.
+
+Widgetic adds events from time to time. **Ignore an event type your code does not know**: answer `2xx` and drop it.
 
 ## What Each Event Carries
 
@@ -43,11 +53,14 @@ Every notification has a `title` (one line), a `body` (a few sentences that say 
 | `invoice.paid` | The invoice facts and `paidAt` |
 | `invoice.failed` | The invoice facts and `reason`, in the card holder's words |
 | `credits.low` | `band` (`low` or `empty`), `balance` (what you can spend now: the credits you hold less the ones committed to a running job) and `threshold` (the level the warning was raised at) |
+| `credits.managed_user_cap_reached` | `managedUserId`, `externalId`, `monthlyCredits` (the customer's cap), `creditsUsed` (what the customer had spent this month when the request was refused), `resetsAt` (the start of the next month, in UTC, when the customer can use credits again) and `reachedAt` (the first refusal of the month) |
 | `partner.activated`, `partner.paused`, `partner.resumed` | `status` (`active`, `suspended` or `payment_arrears`), `previousStatus` (`active`, `inactive`, `suspended`, `payment_arrears` or `null`) and `reason` (set for a stop: the one written for a pause, or a sentence that names the overdue invoice). A stop for an unpaid invoice has `status` set to `payment_arrears`, and the `partner.resumed` that ends it has `previousStatus` set to `payment_arrears` |
 | `storage.check_failed` | `reason` and `checkedAt` |
 | `composition.created` | `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId`, `createdAt` |
+| `composition.updated` | `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId`, `contentVersion` (the version of the content after the save, or `null` when it could not be read) and `savedAt` (the save that was told: the first one of its five minutes) |
 | `widget.published` | `widgetId`, `name`, `managedUserId`, `externalId`, `version`, `publishedAt` |
 | `upload.created` | `uploadId`, `name`, `mimeType`, `sizeBytes`, `address`, `managedUserId`, `externalId`, `purpose`, `createdAt` |
+| `entry.created` | `compositionId`, `table` (the table the entry was saved in), `entryId`, `createdAt` and `context` (what the embedding page attached to the entry, as text and numbers, or `null`; use it as a label, never to decide what someone may do). It carries none of the values the visitor entered: read those with the entries routes |
 
 ## Read Your Notifications
 
@@ -111,7 +124,7 @@ curl -sS -X PUT "https://api.widgetic.com/v1/partners/$WIDGETIC_PARTNER_ID/notif
 | `emailRecipients` | The addresses the emails go to, at most five. While the list is empty, the emails about invoices go to the billing emails of your billing profile (your contact email when there are none), and the others to your contact email |
 | `emailEvents` | The events you want by email. `null` means every event. It narrows the events marked **Your choice** above; the others are emailed whatever it says |
 | `webhookUrl` | Where the signed calls go. `null`, or an empty text, switches the webhook off |
-| `webhookEvents` | The events sent to your webhook. `null` means every event, the three about your managed users included |
+| `webhookEvents` | The events sent to your webhook. `null` means every event, those about your managed users included and those added later. A list names exactly the events you get, so add a new event to it to receive it |
 
 Changing the settings needs an API key with full access, because they decide where your notifications go. Reading them does not.
 
@@ -246,6 +259,7 @@ app.post('/widgetic/events', express.raw({ type: 'application/json' }), (request
   } else if (event.type === 'credits.low') {
     console.log(`Credits are ${event.data.band}: ${event.data.balance} left`);
   }
+  // Any other type: answer 2xx and move on. Widgetic adds event types from time to time.
 
   return response.status(200).send('ok');
 });
