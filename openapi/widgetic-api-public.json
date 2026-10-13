@@ -161,7 +161,7 @@
       "get": {
         "operationId": "getPublicCompositionEmbed",
         "summary": "Resolve a composition UUID to a published widget URL",
-        "description": "Public customer embed lookup. No API key. Used by embed-sdk.js on third-party sites.\nIf the composition's owner listed the websites it may appear on (the workspace's domain list, or the `allowedDomains` of a partner the owner administers), a request from any other website is refused with 403 `DOMAIN_NOT_ALLOWED`. The website is read from the `Origin` header, or the host of `Referer` when there is no `Origin`; a request that names neither (a server, a tool) is not refused. An owner who listed nothing is not restricted, and a page on the visitor's own machine (`localhost`, `127.0.0.1` or `[::1]`, on any port) is always allowed. The list stops other websites from showing the embed in a visitor's browser; it does not hide the published content from someone who holds the composition ID.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n**Limit.** 500 calls for each visitor address and browser in one counting window, shared with the frame and the status routes. Over it the answer is 429 `RATE_LIMITED` with a `Retry-After` header.\n",
+        "description": "Public customer embed lookup. No API key. Used by embed-sdk.js on third-party sites.\nIf the composition's owner listed the websites it may appear on (the workspace's domain list, or the `allowedDomains` of a partner the owner administers), a request from any other website is refused with 403 `DOMAIN_NOT_ALLOWED`. The website is read from the `Origin` header, or the host of `Referer` when there is no `Origin`; a request that names neither (a server, a tool) is not refused. An owner who listed nothing is not restricted, and a page on the visitor's own machine (`localhost`, `127.0.0.1` or `[::1]`, on any port) is always allowed. So is the website where a partner integrates Widgetic, with every subdomain of it (`platformDomain` in the answer of `GET /partners/mine`), for the widgets of that partner: a partner's list never has to name it. The list stops other websites from showing the embed in a visitor's browser; it does not hide the published content from someone who holds the composition ID.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n**Limit.** 500 calls for each visitor address and browser in one counting window, shared with the frame and the status routes. Over it the answer is 429 `RATE_LIMITED` with a `Retry-After` header.\n",
         "tags": [
           "Public Embed"
         ],
@@ -201,7 +201,7 @@
                     },
                     "playerVersion": {
                       "type": "integer",
-                      "description": "Version of the gateway frame wrapper and host-bridge protocol (`widgetic:host` v1). Raised when page, frame, and widget messages change in a way a widget could notice."
+                      "description": "Version of the player: the gateway frame wrapper that shows the widget, and the host bridge it speaks with the embedding page and the widget (currently 2). Raised when the messages between page, frame, and widget change in a way a widget could notice, such as a new `widgetic:host` field or a new forwarded event. It is not `widgetVersion` (the version of the published widget) and not the `version` inside a `widgetic:host` message."
                     },
                     "dataSource": {
                       "type": "object",
@@ -392,7 +392,7 @@
       "get": {
         "operationId": "getPublicCompositionIframe",
         "summary": "Embed a published composition with its saved values",
-        "description": "Public HTML wrapper with an inner published artifact iframe. No API key or SDK required.\nIf the composition's owner listed the websites it may appear on, the page is sent with `Content-Security-Policy: frame-ancestors` naming those websites (and Widgetic's own), so a browser refuses to show it inside any other website whatever `Referer` policy that website uses. Opening the address directly still works. An owner who listed nothing is not restricted.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}/frame`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n",
+        "description": "Public HTML wrapper with an inner published artifact iframe. No API key or SDK required.\nIf the composition's owner listed the websites it may appear on, the page is sent with `Content-Security-Policy: frame-ancestors` naming those websites (and Widgetic's own, and the website where the partner the owner administers integrates Widgetic, with its subdomains), so a browser refuses to show it inside any other website whatever `Referer` policy that website uses. Opening the address directly still works. An owner who listed nothing is not restricted.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}/frame`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n",
         "tags": [
           "Public Embed"
         ],
@@ -1323,7 +1323,7 @@
       "post": {
         "operationId": "addPersonalWorkspaceDomain",
         "summary": "Allow a website to show your widgets",
-        "description": "Adds a website to an account's own list. Give a website name such as `example.com`, or `*.example.com` for a website and all of its subdomains. A scheme, a port, a path, capital letters and a leading `www.` are dropped, so `https://www.Example.com/shop` is kept as `example.com`, and `example.com` covers `www.example.com` too. Something that is not a website name is refused, not stored.\nUntil the first website is added nothing is restricted, and a widget can be shown anywhere. Once the list has one, a widget of the account is shown on the listed websites (and on Widgetic's own) and nowhere else. A page on your own machine (`localhost`, `127.0.0.1` or `[::1]`, on any port) is always allowed, so there is nothing to add to test locally. A change can take about 15 seconds to reach every server.\nThe list is a safeguard against other websites showing your widgets in a visitor's browser. It is not access control: anyone who knows a widget's id can still fetch its published content with a plain request that names no website.\nAn account can list at most 50 websites. Use `*.example.com` for a website and all of its subdomains instead of listing each one.",
+        "description": "Adds a website to an account's own list. Give a website name such as `example.com`, or `*.example.com` for a website and all of its subdomains. A scheme, a port, a path, capital letters and a leading `www.` are dropped, so `https://www.Example.com/shop` is kept as `example.com`, and `example.com` covers `www.example.com` too. Something that is not a website name is refused, not stored.\nUntil the first website is added nothing is restricted, and a widget can be shown anywhere. Once the list has one, a widget of the account is shown on the listed websites (and on Widgetic's own) and nowhere else. A page on your own machine (`localhost`, `127.0.0.1` or `[::1]`, on any port) is always allowed, so there is nothing to add to test locally. So is the website where a partner your account administers integrates Widgetic, with every subdomain of it (`platformDomain` in the answer of `GET /partners/mine`), so there is nothing to add for it either and a list can never lock it out. A change can take about 15 seconds to reach every server.\nThe list is a safeguard against other websites showing your widgets in a visitor's browser. It is not access control: anyone who knows a widget's id can still fetch its published content with a plain request that names no website.\nAn account can list at most 50 websites. Use `*.example.com` for a website and all of its subdomains instead of listing each one.",
         "tags": [
           "Partner",
           "Users"
@@ -1878,7 +1878,7 @@
       "post": {
         "operationId": "createUserApiKey",
         "summary": "Create an API key",
-        "description": "Makes a new API key for an account and returns its secret in `key`. That is the only time the secret is shown: Widgetic keeps a hash, so a key that was not stored cannot be recovered, only replaced. To rotate a key, make the new one, switch the integration over to it, then delete the old one.\nOnly a person signed in on widgetic.com can make a key: a request made with an API key, or with an SDK token, is refused with 403. That way a leaked key cannot be used to make a second one that survives its revocation. Make keys from the dashboard; a key can still list, rename, switch off and delete keys.\nAn `Idempotency-Key` header is required (8 to 50 characters: letters, digits, `-` and `_`). A retry with the same header and the same body returns the same answer instead of making a second key, and the same header with a different body is refused with 422. Make keys one at a time: two requests for the same account that run at the same moment can overwrite each other.\nA key can be limited to what it needs. Send a `preset` (`read_only`, `content` or `full_access`) or a list of `scopes`, never both. Send neither for a key that can do everything its owner can, as every key made before scopes existed. A limited key is refused with 403 and the code `API_KEY_SCOPE_MISSING` on anything outside its scopes, so a key held by a build server or by a partner's backend can be given only the part of the API it uses. The scopes of a key are fixed when it is made: to widen one, make a new key and delete the old one. A limited key cannot make, change or delete keys, exchange tokens or reach the administration routes. The list of scopes is in the `ApiKeyScope` schema.\nAn account can hold at most 25 keys, except a partner account, which has no limit: what a partner's keys do is paid for from its own credits, however many integrations it runs. An account on a plan without API access cannot make one (a partner account is not asked about a plan).",
+        "description": "Makes a new API key for an account and returns its secret in `key`. That is the only time the secret is shown: Widgetic keeps a hash, so a key that was not stored cannot be recovered, only replaced. To rotate a key, make the new one, switch the integration over to it, then delete the old one.\nOnly a person signed in on widgetic.com can make a key: a request made with an API key, or with an SDK token, is refused with 403. That way a leaked key cannot be used to make a second one that survives its revocation. Make keys from the dashboard; a key can still list, rename, switch off and delete keys.\nAn `Idempotency-Key` header is required (8 to 50 characters: letters, digits, `-` and `_`). A retry with the same header and the same body returns the same answer instead of making a second key, and the same header with a different body is refused with 422. Make keys one at a time: two requests for the same account that run at the same moment can overwrite each other.\nA key can be limited to what it needs. Send a `preset` (`read_only`, `content` or `full_access`) or a list of `scopes`, never both. Send neither for a key that can do everything its owner can, as every key made before scopes existed. A limited key is refused with 403 and the code `API_KEY_SCOPE_MISSING` on anything outside its scopes, so a key held by a build server or by a partner's backend can be given only the part of the API it uses. The scopes of a key are fixed when it is made: to widen one, make a new key and delete the old one. A limited key cannot make, change or delete keys, exchange tokens or reach the administration routes. The list of scopes is in the `ApiKeyScope` schema.\nAccounts with API access (Solo, Teams and partner accounts) have no limit on how many keys they hold. An account on a plan without API access cannot make one (a partner account is not asked about a plan).",
         "tags": [
           "Partner",
           "Users"
@@ -1936,7 +1936,7 @@
             "description": "The request was made with an API key or an SDK token (only a person signed in on widgetic.com can make a key), the account belongs to someone else, or its plan does not include API keys"
           },
           "409": {
-            "description": "The account already holds 25 keys (a partner account has no limit), or another request with this Idempotency-Key is still running"
+            "description": "Another request with this Idempotency-Key is still running"
           },
           "422": {
             "description": "This Idempotency-Key was already used with a different body"
@@ -3483,7 +3483,7 @@
       "get": {
         "operationId": "getPartnerCreditBalance",
         "summary": "Get partner credit balance",
-        "description": "Returns the credits the partner has: the balance of the account of the person who administers it, and how\nmuch of that is reserved by operations that are still running. That is the account its customers' editor\nsessions and its own API calls spend from, and the one a paid invoice that carries credits adds to, so it is\nthe same balance `getUserCreditBalance` reads for that person.\n\nThe partner wallet that was kept before credits followed the account is not read here: nothing adds to it or\nspends from it any more. A partner with no administrator reads a balance of 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
+        "description": "Returns the credits the partner has, and how much of that is reserved by operations that are still running.\nA partner has ONE account for its credits: the account of the person who administers it, the same account\nits API key acts as. There is nothing else to create or to fund. What its customers' editor sessions and its\nown API calls spend comes out of that account, and the credits a paid invoice carries are added to it, so\nthis is the same balance `getUserCreditBalance` reads for that person.\n\nA partner with no administrator has no account to hold credits, and reads a balance of 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
           "Partner",
           "Partners"
@@ -3576,7 +3576,7 @@
       "get": {
         "operationId": "getPartnerCreditTransactions",
         "summary": "Get partner credit transaction history",
-        "description": "Lists what happened to the partner's credits, newest first: the entries of the credit ledger of the account of\nthe person who administers it. Every operation that spends credits is a `debit` entry, and the credits an\ninvoice carried arrive as `credit` entries when the invoice is paid, so this is also how the partner's usage\nis read. It is the same ledger `getUserCreditTransactions` reads for that person.\n\nThe partner wallet that was kept before credits followed the account is not read here. A partner with no\nadministrator has an empty ledger.\n\nThe page is always bounded: `limit` defaults to 20 and is capped at 100, `offset` defaults to 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
+        "description": "Lists what happened to the partner's credits, newest first: the entries of the credit ledger of the account of\nthe person who administers it, the one account a partner has for its credits. Every operation that spends\ncredits is a `debit` entry, and the credits an invoice carried arrive as `credit` entries when the invoice is\npaid, so this is also how the partner's usage is read. It is the same ledger `getUserCreditTransactions`\nreads for that person.\n\nA partner with no administrator has no account, and an empty ledger.\n\nThe page is always bounded: `limit` defaults to 20 and is capped at 100, `offset` defaults to 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
           "Partner",
           "Partners"
@@ -3839,7 +3839,7 @@
       "get": {
         "operationId": "getPartnerBillingOverview",
         "summary": "Get comprehensive partner billing overview",
-        "description": "Retrieves the older partner wallet's figures (`operationalCredits`), the partner's contract terms (`partnerCustomization`, the same fields as `getPartnerContract`) and billing integration status. Internal negotiation notes are not part of it.\n`operationalCredits` is **not** what the partner spends: that is the balance of its administrator's account, read with `getPartnerCreditBalance` (and its ledger with `getPartnerCreditTransactions`). The wallet it shows was kept before credits followed the account, and nothing adds to it any more.\n",
+        "description": "Retrieves the partner's credits (`operationalCredits`), the partner's contract terms (`partnerCustomization`, the same fields as `getPartnerContract`) and billing integration status. Internal negotiation notes are not part of it.\n`operationalCredits` is the one account a partner has for its credits: the account of the person who administers it. It holds `balance` (the same balance `getPartnerCreditBalance` reads), `reservedBalance`, `availableBalance` (what a new operation can use) and `recentTransactions` (the ten newest entries of the ledger `getPartnerCreditTransactions` lists). A partner with no administrator has no account, and reads 0 and an empty list.\n",
         "tags": [
           "Partner",
           "Partners"
@@ -14759,7 +14759,7 @@
       "post": {
         "operationId": "getCompositionsBatch",
         "summary": "Get Compositions Batch",
-        "description": "Retrieves multiple compositions by their IDs in a single request.\nThis endpoint includes domain validation for embed contexts and is used by the embed SDK.\n\nEach composition is checked on its own. If its owner listed the websites it may appear on (the\nworkspace's domain list, or the `allowedDomains` of a partner the owner administers) and the request\ncomes from another website (the `Origin` header, or the host of `Referer` when there is no `Origin`),\nthat composition is left out of `compositions` and reported in `errors` as\n`Domain access denied: <reason>`; the others are still returned. A request that names no website, and\nan owner who listed nothing, are not restricted, and a page on the visitor's own machine (`localhost`,\n`127.0.0.1` or `[::1]`, on any port) is always allowed.\n",
+        "description": "Retrieves multiple compositions by their IDs in a single request.\nThis endpoint includes domain validation for embed contexts and is used by the embed SDK.\n\nEach composition is checked on its own. If its owner listed the websites it may appear on (the\nworkspace's domain list, or the `allowedDomains` of a partner the owner administers) and the request\ncomes from another website (the `Origin` header, or the host of `Referer` when there is no `Origin`),\nthat composition is left out of `compositions` and reported in `errors` as\n`Domain access denied: <reason>`; the others are still returned. A request that names no website, and\nan owner who listed nothing, are not restricted, and a page on the visitor's own machine (`localhost`,\n`127.0.0.1` or `[::1]`, on any port) is always allowed. So is the website where a partner integrates\nWidgetic, with every subdomain of it (`platformDomain` in the answer of `GET /partners/mine`), for the\ncompositions of that partner: a partner's list never has to name it.\n",
         "tags": [
           "Compositions"
         ],
@@ -17557,6 +17557,7 @@
           "name",
           "status",
           "allowedDomains",
+          "platformDomain",
           "suspendedAt",
           "suspensionReason"
         ],
@@ -17589,6 +17590,12 @@
             },
             "description": "The domains Widgetic added to the embeds of this partner's customers. The domains the person added themselves are on the domains route of the account.\n"
           },
+          "platformDomain": {
+            "type": "string",
+            "nullable": true,
+            "example": "acme.com",
+            "description": "The website where the partner integrates Widgetic, as a bare name. It and every subdomain of it (`app.acme.com`, `learn.eu.acme.com`) can always show the partner's widgets, the ones its customers make through it included, and send entries to them, whatever `allowedDomains` and the account's own domain list say, so a list can never lock the partner's own website out. It is not an entry of `allowedDomains`, and it does not turn an empty list into a restriction: a partner that lists nothing stays unrestricted for every website. Widgetic sets it when the partner is set up; contact Widgetic to change it. `null` when none has been set.\n"
+          },
           "suspendedAt": {
             "type": "string",
             "format": "date-time",
@@ -17612,6 +17619,7 @@
           "status": "Example status",
           "contactEmail": "Example contactEmail",
           "allowedDomains": [],
+          "platformDomain": "acme.com",
           "suspendedAt": "2026-01-15T09:30:00.000Z",
           "suspensionReason": "Example suspensionReason",
           "createdAt": "2026-01-15T09:30:00.000Z"

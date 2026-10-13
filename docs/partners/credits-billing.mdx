@@ -3,13 +3,13 @@ title: Credits & Billing
 description: How invoices, AI credits and storage work for a partner account
 ---
 
-You pay Widgetic **by invoice**, and you spend **credits** on Widgetic's AI. Credits belong to your administering account: the account behind your API key. Creating compositions, changing their content or design, uploading files and showing a widget to visitors never spend credits.
+You pay Widgetic **by invoice**, and you spend **credits** on Widgetic's AI. Your credits live in **one account**: the account of the person who administers your partner record, which is the account behind your API key. There is nothing else to create or to fund: no second account, and no separate balance for the partner. Creating compositions, changing their content or design, uploading files and showing a widget to visitors never spend credits.
 
 ## Overview
 
 1. **Agree your terms** with Widgetic. Your contract sets the billing cycle, the credits you get in each billing period, your price for a credit and the dates. Read it with `GET /partners/{partnerId}/contract`.
 2. **Pay the invoices.** For each billing period Widgetic issues an invoice by itself, for the credits of that period at your price for a credit, with the tax that applies to you. Stripe emails it to your billing contact, and you pay it on the invoice page within the number of days printed on it (7 unless you agreed another number). Nothing is charged automatically. You pay from the first day: a partner has no trial.
-3. **Get your credits.** Paying an invoice adds its credits to your account. Each generation by Widgetic's AI uses 1 credit. When the credits of a period are used up, you can buy extra credits yourself with one API call (see [Getting More Credits](#getting-more-credits)).
+3. **Get your credits.** Paying an invoice adds its credits to your account, once. Each generation by Widgetic's AI uses 1 credit. When the credits of a period are used up, you can buy extra credits yourself with one API call (see [Getting More Credits](#getting-more-credits)).
 4. **Pay on time.** An invoice of your contract that is still unpaid after its due date stops your partner account until it is paid (see [When an Invoice Is Not Paid](#when-an-invoice-is-not-paid)).
 5. **Monitor** your balance, your spending and your invoices in your [dashboard](/docs/partners/dashboard), with the calls below, or let [notifications](/docs/partners/notifications) tell you when an invoice is issued, due, overdue or paid, and when your credits run low.
 
@@ -164,12 +164,17 @@ Your contract includes no storage: your files go to your own bucket (see [Storag
       "billingCycle": "monthly",
       "contractActive": true
     },
-    "operationalCredits": { "...": "the older partner wallet. See below: it is not your spendable balance" }
+    "operationalCredits": {
+      "balance": 1500,
+      "reservedBalance": 0,
+      "availableBalance": 1500,
+      "recentTransactions": [{ "...": "the 10 newest entries of your spending history, in the shape shown under Spending History" }]
+    }
   }
 }
 ```
 
-`tier` is `partner` when you have a contract and `standard` when you do not. The overview does not show a stop for an unpaid invoice: read `standing` in the answer of `GET /partners/mine` for that (see [Account Status](/docs/partners/account-status)).
+`operationalCredits` is your account's credits, the same figures as in [Checking Your Balance](#checking-your-balance): `balance`, `reservedBalance` and `availableBalance` (`balance` minus `reservedBalance`, never below 0), and the 10 newest entries of your [spending history](#spending-history). The figures here are an illustration, not real ones. `tier` is `partner` when you have a contract and `standard` when you do not. The overview does not show a stop for an unpaid invoice: read `standing` in the answer of `GET /partners/mine` for that (see [Account Status](/docs/partners/account-status)).
 
 ## How and When You Pay
 
@@ -227,9 +232,11 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
 
 Your contract includes no storage. Every file goes to your own bucket, which is required: your customers' uploads and the files of your own widgets, whether they come from the API, from the [editors](/docs/partners/editor-sessions#every-session-needs-your-own-storage) in your page or from Widgetic's MCP tools. Widgetic counts none of them against an allowance, so an upload of yours is never refused for a full one, and Widgetic does not sell storage to a partner account (`403` with the code `PARTNER_STORAGE_NOT_SOLD`). Set your bucket up in [Storage](/docs/partners/storage). What each customer keeps is in the [storage report](/docs/partners/storage#what-each-customer-keeps).
 
-## The Older Partner Wallet: Ignore It
+## One Account, Nothing Else to Create
 
-Before credits followed your account, your partner record had a separate "wallet" with its own balance. Widgetic no longer uses it: nothing adds to it and nothing spends from it, so its figure does not tell you what you can use. Use the account balance above. `operationalCredits` in the billing overview still shows it.
+Your credits are in one place: the account of the person who administers your partner record, which is the account behind your API key. You do not create, fund or manage any other account or balance to get started. What you build with the key is charged to that account, an invoice you pay adds its credits to it, and every figure that shows your credits reads it: the account calls, the two partner credit calls and `operationalCredits` in the billing overview.
+
+An earlier version of Widgetic also kept a separate balance on the partner record, and `operationalCredits` used to show it. That balance is gone, and `operationalCredits` now shows your account's credits. If a script or a screen of yours still reads or tops up a "partner balance", point it at the account balance in [Checking Your Balance](#checking-your-balance).
 
 <Warning>
   `POST /partners/{partnerId}/credits/add` and `PUT /partners/{partnerId}/credits/auto-reload` no longer exist, so do not call them: they answer `404`. Versions of `@widgetic/api-sdk` up to 1.0.32 still have a method for each (`addPartnerCredits` and `configureAutoReload`). To get more credits, buy [extra credits](#getting-more-credits).
