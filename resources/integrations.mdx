@@ -124,62 +124,10 @@ if (widgetElement) {
 
 ## Webhooks
 
-<Warning>
-  **Not available yet.** Widgetic does not send these events to your server today, and there is no Webhooks page in the dashboard. The design below is a sketch and may change.
-</Warning>
+Widgetic sends webhooks to partner accounts only. A partner account can have a signed call made to its own server when an invoice is paid, when its credits run low, when a customer's composition is created or saved, when a visitor sends an entry, and for the other events listed in [Notifications](/docs/partners/notifications). That page also shows how to set the address and how to check the signature.
 
-### Events in the Sketch
-
-| Event | Description |
-|-------|-------------|
-| `widget.created` | New widget created |
-| `widget.updated` | Widget modified |
-| `widget.published` | Widget published |
-| `composition.saved` | Composition saved |
-
-### Setup in the Sketch
-
-1. Go to Dashboard → Settings → Webhooks
-2. Add your endpoint URL
-3. Select events to subscribe
-4. Copy the signing secret
-
-### Example Handler
-
-```typescript
-app.post('/webhooks/widgetic', (req, res) => {
-  // Verify signature
-  if (!verifySignature(req)) {
-    return res.status(401).send('Invalid signature');
-  }
-  
-  const { event, data } = req.body;
-  
-  switch (event) {
-    case 'widget.published':
-      // Update your cache
-      cache.invalidate(`widget:${data.id}`);
-      break;
-    case 'composition.saved':
-      // Sync to your database
-      db.compositions.upsert(data);
-      break;
-  }
-  
-  res.status(200).send('OK');
-});
-```
+Other accounts have no webhooks today, and there is no Webhooks page in the dashboard for them.
 
 ## Other Languages
 
 Widgetic does not publish a Python or PHP package. Any language that can send HTTPS requests can call the REST API, and every endpoint in the [API Reference](/api-reference/introduction) has request samples in several languages. For TypeScript, use the [API SDK](/resources/sdks).
-
-## Need a Custom Integration?
-
-Contact us for:
-- Custom integrations
-- SSO (SAML, OIDC)
-- On-premise deployment
-- Dedicated support
-
-Email: [partners@widgetic.com](mailto:partners@widgetic.com)
