@@ -21,6 +21,7 @@ The allowance that applies to a call is in the `RateLimit-Limit` header of its r
 Responses that were counted include rate limit information:
 
 ```
+RateLimit-Policy: 3000;w=900
 RateLimit-Limit: 3000
 RateLimit-Remaining: 2995
 RateLimit-Reset: 540
@@ -28,9 +29,12 @@ RateLimit-Reset: 540
 
 | Header | Description |
 |--------|-------------|
+| `RateLimit-Policy` | The allowance and the length of the window in seconds: `3000;w=900` is 3,000 requests per 900 seconds |
 | `RateLimit-Limit` | Maximum requests per window |
 | `RateLimit-Remaining` | Requests remaining in window |
 | `RateLimit-Reset` | Seconds until the window ends (a number of seconds to wait, not a timestamp) |
+
+The older `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` headers are sent as well, for clients that still read them. The first two carry the same numbers. `X-RateLimit-Reset` does not: it is the time the window ends, in Unix seconds, not a number of seconds to wait. Read the `RateLimit-*` headers.
 
 ## When Rate Limited
 
@@ -41,7 +45,7 @@ If you exceed a limit, you'll receive a `429 Too Many Requests` response with a 
   "success": false,
   "message": "Too many requests, please try again later.",
   "error": {
-    "code": "RATE_LIMIT_EXCEEDED",
+    "code": "RATE_LIMIT_API_KEY_EXCEEDED",
     "message": "Too many requests, please try again later.",
     "retryAfter": 540,
     "details": { "limit": 3000 }
@@ -53,13 +57,27 @@ If you exceed a limit, you'll receive a `429 Too Many Requests` response with a 
 
 ## Endpoint-Specific Limits
 
-Some operations have a limit of their own, on top of the allowance on your key:
+Some operations have a limit of their own, on top of the allowance on your key. Each one is counted for each person, across all of their keys and sessions: a partner key and the same person's dashboard session count together. A refusal has the code `RATE_LIMIT_USER_EXCEEDED`.
 
-| Operation | Limit | Counted |
-|-----------|-------|---------|
-| Creating a widget | 120 per minute | For each account, across all of its keys |
-| Billing operations | 20 per minute | For each person, across all of their keys |
-| Events sent to a Zap | 60 per minute | For each Zap. Events over the limit are not sent |
+| Operation | Limit |
+|-----------|-------|
+| Creating a widget (`POST /widgets`) | 120 per minute |
+| Billing operations | 20 per minute |
+| Buying extra credits (`POST /partners/{partnerId}/credits/extra-invoice`) | 10 per hour |
+| Changing, removing or checking a partner's storage destination (`PUT`, `DELETE` and `POST …/verify` on `/partners/{partnerId}/storage`). Reading it is not counted | 10 per 10 minutes |
+| Partner reports (`/partners/{partnerId}/storage/usage` and `/partners/{partnerId}/analytics/…`) | 60 per minute |
+| Reading partner notifications, deliveries and settings | 60 per minute |
+| Changing the notification settings, or making a new webhook secret | 20 per minute |
+| Replaying a delivery | 5 per minute |
+| Sending a test event | 5 per minute |
+| Reading the entry context signing setting (`GET /partners/{partnerId}/entry-context-signing`) | 60 per minute |
+| Changing it, or making its secret | 20 per minute |
+| A managed user's entries feed (`GET /managed-users/{id}/entries`) | 30 per minute |
+| Listing the items of an entry table (`GET /compositions/{id}/entries/{table}/items`) | 120 per minute |
+| Deleting items of an entry table | 30 per minute |
+| Exporting an entry table | 20 per minute |
+
+Each gateway server counts these on its own, so when several servers answer, the number let through can be higher than the figure shown.
 
 AI generations are also held to a usage budget per hour and per day, and to a number of generations running at once. A refusal says which (`COST_LIMIT_EXCEEDED` or `CONCURRENCY_LIMIT_EXCEEDED`).
 

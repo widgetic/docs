@@ -9463,7 +9463,7 @@
       "get": {
         "operationId": "listManagedUserEntries",
         "summary": "List entries across a managed user's compositions",
-        "description": "Merges eligible tables (time and id columns) across the managed user's compositions in global time order, then compositionId, table, and id (byte order). Only tables with both a time and an id column take part. Rate limit 120 requests per minute.",
+        "description": "Merges eligible tables (time and id columns) across the managed user's compositions in global time order, then compositionId, table, and id (byte order). Only tables with both a time and an id column take part. Rate limit 30 requests per minute.",
         "tags": [
           "Partner"
         ],
