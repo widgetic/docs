@@ -1,19 +1,20 @@
 ---
 title: Account Status
-description: How a partner account is activated, what a pause stops, and how it starts again
+description: How a partner account is activated, what a pause or an unpaid invoice stops, and how it starts again
 ---
 
-A partner account is in one of three states, and only Widgetic changes it. This page says what each state means for you and for your customers, so that a pause never comes as a surprise.
+A partner account is in one of four states. Widgetic decides three of them. The fourth, **payment arrears**, follows from an unpaid invoice of your contract: nobody sets it, and it ends when the invoice is paid. This page says what each state means for you and for your customers, so that a stop never comes as a surprise.
 
-## The Three States
+## The Four States
 
 | Status | What it means | Your customers |
 |--------|---------------|----------------|
 | `inactive` | Not activated yet. Every new account starts here, and an account that was deactivated returns here | Cannot use Widgetic through you |
 | `active` | In force | Everything works |
 | `suspended` | Paused by hand by Widgetic. The reason is recorded and you can read it | Their editors stop, and your published widgets are not served |
+| `payment_arrears` | An invoice of your contract is unpaid after its due date. It starts the day after the due date (UTC) and ends when the invoice is paid | The same as a pause: their editors stop, and your published widgets are not served |
 
-Read your own state with `GET /partners/mine`. The answer has `standing` for the account as a whole (`inactive`, `active` or `suspended`, or `not_a_partner` for an account that administers no partner) and the `partners` you administer. Each one has its `id`, which the other partner routes ask for, its `status` and, while it is paused, `suspendedAt` and `suspensionReason`.
+Read your own state with `GET /partners/mine`. The answer has `standing` for the account as a whole (`inactive`, `active`, `suspended` or `payment_arrears`, or `not_a_partner` for an account that administers no partner), `overdueSince` and the `partners` you administer. `overdueSince` is the due date of the oldest unpaid invoice of your contract while `standing` is `payment_arrears`, and `null` otherwise. Each partner has its `id`, which the other partner routes ask for, its `status` and, while it is paused, `suspendedAt` and `suspensionReason`.
 
 ```bash
 curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
@@ -25,6 +26,7 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
   "success": true,
   "data": {
     "standing": "suspended",
+    "overdueSince": null,
     "partners": [
       {
         "id": "7d5f3c1a-2b64-4c0e-9a51-6f1e2d3c4b5a",
@@ -33,7 +35,7 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
         "contactEmail": "billing@yourcompany.com",
         "allowedDomains": [],
         "suspendedAt": "2026-10-20T09:00:00.000Z",
-        "suspensionReason": "Invoice 2026-0042 is unpaid",
+        "suspensionReason": "Contract under review",
         "createdAt": "2026-09-01T10:00:00.000Z"
       }
     ]
@@ -41,24 +43,26 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
 }
 ```
 
+With an unpaid invoice, `standing` is `payment_arrears` and `overdueSince` has the date. The partner itself is not paused, so its `status` stays `active` and there is no `suspensionReason`: nobody wrote a reason, an invoice is the cause.
+
 <Note>
-  A pause is never automatic. Widgetic reminds you of an unpaid invoice (see [When an invoice is not paid](/docs/partners/credits-billing#when-an-invoice-is-not-paid)) and tells its own team, but however late an invoice is, nothing pauses your account by itself. A person at Widgetic decides, and writes the reason you read here.
+  A pause is a person's decision: a person at Widgetic decides, and writes the reason you read here. Payment arrears is different, because nobody decides it. An invoice of your contract that is still unpaid after its due date stops the account by itself, and paying the invoice ends the stop by itself. Widgetic reminds you before and after the due date (see [When an invoice is not paid](/docs/partners/credits-billing#when-an-invoice-is-not-paid)). An unpaid invoice for extra credits stops nothing.
 </Note>
 
 ## Getting Activated
 
 A partner has no trial. You pay from the first day, and you can use the account only once Widgetic has activated it. Widgetic activates it when two things are in place:
 
-1. **A contract in force.** Widgetic records what was agreed: the price, the credits, the billing cycle and the dates. The dates must cover today.
+1. **A contract in force.** Widgetic records what was agreed: the credits for each billing period, your price for a credit, the billing cycle and the dates. The dates must cover today.
 2. **Storage that works.** Your own [storage destination](/docs/partners/storage) is saved and has passed its check. This one is yours to do, and it is the part that takes the longest, so start with it.
 
 Until then the account is `inactive`. You can set up your storage and read your contract, invoices and notifications, and you can pay. Everything that makes something is refused with `PARTNER_INACTIVE`. When Widgetic activates the account you get a `partner.activated` [notification](/docs/partners/notifications).
 
-The first invoice is not a requirement for the activation. Widgetic may send it before or right after, and you pay it from the Billing page of your [dashboard](/docs/partners/dashboard) or from the link in the invoice email.
+The first invoice is not a requirement for the activation. Widgetic issues it on the day your contract starts, and you pay it from the Billing page of your [dashboard](/docs/partners/dashboard) or from the link in the invoice email.
 
-## What a Pause Stops
+## What a Pause or Payment Arrears Stops
 
-**For you.** Everything that makes something or starts work is refused with `403`: creating or changing widgets and compositions, publishing, generating with the AI, uploading, and making managed users and their editor sessions. The answer says why:
+**For you.** Everything that makes something or starts work is refused with `403`: creating or changing widgets and compositions, publishing, generating with the AI, uploading, and making managed users and their editor sessions. The answer says why. For a pause:
 
 ```json
 {
@@ -68,15 +72,31 @@ The first invoice is not a requirement for the activation. Widgetic may send it 
     "message": "This partner account is paused. Billing, invoices, credits and notifications are still available; everything else comes back when Widgetic resumes the account.",
     "details": {
       "partnerStatus": "suspended",
-      "reason": "Invoice 2026-0042 is unpaid"
+      "reason": "Contract under review"
     }
   }
 }
 ```
 
-`details.partnerStatus` is `suspended` or `inactive`, and `details.reason` is the reason recorded with the pause. Branch on `error.code` (`PARTNER_SUSPENDED` or `PARTNER_INACTIVE`), not on the message.
+And for an unpaid invoice:
 
-**What stays open to you.** Reading everything, as before, so that you can see what is paused and why. And what you need to get going again: [billing, invoices and credits](/docs/partners/credits-billing), your contract, your [storage](/docs/partners/storage), your [notifications](/docs/partners/notifications), your API keys (a leaked key can still be revoked) and signing in and out. A generation that is already running can still be stopped, since stopping only saves credits.
+```json
+{
+  "success": false,
+  "error": {
+    "code": "PARTNER_PAYMENT_ARREARS",
+    "message": "This partner account is stopped because an invoice is past its due date. Billing, invoices, credits and notifications are still available; pay the overdue invoice and everything else comes back at once.",
+    "details": {
+      "partnerStatus": "payment_arrears",
+      "overdueSince": "2026-11-01T00:00:00.000Z"
+    }
+  }
+}
+```
+
+`details.partnerStatus` is `suspended`, `payment_arrears` or `inactive`. `details.reason` is the reason recorded with a pause, and `details.overdueSince` is the due date of the oldest unpaid invoice. Branch on `error.code` (`PARTNER_SUSPENDED`, `PARTNER_PAYMENT_ARREARS` or `PARTNER_INACTIVE`), not on the message.
+
+**What stays open to you.** Reading everything, so that you can see what is stopped and why. And what you need to get going again: [billing, invoices, buying credits and your credits](/docs/partners/credits-billing), your contract, your [storage](/docs/partners/storage), your [notifications](/docs/partners/notifications), your API keys (a leaked key can still be revoked) and signing in and out. A generation that is already running can still be stopped, since stopping only saves credits.
 
 **For your customers.** Their [editor sessions](/docs/partners/editor-sessions) stop working at the next call, with `403` and the same code, and no new session can be made. What the customer reads is only:
 
@@ -84,9 +104,15 @@ The first invoice is not a requirement for the activation. Widgetic may send it 
 
 It says nothing about money, because the customer did not cause it and cannot fix it. Your published widgets are not served while the account is not in force: their public address answers `404`.
 
-**What a pause keeps.** Nothing is deleted. Your customers, compositions, widgets, uploads, credits and invoices stay as they were, and everything comes back when the account is resumed.
+**What it keeps.** Nothing is deleted. Your customers, compositions, widgets, uploads, credits and invoices stay as they were, and everything comes back when the account is resumed or the invoice is paid.
 
 ## Getting Going Again
+
+### After an unpaid invoice
+
+Pay the overdue invoice on its invoice page (`hostedInvoiceUrl`), or from the Billing page of your dashboard. **That is all.** Service comes back by itself as soon as the payment is confirmed, for you and for your customers, and you get a `partner.resumed` notification. Nobody at Widgetic has to switch the account on, and you do not need to write to anyone. If you paid and the account is still stopped an hour later, write to [partners@widgetic.com](mailto:partners@widgetic.com) with the invoice number.
+
+### After a pause
 
 <Steps>
   <Step title="See why">
@@ -96,7 +122,7 @@ It says nothing about money, because the customer did not cause it and cannot fi
     Usually that means paying an open invoice. Billing stays open while the account is paused, so you can pay from the invoice link or from your dashboard.
   </Step>
   <Step title="Tell Widgetic">
-    Write to [partners@widgetic.com](mailto:partners@widgetic.com). A person at Widgetic resumes the account; nothing resumes it automatically.
+    Write to [partners@widgetic.com](mailto:partners@widgetic.com). A person at Widgetic resumes the account; a pause is never lifted automatically.
   </Step>
   <Step title="Carry on">
     You get a `partner.resumed` notification. The change takes effect within seconds, for you and for your customers. Resuming is never held up by paperwork.
@@ -110,15 +136,16 @@ Three events tell you about the standing of the account, and all three are email
 | Event | When |
 |-------|------|
 | `partner.activated` | Widgetic activated your account |
-| `partner.paused` | Widgetic paused it. `data.reason` has the reason |
-| `partner.resumed` | Widgetic resumed it after a pause |
+| `partner.paused` | Your account was stopped, by a pause or by an unpaid invoice. `data.reason` has the reason: the one Widgetic wrote for a pause, or a sentence that names the overdue invoice |
+| `partner.resumed` | Your account is served again, after a pause or because the overdue invoice was paid |
 
-They are also in the list of your dashboard and, when you have set one up, sent to your [webhook](/docs/partners/notifications#your-own-webhook). Their `data` is `{ "status": "active" | "suspended", "previousStatus": "active" | "inactive" | "suspended" | null, "reason": string | null }`.
+They are also in the list of your dashboard and, when you have set one up, sent to your [webhook](/docs/partners/notifications#your-own-webhook). Their `data` is `{ "status": "active" | "suspended" | "payment_arrears", "previousStatus": "active" | "inactive" | "suspended" | "payment_arrears" | null, "reason": string | null }`. For a stop that an unpaid invoice caused, `partner.paused` has `status` set to `payment_arrears`, and `partner.resumed` has `previousStatus` set to `payment_arrears`.
 
 ## Errors
 
 | Status | Code | When | What to do |
 |--------|------|------|------------|
+| 403 | `PARTNER_PAYMENT_ARREARS` | An invoice of your contract is unpaid after its due date and the request is not one that stays open | Pay the overdue invoice. `details.overdueSince` says when the oldest one was due |
 | 403 | `PARTNER_SUSPENDED` | The account is paused and the request is not one that stays open | Pay what is due and write to Widgetic. `details.reason` says why it was paused |
 | 403 | `PARTNER_INACTIVE` | The account has not been activated yet | Finish your [storage](/docs/partners/storage) and wait for the activation |
 

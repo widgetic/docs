@@ -3,13 +3,13 @@ title: Storage
 description: The bucket your customers' files are kept in, how to set it up, and how to see what each customer keeps
 ---
 
-Your customers' files are yours to keep, so they are not kept with Widgetic. Every partner has a **storage destination**: a bucket you own, on any S3-compatible service (Amazon S3, Cloudflare R2, Backblaze B2, Wasabi, MinIO and the like). A file a customer uploads in a Widgetic [editor](/docs/partners/editor-sessions), and a file you upload with your own API key, is written to your bucket and served from the address you name.
+Your customers' files are yours to keep, so they are not kept with Widgetic. Every partner has a **storage destination**: a bucket you own, on any S3-compatible service (Amazon S3, Cloudflare R2, Backblaze B2, Wasabi, MinIO and the like). A file a customer uploads in a Widgetic [editor](/docs/partners/editor-sessions), and every file you upload yourself (with your API key, signed in on widgetic.com, as a resumable upload, into your media library, or through an AI assistant or the MCP server), is written to your bucket and served from the address you name.
 
 Storage is not optional:
 
 - Your account cannot be [activated](/docs/partners/account-status#getting-activated) until it has a storage destination that works.
 - An editor session of any kind cannot be made without one. The call answers `409` with `PARTNER_STORAGE_REQUIRED`.
-- An upload with your own key and no destination is refused the same way. It is never stored with Widgetic instead.
+- An upload of your own, whichever way you make it, is refused the same way while you have no destination. A resumable upload is refused when it is declared, before the first byte is sent. Nothing is ever stored with Widgetic instead.
 
 ## What You Need
 
@@ -131,9 +131,9 @@ When a step fails, nothing is saved, and the answer is `422` with the step, a st
 | A file a customer uploads in a Widgetic editor: the file browser, pictures dropped on a canvas, a chat attachment in the widget creator | Your bucket, filed under that customer |
 | A file you upload with `POST /uploads` and your API key or an SDK token | Your bucket |
 | What a session makes for itself, such as a widget's code and its previews | Widgetic |
-| Uploads you make signed in on widgetic.com, resumable uploads (`POST /uploads/tus`) and your account's own media library | Widgetic, against the storage allowance of your contract |
+| A file you upload signed in on widgetic.com, as a resumable upload (`POST /uploads/tus`), into your account's media library, or through an AI assistant or the MCP server | Your bucket. A resumable upload waits in Widgetic's temporary staging area while it is sent, and nothing is left there once it is finished |
 
-What is kept in your bucket takes none of your storage allowance. The upload call, the customer's own filing and the allowance are described in [Managed Users](/docs/partners/managed-users#uploads) and [Credits & Billing](/docs/partners/credits-billing).
+A partner account has no storage allowance. What is kept in your bucket takes none of Widgetic's, and Widgetic does not sell extra storage to a partner account (see [Credits & Billing](/docs/partners/credits-billing#storage)). The upload call and the customer's own filing are described in [Managed Users](/docs/partners/managed-users#uploads).
 
 When a destination is set, an upload is never stored with Widgetic instead of in it. If the destination cannot be used, the upload is refused (`503`), and if your bucket rejects the file, the answer is `502`. The customer reads one plain sentence, "This is not available right now. Please try again later.", that names neither your storage nor a limit, because it is your setup and not theirs.
 

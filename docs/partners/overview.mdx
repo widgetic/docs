@@ -44,7 +44,7 @@ A key does everything its account may do, unless you limit it when you make it. 
 
 ## Your Account Status
 
-A partner account starts **inactive** and has no trial: you pay from the first day, and Widgetic activates the account once your contract is in force and your storage works. Widgetic can also pause an account by hand, for example for an unpaid invoice. While the account is paused or not yet active, your customers cannot use your widgets or editors, and what you can change is limited to paying, your storage, your notifications and your keys. Nothing is ever paused automatically. See [Account Status](/docs/partners/account-status).
+A partner account starts **inactive** and has no trial: you pay from the first day, and Widgetic activates the account once your contract is in force and your storage works. An invoice of your contract that is still unpaid after its due date stops the account by itself until it is paid, and Widgetic can also pause an account by hand. While the account is stopped, paused or not yet active, your customers cannot use your widgets or editors, and what you can change is limited to paying, buying credits, your storage, your notifications and your keys. See [Account Status](/docs/partners/account-status).
 
 ## Architecture Overview
 
@@ -105,7 +105,7 @@ A preset is a widget of your own that you offer your customers as a starting poi
 
 ### Credits System
 
-You pay Widgetic by invoice. Credits pay for Widgetic's AI: each generation uses 1 credit ($0.10). Creating compositions, embedding widgets, storage and API calls do not use credits. Widgetic adds credits to your account when you ask. See [Credits & Billing](/docs/partners/credits-billing).
+You pay Widgetic by invoice, and Widgetic issues each invoice by itself: one for the credits of every billing period, at your price for a credit. Paying it adds those credits to your account, and when they run out you can buy extra credits with one API call. Credits pay for Widgetic's AI: each generation uses 1 credit (the list price of a credit is $0.10). Creating compositions, embedding widgets, storage and API calls do not use credits. An invoice of your contract that is unpaid after its due date stops the account until it is paid. See [Credits & Billing](/docs/partners/credits-billing).
 
 ## Getting Started
 
@@ -117,7 +117,7 @@ You pay Widgetic by invoice. Credits pay for Widgetic's AI: each generation uses
     Save a bucket of your own on any S3-compatible service with `PUT /partners/{partnerId}/storage`. It is checked before it is saved, and every editor session and every upload with your key needs it. See [Storage](/docs/partners/storage).
   </Step>
   <Step title="Agree Your Billing and Get Activated">
-    Read how [credits and billing](/docs/partners/credits-billing) work, and agree the price, the invoice dates and the credits with Widgetic. Once your contract is in force and your storage works, Widgetic activates your account (see [Account Status](/docs/partners/account-status)). There is no trial, so your first invoice is due as agreed.
+    Read how [credits and billing](/docs/partners/credits-billing) work, and agree the credits for each billing period, your price for a credit and the start date with Widgetic. Once your contract is in force and your storage works, Widgetic activates your account (see [Account Status](/docs/partners/account-status)). There is no trial, so your first invoice is issued on the day your contract starts.
   </Step>
   <Step title="Keep Track of Your Customers">
     [Create managed users](/docs/partners/managed-users) for your platform's customers.
@@ -129,7 +129,7 @@ You pay Widgetic by invoice. Credits pay for Widgetic's AI: each generation uses
     Make an [editor session](/docs/partners/editor-sessions) for the customer who is on the page, and mount a Widgetic editor with the [UI SDK](/docs/partners/ui-components), so your customers make and change widgets without leaving your product.
   </Step>
   <Step title="Watch Your Account">
-    Open your [dashboard](/docs/partners/dashboard) for your credits, invoices, customers and analytics, and set an address for [notifications](/docs/partners/notifications) so that your own system hears about invoices, low credits and pauses.
+    Open your [dashboard](/docs/partners/dashboard) for your credits, invoices, customers and analytics, and set an address for [notifications](/docs/partners/notifications) so that your own system hears about invoices, low credits, pauses and stops.
   </Step>
 </Steps>
 
@@ -155,6 +155,7 @@ All partner endpoints require a `wgt_prt_` API key. Key endpoints include:
 | `PUT /partners/{id}/notifications/settings` | Choose where your notifications go, and set your webhook |
 | `GET /invoices/partner/{id}` | List your invoices |
 | `GET /credits/user/{userId}/balance` | Check your AI credit balance |
+| `POST /partners/{id}/credits/extra-invoice` | Buy extra credits: an invoice that you pay on its page |
 
 <Info>
   See the [API Reference](/api-reference/introduction) for complete endpoint documentation. Filter by the `Managed Users`, `Partners`, `Credits` and `Invoices` tags.

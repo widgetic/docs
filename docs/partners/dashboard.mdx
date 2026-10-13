@@ -15,6 +15,7 @@ A banner at the top says where your account stands (see [Account Status](/docs/p
 |--------|---------------------------|
 | `inactive` | Overview, Billing and credits, Notifications and Settings: what you need to get going, and nothing that needs customers. You can pay, set up your notifications and make your keys |
 | `suspended` | The banner shows the reason Widgetic gave. Everything stays readable, but nothing can be changed. Billing, notifications and your API keys stay open, so you can pay and get going again |
+| `payment_arrears` | The banner says that a payment on your partner account is overdue, and the status reads "Payment overdue". Everything stays readable, but nothing can be changed. Billing, your invoices, adding credits, notifications and your API keys stay open: pay the overdue invoice and the account is back as soon as the payment goes through |
 | `active` | Everything |
 
 ## The Tabs
@@ -22,7 +23,7 @@ A banner at the top says where your account stands (see [Account Status](/docs/p
 | Tab | What it is for | The API behind it |
 |-----|----------------|-------------------|
 | **Overview** | Where your partner account stands, and where to go next | `GET /partners/mine` |
-| **Billing and credits** | Your credits, what your customers used, your invoices with their tax, and your contract | `GET /partners/{partnerId}/credits/balance`, `GET /partners/{partnerId}/billing-overview`, `GET /partners/{partnerId}/contract` and the invoice routes (see [Credits & Billing](/docs/partners/credits-billing)) |
+| **Billing and credits** | Your credits and a button to add extra credits, what your customers used, your invoices with their tax, and your contract | `GET /partners/{partnerId}/credits/balance`, `POST /partners/{partnerId}/credits/extra-invoice`, `GET /partners/{partnerId}/billing-overview`, `GET /partners/{partnerId}/contract` and the invoice routes (see [Credits & Billing](/docs/partners/credits-billing)) |
 | **Managed users** | Your customers: switch them on or off, and see what each one used and keeps in storage | `GET /users/{managerId}/managed-users`, `GET /managed-users/{id}/usage`, `GET /partners/{partnerId}/storage/usage` (see [Managed Users](/docs/partners/managed-users)) |
 | **Presets** | The widgets you offer your customers as starting points | `GET`, `PUT` and `DELETE` on `/partners/{partnerId}/presets` |
 | **Widgets** | The widgets you and your customers made | `GET /widgets`, with `managedUserId` to narrow it to one customer |

@@ -130,7 +130,7 @@ curl -sS -X POST "https://api.widgetic.com/v1/uploads" \
 
 Your uploads with an API key are kept in your own [storage](/docs/partners/storage), which is required: without it `POST /uploads` is refused with `409` `PARTNER_STORAGE_REQUIRED`. A file that came through a customer's [editor session](/docs/partners/editor-sessions) is filed under that customer by itself.
 
-A resumable upload (`POST /uploads/tus`, which needs a signed-in session, not an API key) files a file the same way. Put `managed_user_id` or `managed_user_external_id` in its `Upload-Metadata`, never both. The managed user is checked when the upload is declared, so a wrong one is refused before any byte is sent, and again when the file is stored. The finished file carries `managedUserId`, is found with the `managed_user_id` filter of `GET /uploads`, and is counted for that customer in the [storage report](/docs/partners/storage#what-each-customer-keeps).
+A resumable upload (`POST /uploads/tus`, which needs a signed-in session, not an API key) files a file the same way, and it keeps it in your own storage too: without one the upload is refused when it is declared. Put `managed_user_id` or `managed_user_external_id` in its `Upload-Metadata`, never both. The managed user is checked when the upload is declared, so a wrong one is refused before any byte is sent, and again when the file is stored. The finished file carries `managedUserId`, is found with the `managed_user_id` filter of `GET /uploads`, and is counted for that customer in the [storage report](/docs/partners/storage#what-each-customer-keeps).
 
 ### What Widgetic checks
 
