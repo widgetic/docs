@@ -12,7 +12,7 @@ Widgetic provides an SDK for calling the API from your server, an embed script f
     The `@widgetic/api-sdk` package on npm, for your server
   </Card>
   <Card title="Embed Script" icon="code">
-    One script tag from the Widgetic CDN that shows published widgets. It is not an npm package
+    One script tag from the Widgetic CDN that shows published widgets. For a project that bundles its own JavaScript, the same code is on npm as `@widgetic/embed-sdk`
   </Card>
   <Card title="UI SDK (preview)" icon="window">
     The `@widgetic/ui-sdk` package on npm, for your customer's browser: the File Browser, the composition editor and the widget creator in your own page
@@ -20,7 +20,7 @@ Widgetic provides an SDK for calling the API from your server, an embed script f
 </CardGroup>
 
 <Tip>
-  Two packages are on npm: `@widgetic/api-sdk` for your server and `@widgetic/ui-sdk` for your page. For other languages, use the multi-language code samples in the API Reference (or cURL).
+  Three packages are on npm: `@widgetic/api-sdk` for your server, `@widgetic/ui-sdk` for Widgetic's editors in your page and `@widgetic/embed-sdk` for showing widgets from a project that bundles its own JavaScript. For other languages, use the multi-language code samples in the API Reference (or cURL).
 </Tip>
 
 ## JavaScript / TypeScript API SDK
@@ -153,9 +153,23 @@ When you cannot load a script, use the frame instead:
 <iframe src="https://api.widgetic.com/embed/compositions/COMPOSITION_ID/frame" width="800" height="450" frameborder="0" allowfullscreen></iframe>
 ```
 
-<Note>
-  The embed script is not on npm: `npm install @widgetic/embed-sdk` finds nothing today.
-</Note>
+### In a project with a bundler
+
+If you bundle your own JavaScript (Vite, webpack, Next.js) and would rather not add a third-party script tag, the same code is on npm:
+
+```bash
+npm install @widgetic/embed-sdk
+```
+
+```javascript
+import { getSDK } from '@widgetic/embed-sdk';
+
+// Loading the package in a browser starts the embed script: it finds the <widgetic> tags and watches for new ones.
+// Calling getSDK() keeps your bundler from dropping the import.
+getSDK();
+```
+
+Load it in the browser only: it scans the page, and a server has no page. In React or Next.js, call it from an effect: `import('@widgetic/embed-sdk').then(({ getSDK }) => getSDK())`. The `<widgetic>` tag and its attributes are the same as above. For a page, a CMS or a template where you can add a `<script>` tag, the script from the CDN stays the supported way. It is published separately from the package, so it can be a different build from the version you installed.
 
 ## UI SDK (Partners)
 
