@@ -124,20 +124,18 @@ curl -X POST "https://api.widgetic.com/v1/widgets" \
 ```typescript TypeScript SDK
 import { randomUUID } from 'node:crypto';
 
-// The API needs an Idempotency-Key header, and the SDK does not add one, so pass it in the second argument.
+// The API needs an Idempotency-Key header: send it as idempotencyKey in the request object.
 // Keep the key if you retry, so that one widget is created, not two.
 const idempotencyKey = randomUUID();
 
-const { data: widget } = await widgets.createWidget(
-  {
-    newWidget: {
-      name: 'Quarterly sales chart',
-      type: 'chart',
-      content: { chartType: 'bar' }
-    }
-  },
-  async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': idempotencyKey } })
-);
+const { data: widget } = await widgets.createWidget({
+  idempotencyKey,
+  newWidget: {
+    name: 'Quarterly sales chart',
+    type: 'chart',
+    content: { chartType: 'bar' }
+  }
+});
 
 console.log(`Created ${widget.id}`);
 ```

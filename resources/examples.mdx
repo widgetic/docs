@@ -136,21 +136,20 @@ import { ManagedUsersApi } from '@widgetic/api-sdk';
 const managedUsers = new ManagedUsersApi(process.env.WIDGETIC_PARTNER_KEY);
 
 // Create a managed user for your customer. Leave manager_id out: it defaults to you.
-// The API needs an Idempotency-Key header, and the SDK does not add one, so pass it in the second argument.
-const user = await managedUsers.createManagedUser(
-  {
-    newManagedUser: {
-      external_id: `myapp_user_${customerId}`,
-      metadata: {
-        firstName: customer.firstName,
-        lastName: customer.lastName,
-        email: customer.email,
-        plan: customer.subscriptionPlan
-      }
+// The API needs an Idempotency-Key header: send it as idempotencyKey in the request object.
+const user = await managedUsers.createManagedUser({
+  // Reuse the same key when you retry this call
+  idempotencyKey: randomUUID(),
+  newManagedUser: {
+    external_id: `myapp_user_${customerId}`,
+    metadata: {
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      email: customer.email,
+      plan: customer.subscriptionPlan
     }
-  },
-  async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': randomUUID() } })
-);
+  }
+});
 
 // Store the mapping
 await db.widgeticUsers.create({
