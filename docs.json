@@ -123,7 +123,8 @@
               "resources/examples",
               "resources/sdks",
               "resources/security",
-              "resources/integrations"
+              "resources/integrations",
+              "resources/license"
             ]
           }
         ]
