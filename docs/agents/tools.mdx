@@ -16,6 +16,7 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `get_profile` | Tells which Widgetic account the connection acts for | `widgetic.read` | 0 |
 | `get_account_usage` | Reports your credits, storage, widget counts and whether you can publish | `widgetic.read` | 0 |
 | `create_widget` | Starts building a new widget from a description | `widgetic.write` | 1 |
+| `replicate_widget` | Starts building a new widget from a Widgetic capture link | `widgetic.write` | 1 |
 | `get_widget` | Reports a widget's state: building, ready, failed, published | `widgetic.read` | 0 |
 | `revise_widget` | Starts a new build of an existing widget from your feedback | `widgetic.write` | 1 |
 | `cancel_widget_creation` | Cancels a build that has not finished | `widgetic.write` | 0 |
@@ -41,6 +42,9 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
 <AccordionGroup>
   <Accordion title="create_widget" icon="wand-magic-sparkles">
     Starts a new widget from a description: a quiz, countdown, gallery, timeline, FAQ, chart, calculator, list, carousel or similar. It returns at once with a widget id; the build usually takes a few minutes. Each call starts a separate widget and uses 1 credit, charged up front. A call that repeats the title of a widget started in the last two minutes returns that widget and charges nothing, so a retry after a failure or timeout does not build twice. If you are unsure, check your widgets before creating again.
+  </Accordion>
+  <Accordion title="replicate_widget" icon="clone">
+    Starts a new widget from a temporary Widgetic capture link (`wgc_…` from the Widgetic Chrome extension), plus any adjustments you ask for. The capture is resolved inside Widgetic and never fetched over the network; expired or revoked links are refused before any build starts. Each call starts a separate widget and uses 1 credit, charged up front, with the same two-minute retry protection as `create_widget`.
   </Accordion>
   <Accordion title="get_widget" icon="gauge">
     The current state of one widget: still being built and how far along, draft ready, failed or cancelled, the link to its preview, and whether it is published and being served. For a published widget it also lists its copies (compositions) with their ids. While a build runs, the assistant checks it every 5 to 10 seconds.
@@ -133,7 +137,7 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | Tool | Reads only | Can change or replace | Interacts with the outside world |
 |---|---|---|---|
 | `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library` | yes | no | no |
-| `create_widget`, `revise_widget` | no | no (they add a draft) | no |
+| `create_widget`, `replicate_widget`, `revise_widget` | no | no (they add a draft) | no |
 | `duplicate_composition` | no | no (it adds a copy) | no |
 | `cancel_widget_creation`, `update_widget_customization`, `rename_widget` | no | yes | no |
 | `delete_widget` | no | yes (it removes the widget for good) | no |
