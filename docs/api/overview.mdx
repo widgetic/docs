@@ -28,7 +28,7 @@ Self-serve developers typically use:
 
 ## Core Resources
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="Widgets" icon="cube" href="/docs/api/widgets">
     Create and manage individual widgets
   </Card>
@@ -37,9 +37,6 @@ Self-serve developers typically use:
   </Card>
   <Card title="Canvases" icon="palette" href="/docs/api/canvases">
     Work with widget editing canvases
-  </Card>
-  <Card title="Components" icon="puzzle-piece" href="/docs/api/components">
-    Manage widget components
   </Card>
 </CardGroup>
 
@@ -168,15 +165,13 @@ The SDK provides:
 import { 
   WidgetsApi, 
   CompositionsApi, 
-  CanvasesApi,
-  ComponentsApi 
+  CanvasesApi 
 } from '@widgetic/api-sdk';
 
 // Initialize APIs
 const widgets = new WidgetsApi('YOUR_API_KEY');
 const compositions = new CompositionsApi('YOUR_API_KEY');
 const canvases = new CanvasesApi('YOUR_API_KEY');
-const components = new ComponentsApi('YOUR_API_KEY');
 ```
 
 ## Next Steps

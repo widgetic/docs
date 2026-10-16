@@ -78,8 +78,7 @@
               "docs/api/overview",
               "docs/api/widgets",
               "docs/api/compositions",
-              "docs/api/canvases",
-              "docs/api/components"
+              "docs/api/canvases"
             ]
           },
           {

@@ -3,7 +3,7 @@ title: Canvases
 description: Work with widget editing canvases
 ---
 
-Canvases are the editing environment where widgets are designed and configured. Each canvas represents an editing session with its own state and components.
+Canvases are the editing environment where widgets are designed and configured. Each canvas represents an editing session with its own state and widgets.
 
 ## Overview
 
@@ -39,14 +39,13 @@ Filter canvases by various criteria:
 
 ```typescript
 const filtered = await canvases.getAllCanvases({
-  componentId: '123e4567-e89b-12d3-a456-426614174000',
   createdAfter: new Date('2024-01-01T00:00:00Z'),
   createdBefore: new Date('2024-12-31T23:59:59Z'),
   updatedAfter: new Date('2024-06-01T00:00:00Z')
 });
 ```
 
-You can also filter by `widgetComponents` and `updatedBefore`. The list cannot be filtered by persistence key.
+You can also filter by `updatedBefore`. The list cannot be filtered by persistence key.
 
 ## Get Canvas by ID
 
@@ -76,8 +75,7 @@ const newCanvas = await canvases.createCanvas({
         background: '#ffffff',
         gridSize: 10
       }
-    },
-    widgetComponents: '123e4567-e89b-12d3-a456-426614174001'
+    }
   }
 });
 
@@ -125,7 +123,6 @@ interface Canvas {
   id: string;                    // Unique identifier
   persistenceKey: string;        // Your reference key
   canvasContent?: object;        // Canvas state (JSON)
-  widgetComponents?: string;     // Associated components ID
   primaryWidgetId?: string | null; // The widget this canvas is mainly for
   creatorId?: string;            // Who made it
   createdAt: Date;               // Sent as an ISO timestamp
@@ -168,15 +165,6 @@ await saveProjectRecord({ projectId, widgeticCanvasId: canvas.id });
 
 The list cannot be filtered by persistence key, so keep the `id` that creation returns in your own records.
 
-## Related Resources
-
-Each canvas can have associated components. Read them with plain HTTP: in version 1.0.22 of the SDK, `ComponentsApi.getComponents` is typed to return nothing.
-
-```bash
-curl -sS -H "Authorization: Bearer $WIDGETIC_API_KEY" \
-  "https://api.widgetic.com/v1/canvases/$CANVAS_ID/components"
-```
-
 ## Related Endpoints
 
 | Endpoint | Description |
@@ -186,15 +174,14 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_API_KEY" \
 | `POST /canvases` | Create a new canvas |
 | `PUT /canvases/{id}` | Update a canvas |
 | `DELETE /canvases/{id}` | Delete a canvas |
-| `GET /canvases/{id}/components` | Get canvas components |
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Components" icon="puzzle-piece" href="/docs/api/components">
-    Manage canvas components
-  </Card>
   <Card title="Widgets" icon="cube" href="/docs/api/widgets">
     Build widgets from canvases
+  </Card>
+  <Card title="Compositions" icon="layer-group" href="/docs/api/compositions">
+    Set a widget up for one place and embed it
   </Card>
 </CardGroup>

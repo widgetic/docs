@@ -230,7 +230,6 @@ interface Widget {
   isPublic: boolean;             // Public visibility
   shareId?: string | null;       // ID for sharing the widget publicly
   jsPath?: string | null;        // Path to the widget's JavaScript file
-  componentsMetadata?: ComponentMetadata[] | null;
   createdAt: string;             // ISO timestamp
   updatedAt: string;             // ISO timestamp
 }
@@ -268,7 +267,6 @@ The widget needs a published version before it can be shown. Until then the publ
 | `GET /widgets` | List the widgets your account owns |
 | `POST /widgets` | Create a widget |
 | `POST /widgets/batch` | Batch fetch widgets |
-| `GET /widgets/{widgetId}/components` | Get widget components |
 
 ## Next Steps
 
