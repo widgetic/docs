@@ -3,11 +3,11 @@ title: Authentication
 description: Learn how to authenticate with the Widgetic API
 ---
 
-The Widgetic API uses Bearer token authentication. All requests must include an `Authorization` header with your API key or JWT token.
+The Widgetic API uses Bearer token authentication. All requests must include an `Authorization` header with your API key or editor session token.
 
 ## Authentication Methods
 
-### API Keys (Recommended for Server-Side)
+### API Keys (Server-Side)
 
 API keys are the recommended authentication method for server-side applications. They provide persistent access without expiration.
 
@@ -15,12 +15,12 @@ API keys are the recommended authentication method for server-side applications.
 Authorization: Bearer wgt_usr_your_api_key_here
 ```
 
-### JWT Tokens (For Client-Side)
+### Editor Sessions (For Customer Browsers)
 
-For client-side applications, use short-lived JWT tokens obtained through the token exchange flow.
+To run Widgetic's editors inside your own page for one of your customers, mint a short-lived [editor session](/docs/partners/editor-sessions) on your server and pass that session token to the browser.
 
 ```bash
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Authorization: Bearer wgt_eds_your_editor_session_token_here
 ```
 
 ## API Key Types and Access Levels
@@ -96,43 +96,7 @@ A request outside the scopes of the key is refused with `403` and the code `API_
 ```
 
 <Note>
-  These scopes belong to the key and last as long as it does. They are not the `scopes` you send to `POST /tokens/exchange` below, which limit one short-lived token.
-</Note>
-
-## Token Exchange (Client-Side)
-
-For secure client-side usage, exchange your API key for a short-lived token:
-
-<CodeGroup>
-```bash cURL
-curl -X POST "https://api.widgetic.com/v1/tokens/exchange" \
-  -H "Authorization: Bearer wgt_usr_your_api_key" \
-  -H "Content-Type: application/json" \
-  -d '{"scopes": ["widgets:read", "compositions:write"], "expiresIn": 1800}'
-```
-
-```typescript TypeScript
-import { TokensApi } from '@widgetic/api-sdk-ts';
-
-const tokens = new TokensApi('wgt_usr_your_api_key');
-const { token, expiresAt } = await tokens.exchangeToken({
-  exchangeTokenRequest: {
-    scopes: ['widgets:read', 'compositions:write'],
-    expiresIn: 1800
-  }
-});
-
-// Use the short-lived token in the browser
-```
-</CodeGroup>
-
-- **Scopes** are written `resource:action`. The ones you can ask for are `compositions:read`, `compositions:write`, `widgets:read`, `widgets:write`, `projects:read`, `projects:write`, `organizations:read`, `organizations:write`, `analytics:read`, `webhooks:read` and `webhooks:write`. Any other scope is answered with 400 `INVALID_SCOPES`.
-- **`expiresIn`** is the lifetime in seconds, from 60 to 3600. It is 1800 (30 minutes) when you leave it out.
-- **Only an API key can be exchanged.** A token cannot be exchanged for another token.
-- **The scopes are recorded in the token, but the API does not check them on each call yet.** Treat the token as having the access of the key that made it until it expires.
-
-<Note>
-  To put Widgetic's own editors in your page for one of your customers, do not use a token exchange. Make an [editor session](/docs/partners/editor-sessions) instead: it reaches only that customer's content, only the calls the editors need, and only for the page you name.
+  These scopes belong to the key and last as long as it does. To give a customer's browser limited, short-lived access to only that customer's content, mint an [editor session](/docs/partners/editor-sessions) on your server instead.
 </Note>
 
 ## Validating Tokens
@@ -147,11 +111,14 @@ curl -X GET "https://api.widgetic.com/v1/tokens/validate" \
 Response:
 ```json
 {
-  "valid": true,
-  "tokenType": "jwt_token",
-  "scopes": ["widgets:read", "compositions:write"],
-  "userId": "123e4567-e89b-12d3-a456-426614174000",
-  "expiresAt": "2024-01-15T12:00:00Z"
+  "success": true,
+  "data": {
+    "valid": true,
+    "tokenType": "api_key",
+    "scopes": ["content:read", "content:write"],
+    "userId": "123e4567-e89b-12d3-a456-426614174000",
+    "expiresAt": null
+  }
 }
 ```
 

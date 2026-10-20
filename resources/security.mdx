@@ -48,37 +48,32 @@ To rotate a key, make the new one in the dashboard, switch your servers over, th
 
 ## Client-Side Authentication
 
-A browser must never hold an API key. If a page of your own has to call the API, keep the key on your server and give the page a short-lived token from the token exchange:
+A browser must never hold an API key (`wgt_usr_`, `wdg_org_`, or `wgt_prt_`). Keep your API key on your server and have your backend make API calls on behalf of your application, or—when mounting Widgetic's editors in your page for one of your customers—mint a short-lived [editor session](/docs/partners/editor-sessions) on your server:
 
 ```typescript
-// Server-side: Exchange API key for a short-lived token
-app.get('/api/widgetic-token', async (req, res) => {
-  const tokens = new TokensApi(process.env.WIDGETIC_API_KEY);
-  
-  const { token, expiresAt } = await tokens.exchangeToken({
-    exchangeTokenRequest: {
-      scopes: ['widgets:read', 'compositions:write'],
-      expiresIn: 3600 // 1 hour
+import { Configuration, ManagedUsersApi } from '@widgetic/api-sdk-ts';
+
+// Server-side: Mint a short-lived editor session for the signed-in customer
+app.post('/api/widgetic-editor-session', async (req, res) => {
+  const managedUsers = new ManagedUsersApi(
+    new Configuration({ accessToken: process.env.WIDGETIC_PARTNER_KEY })
+  );
+
+  const { data: session } = await managedUsers.createManagedUserEditorSession({
+    id: req.user.widgeticManagedUserId,
+    createManagedUserEditorSessionRequest: {
+      surfaces: ['editor', 'files'],
+      allowedOrigin: 'https://app.example.com',
+      expiresInSeconds: 3600
     }
   });
-  
-  res.json({ token, expiresAt });
-});
 
-// Client-side: Use the limited token
-const api = new WidgetsApi({
-  accessToken: async () => {
-    const res = await fetch('/api/widgetic-token');
-    const { token } = await res.json();
-    return token;
-  }
+  res.json({ token: session.token, expiresAt: session.expiresAt });
 });
 ```
 
-The scopes are recorded in the token, but the API does not check them on each call yet, so the token has the access of the key that made it until it expires. What the exchange gives you is a lifetime: a leaked token stops working when it expires (an hour at most), while a leaked key works until you delete it. See [Authentication](/docs/authentication) for the scopes you can ask for.
-
 <Warning>
-  Because the token is as strong as the key, never send one to your customers' browsers, and never send a partner key, or a token made with one: that is your whole partner account. To run Widgetic's own editors in a browser for one of your customers, use an [editor session](/docs/partners/editor-sessions) instead. A session reaches only that customer's content, only the calls the editors need, and can be bound to your page and ended at any time.
+  Never send a partner key (`wgt_prt_`) or user key (`wgt_usr_`) to a browser: it carries the access of your whole account. Use an [editor session](/docs/partners/editor-sessions) instead—a session reaches only that customer's content, only the calls the editors need, and can be bound to your page origin and revoked at any time.
 </Warning>
 
 ## Domain Validation

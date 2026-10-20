@@ -16,7 +16,7 @@ A managed user is:
 A managed user is not:
 
 - **A login.** It has no password and no API key, and you cannot sign in as a managed user. The one thing that acts for a managed user is an [editor session](/docs/partners/editor-sessions): a short-lived token your server makes, so that the customer's browser can use Widgetic's editors on what is filed under them and nothing else.
-- **An owner.** Compositions, widgets, uploads, credits, storage and the list of allowed websites belong to your administering account, and your key can read, change and delete all of them. Filing something under a managed user is a label for listing it, not an access rule for your key: your key reaches everything either way, so deciding which of your customers may see what stays in your own platform. (An editor session is the exception: it reaches only what is filed under its customer.)
+- **An owner.** Compositions, widgets, uploads, credits, storage and the list of allowed websites belong to your administering account, and an unscoped call with your key can read, change and delete all of them. To restrict a composition call made with your server key so it reaches only one customer's compositions, send `X-Managed-User-Id` or `X-Managed-User-External-Id` on the request (see [Scoping a Composition Call to One Customer](#scoping-a-composition-call-to-one-customer)), or mint an [editor session](/docs/partners/editor-sessions) for the customer's browser.
 - **A billing unit.** There are no per-customer credits, storage or invoices. You are invoiced once, for the contract. What a customer's editor sessions spent on the AI can be read per customer, so you can bill them for it yourself (see [What a Managed User Spent](#what-a-managed-user-spent)). See [Credits & Billing](/docs/partners/credits-billing).
 
 The examples on this page are for your server. Keep the key in an environment variable, such as `WIDGETIC_PARTNER_KEY`.
@@ -141,8 +141,24 @@ A resumable upload (`POST /uploads/tus`, which needs a signed-in session, not an
 - A copy of a composition that you duplicate is filed under the same managed user as the original.
 
 <Note>
-  Filing under a managed user does not change who owns the item or who your key may reach. The item belongs to your account, your key reaches all of them, and the credits it spends are your account's. What filing does decide is what an [editor session](/docs/partners/editor-sessions) for that managed user can open: only the items filed under it.
+  Filing under a managed user does not change who owns the item: the item belongs to your account and the credits it spends are your account's. What filing decides is what an [editor session](/docs/partners/editor-sessions) for that managed user can open, and what a server call carrying `X-Managed-User-Id` or `X-Managed-User-External-Id` may reach.
 </Note>
+
+### Scoping a Composition Call to One Customer
+
+When your backend handles a composition request on behalf of one signed-in customer, send `X-Managed-User-Id` (Widgetic's UUID for the managed user) or `X-Managed-User-External-Id` (your own `external_id` for the customer) on the call—one of the two, never both:
+
+```bash
+curl -sS "https://api.widgetic.com/v1/compositions/$COMPOSITION_ID/content" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "X-Managed-User-External-Id: your-platform-user-123"
+```
+
+In `@widgetic/api-sdk-ts`, pass `xManagedUserId` or `xManagedUserExternalId` in the request object (or set the header once on `new Configuration({ accessToken, headers: { 'X-Managed-User-External-Id': 'your-platform-user-123' } })` for a per-request client):
+
+- `GET /compositions` lists only that customer's compositions, and `POST /compositions` files the new composition under that customer.
+- Any call to `/compositions/{id}` or its sub-routes (content, design, entries, database records, duplicate, publish, delete) succeeds only if the composition is filed under that customer; another customer's composition or an unfiled composition returns `404`.
+- Calling an account-wide route with either header returns `403` `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`, and an empty or malformed header returns `400` `MANAGED_USER_SCOPE_INVALID`.
 
 ## Preset Widgets
 

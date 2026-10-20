@@ -321,7 +321,7 @@ Making a session can also answer: `400` (a surface that does not exist, `expires
 
 <Steps>
   <Step title="Keep the key on your server">
-    Make sessions only from your server. Never send your `wgt_prt_` key, or a token from `/tokens/exchange`, to a browser: those carry the access of your whole account. Use an editor session instead.
+    Make sessions only from your server. Never send your `wgt_prt_` key to a browser: it carries the access of your whole account. Use an editor session instead.
   </Step>
   <Step title="Check who is signed in">
     Your endpoint must make the session for the customer who is signed in, and for nobody else.
