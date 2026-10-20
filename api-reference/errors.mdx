@@ -223,7 +223,7 @@ Internal system errors.
 The SDK throws a `ResponseError` for every answer that is not a success. The HTTP status is `error.response.status`, the response headers are `error.response.headers`, and the body is the error format shown above: read it with `await error.response.json()`. `error.code` holds the machine-readable `code` from that body.
 
 ```javascript
-import { CompositionsApi, ResponseError } from '@widgetic/api-sdk';
+import { CompositionsApi, ResponseError } from '@widgetic/api-sdk-ts';
 
 const compositions = new CompositionsApi('YOUR_API_KEY');
 
@@ -291,7 +291,7 @@ catch (error) {
 For transient errors (429, 503, 504), implement exponential backoff:
 
 ```javascript
-import { ResponseError } from '@widgetic/api-sdk';
+import { ResponseError } from '@widgetic/api-sdk-ts';
 
 async function withRetry(fn, maxRetries = 3) {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -329,7 +329,7 @@ For POST/PUT operations, use idempotency keys to safely retry:
 
 ```javascript
 import { randomUUID } from 'node:crypto';
-import { WidgetsApi } from '@widgetic/api-sdk';
+import { WidgetsApi } from '@widgetic/api-sdk-ts';
 
 const widgets = new WidgetsApi('YOUR_API_KEY');
 

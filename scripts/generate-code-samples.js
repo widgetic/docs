@@ -4,7 +4,7 @@
  *
  * Every endpoint gets samples in 8 languages:
  * - cURL
- * - Node.js, with the published `@widgetic/api-sdk` package (the only SDK that exists today)
+ * - Node.js, with the published `@widgetic/api-sdk-ts` package (the only SDK that exists today)
  * - Python, Go, Ruby, PHP, Java and C#, as plain HTTP with the standard library of the language.
  *   No SDK is published for these, so a sample must not name one: a sample that imports a package
  *   that does not exist fails on the first line.
@@ -28,7 +28,7 @@ const path = require('path');
 
 const OPENAPI_PATH = path.join(__dirname, '..', 'openapi', 'widgetic-api-public.json');
 const BASE_URL = 'https://api.widgetic.com/v1';
-const TYPESCRIPT_SDK_PACKAGE = '@widgetic/api-sdk';
+const TYPESCRIPT_SDK_PACKAGE = '@widgetic/api-sdk-ts';
 const EXAMPLE_API_KEY = 'YOUR_API_KEY';
 const EXAMPLE_UUID = '123e4567-e89b-12d3-a456-426614174000';
 const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'patch', 'head', 'options'];

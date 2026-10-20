@@ -46,7 +46,7 @@ console.log(user);
 ```
 
 ```typescript TypeScript SDK
-import { TokensApi } from '@widgetic/api-sdk';
+import { TokensApi } from '@widgetic/api-sdk-ts';
 
 // The SDK package has no call for your profile, so check the key instead:
 // the answer tells you the key is valid and which account it belongs to.
@@ -80,13 +80,13 @@ Now that you're authenticated, here are some common next steps:
 We recommend using our TypeScript SDK for the best developer experience:
 
 ```bash
-npm install @widgetic/api-sdk
+npm install @widgetic/api-sdk-ts
 ```
 
 The SDK provides type-safe access to all API endpoints:
 
 ```typescript
-import { WidgetsApi, CompositionsApi, CanvasesApi } from '@widgetic/api-sdk';
+import { WidgetsApi, CompositionsApi, CanvasesApi } from '@widgetic/api-sdk-ts';
 
 // Initialize with your API key
 const widgets = new WidgetsApi('YOUR_API_KEY');

@@ -51,7 +51,7 @@ curl -X GET "https://api.widgetic.com/v1/widgets" \
 ```
 
 ```typescript TypeScript SDK
-import { WidgetsApi } from '@widgetic/api-sdk';
+import { WidgetsApi } from '@widgetic/api-sdk-ts';
 
 const widgets = new WidgetsApi('wgt_usr_your_api_key');
 
@@ -152,7 +152,7 @@ See [Idempotency](/docs/reference/idempotency) for more details.
 We recommend using the TypeScript SDK for the best experience:
 
 ```bash
-npm install @widgetic/api-sdk
+npm install @widgetic/api-sdk-ts
 ```
 
 The SDK provides:
@@ -166,7 +166,7 @@ import {
   WidgetsApi, 
   CompositionsApi, 
   CanvasesApi 
-} from '@widgetic/api-sdk';
+} from '@widgetic/api-sdk-ts';
 
 // Initialize APIs
 const widgets = new WidgetsApi('YOUR_API_KEY');

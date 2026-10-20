@@ -48,7 +48,7 @@ curl -sS -X POST "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID/edi
 ```
 
 ```typescript TypeScript SDK
-import { ManagedUsersApi } from '@widgetic/api-sdk';
+import { ManagedUsersApi } from '@widgetic/api-sdk-ts';
 
 const managedUsersApi = new ManagedUsersApi(process.env.WIDGETIC_PARTNER_KEY!);
 
@@ -252,7 +252,7 @@ curl -sS "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID/usage?start
 ```
 
 ```typescript TypeScript SDK
-import { ManagedUsersApi } from '@widgetic/api-sdk';
+import { ManagedUsersApi } from '@widgetic/api-sdk-ts';
 
 const managedUsersApi = new ManagedUsersApi(process.env.WIDGETIC_PARTNER_KEY!);
 

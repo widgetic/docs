@@ -64,7 +64,7 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
 The values above are an illustration, not real figures. Credits reserved for an operation that is still running cannot be spent, so what a new operation can use is `balance - reservedBalance`. An account that has never held credits reads a balance of 0.
 
 <Note>
-  `GET /partners/{partnerId}/credits/balance` and `GET /partners/{partnerId}/credits/transactions` read this same account and answer with the same figures, so use whichever is handier. In the TypeScript SDK (`@widgetic/api-sdk`) the two account credit calls are `CreditsApi.getUserCreditBalance` and `CreditsApi.getUserCreditTransactions`.
+  `GET /partners/{partnerId}/credits/balance` and `GET /partners/{partnerId}/credits/transactions` read this same account and answer with the same figures, so use whichever is handier. In the TypeScript SDK (`@widgetic/api-sdk-ts`) the two account credit calls are `CreditsApi.getUserCreditBalance` and `CreditsApi.getUserCreditTransactions`.
 </Note>
 
 ## Credits on Your Account
@@ -103,7 +103,7 @@ In the answer, `data` is the invoice: `invoiceId`, `number`, `hostedInvoiceUrl` 
 - **When it fails:** `503` means Stripe could not issue the invoice and nothing was sent, so send the same request again with the same key. A `422` with `NO_PAID_CONTRACT`, `CONTRACT_INVOICE_OVERDUE`, `NO_BILLING_EMAIL`, `TAX_ID_INVALID` or `NO_PARTNER_ADMINISTRATOR` names what must be settled or put right in your contract or billing profile before an invoice for extra credits can be issued.
 
 <Note>
-  In the TypeScript SDK (`@widgetic/api-sdk`, version 1.0.33 or later) the call is `PartnerApi.createPartnerExtraCreditsInvoice`, with `partnerId`, `idempotencyKey` and `requestExtraCredits: { usd }`.
+  In the TypeScript SDK (`@widgetic/api-sdk-ts`) the call is `PartnerApi.createPartnerExtraCreditsInvoice`, with `partnerId`, `idempotencyKey` and `requestExtraCredits: { usd }`.
 </Note>
 
 In your [invoices](#read-your-invoices) the purchase reads like “5,000 Widgetic credits (extra credits, they do not expire)”. When it is paid, your spending history gets an entry whose `description` reads “Credits on partner invoice ABCD-0002 (5,000 credits)”, with the number of that invoice, so you can match the two.
@@ -239,7 +239,7 @@ Your credits are in one place: the account of the person who administers your pa
 An earlier version of Widgetic also kept a separate balance on the partner record, and `operationalCredits` used to show it. That balance is gone, and `operationalCredits` now shows your account's credits. If a script or a screen of yours still reads or tops up a "partner balance", point it at the account balance in [Checking Your Balance](#checking-your-balance).
 
 <Warning>
-  `POST /partners/{partnerId}/credits/add` and `PUT /partners/{partnerId}/credits/auto-reload` no longer exist, so do not call them: they answer `404`. Versions of `@widgetic/api-sdk` up to 1.0.32 still have a method for each (`addPartnerCredits` and `configureAutoReload`). To get more credits, buy [extra credits](#getting-more-credits).
+  `POST /partners/{partnerId}/credits/add` and `PUT /partners/{partnerId}/credits/auto-reload` no longer exist, so do not call them: they answer `404`. To get more credits, buy [extra credits](#getting-more-credits).
 </Warning>
 
 ## Not Available Yet

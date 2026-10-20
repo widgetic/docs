@@ -112,7 +112,7 @@ curl -X POST "https://api.widgetic.com/v1/tokens/exchange" \
 ```
 
 ```typescript TypeScript
-import { TokensApi } from '@widgetic/api-sdk';
+import { TokensApi } from '@widgetic/api-sdk-ts';
 
 const tokens = new TokensApi('wgt_usr_your_api_key');
 const { token, expiresAt } = await tokens.exchangeToken({

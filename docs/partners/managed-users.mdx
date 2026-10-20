@@ -56,7 +56,7 @@ curl -sS -X POST "https://api.widgetic.com/v1/managed-users" \
 - Use camelCase keys inside `metadata`. The API converts every key in every answer to camelCase, so `company_name` would come back as `companyName`.
 
 <Note>
-  `POST /managed-users` and `PUT /managed-users/{id}` need an `Idempotency-Key` header (see [Idempotency](/docs/reference/idempotency)). In the `@widgetic/api-sdk` package, send it as `idempotencyKey` in the request object of `createManagedUser` and `updateManagedUser`, and send the same one when you retry.
+  `POST /managed-users` and `PUT /managed-users/{id}` need an `Idempotency-Key` header (see [Idempotency](/docs/reference/idempotency)). In the `@widgetic/api-sdk-ts` package, send it as `idempotencyKey` in the request object of `createManagedUser` and `updateManagedUser`, and send the same one when you retry.
 </Note>
 
 ## Listing Managed Users

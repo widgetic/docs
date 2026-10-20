@@ -110,7 +110,7 @@ See [Credits & Billing](/docs/partners/credits-billing#checking-your-balance) fo
 ### Implement Backoff
 
 ```typescript
-import { ResponseError } from '@widgetic/api-sdk';
+import { ResponseError } from '@widgetic/api-sdk-ts';
 
 async function withBackoff<T>(call: () => Promise<T>, maxRetries = 3): Promise<T> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {

@@ -14,7 +14,7 @@ import {
   WidgetsApi, 
   CompositionsApi, 
   CanvasesApi 
-} from '@widgetic/api-sdk';
+} from '@widgetic/api-sdk-ts';
 
 // Initialize with API key
 const widgets = new WidgetsApi(process.env.WIDGETIC_API_KEY);
@@ -27,7 +27,7 @@ const canvases = new CanvasesApi(process.env.WIDGETIC_API_KEY);
 For short-lived tokens that rotate (see [Authentication](/docs/authentication) for token exchange):
 
 ```typescript
-import { WidgetsApi } from '@widgetic/api-sdk';
+import { WidgetsApi } from '@widgetic/api-sdk-ts';
 
 const widgets = new WidgetsApi({
   accessToken: async () => {
@@ -131,7 +131,7 @@ A managed user is a record of one of your customers. It is not a login, and it d
 
 ```typescript
 import { randomUUID } from 'node:crypto';
-import { ManagedUsersApi } from '@widgetic/api-sdk';
+import { ManagedUsersApi } from '@widgetic/api-sdk-ts';
 
 const managedUsers = new ManagedUsersApi(process.env.WIDGETIC_PARTNER_KEY);
 
@@ -169,7 +169,7 @@ To keep each customer's work apart, send `managedUserId` (or your own id as `man
 Your server makes an [editor session](/docs/partners/editor-sessions) for the customer who is on the page, and the page mounts the editor with the token. The API key stays on your server.
 
 ```typescript
-import { ManagedUsersApi } from '@widgetic/api-sdk';
+import { ManagedUsersApi } from '@widgetic/api-sdk-ts';
 
 const managedUsers = new ManagedUsersApi(process.env.WIDGETIC_PARTNER_KEY);
 
@@ -204,7 +204,7 @@ const editor = await mountModule('composition-editor', {
 The SDK throws a `ResponseError`. The HTTP status is `error.response.status`, and `error.code` holds the machine-readable code from the API's answer:
 
 ```typescript
-import { CompositionsApi, ResponseError } from '@widgetic/api-sdk';
+import { CompositionsApi, ResponseError } from '@widgetic/api-sdk-ts';
 
 class WidgeticClient {
   private compositions: CompositionsApi;

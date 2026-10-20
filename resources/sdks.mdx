@@ -9,7 +9,7 @@ Widgetic provides an SDK for calling the API from your server, an embed script f
 
 <CardGroup cols={2}>
   <Card title="JavaScript / TypeScript API SDK" icon="js">
-    The `@widgetic/api-sdk` package on npm, for your server
+    The `@widgetic/api-sdk-ts` package on npm, for your server
   </Card>
   <Card title="Embed Script" icon="code">
     One script tag from the Widgetic CDN that shows published widgets. For a project that bundles its own JavaScript, the same code is on npm as `@widgetic/embed-sdk`
@@ -20,7 +20,7 @@ Widgetic provides an SDK for calling the API from your server, an embed script f
 </CardGroup>
 
 <Tip>
-  Three packages are on npm: `@widgetic/api-sdk` for your server, `@widgetic/ui-sdk` for Widgetic's editors in your page and `@widgetic/embed-sdk` for showing widgets from a project that bundles its own JavaScript. For other languages, use the multi-language code samples in the API Reference (or cURL).
+  Three packages are on npm: `@widgetic/api-sdk-ts` for your server, `@widgetic/ui-sdk` for Widgetic's editors in your page and `@widgetic/embed-sdk` for showing widgets from a project that bundles its own JavaScript. For other languages, use the multi-language code samples in the API Reference (or cURL).
 </Tip>
 
 ## JavaScript / TypeScript API SDK
@@ -32,15 +32,15 @@ The primary SDK for interacting with the Widgetic API from your server.
 <CodeGroup>
 
 ```bash npm
-npm install @widgetic/api-sdk
+npm install @widgetic/api-sdk-ts
 ```
 
 ```bash yarn
-yarn add @widgetic/api-sdk
+yarn add @widgetic/api-sdk-ts
 ```
 
 ```bash pnpm
-pnpm add @widgetic/api-sdk
+pnpm add @widgetic/api-sdk-ts
 ```
 
 </CodeGroup>
@@ -48,7 +48,7 @@ pnpm add @widgetic/api-sdk
 ### Basic Usage
 
 ```javascript
-import { WidgetsApi } from '@widgetic/api-sdk';
+import { WidgetsApi } from '@widgetic/api-sdk-ts';
 
 // Initialize with API key
 const widgets = new WidgetsApi(process.env.WIDGETIC_API_KEY);
@@ -89,7 +89,7 @@ Every method takes one request object, for example `getWidgets({ page: 1, size: 
 The public embed routes are at `https://api.widgetic.com/embed`. The SDK's default base path ends in `/v1`, so pass the address without it:
 
 ```javascript
-import { Configuration, PublicEmbedApi } from '@widgetic/api-sdk';
+import { Configuration, PublicEmbedApi } from '@widgetic/api-sdk-ts';
 
 const embed = new PublicEmbedApi(new Configuration({ basePath: 'https://api.widgetic.com' }));
 ```
@@ -100,7 +100,7 @@ Most calls that make or change something need an `Idempotency-Key` header, such 
 
 ```javascript
 import { randomUUID } from 'node:crypto';
-import { CompositionsApi } from '@widgetic/api-sdk';
+import { CompositionsApi } from '@widgetic/api-sdk-ts';
 
 const compositions = new CompositionsApi(process.env.WIDGETIC_API_KEY);
 
@@ -111,26 +111,11 @@ const composition = await compositions.createComposition({
 });
 ```
 
-The SDK does not insist on it: a call that needs a key and goes without one is answered by the API with `400`.
+The SDK requires `idempotencyKey` in the request object on every call that takes the header; a request sent without the header is answered by the API with `400`.
 
-### Known Gaps in Version 1.0.32
+### Request and Response Field Names
 
-The package is generated from the API description, and this version includes the partner calls for the contract, the billing overview, credits, storage, notifications, analytics and presets, the one-call composition routes, content items, data sources, entries, managed-user limits and design defaults, and the public embed routes. When a call fails or a field is `undefined`, compare it with the [API Reference](/api-reference/introduction):
-
-- **Some calls are typed to return nothing.** The API description gives no shape for their answer, so the SDK hands you no data from them. Among them are `getCurrentUser`, `updateWidget` and `getPartnerBillingOverview`, and, before version 1.0.33, `getPartnerCreditTransactions`. Use the `Raw` twin of the call (the same name with `Raw` at the end), and read the body yourself:
-
-  ```javascript
-  import { PartnersApi } from '@widgetic/api-sdk';
-
-  const partners = new PartnersApi(process.env.WIDGETIC_PARTNER_KEY);
-
-  const response = await partners.getPartnerBillingOverviewRaw({ partnerId });
-  const overview = await response.raw.json();
-  ```
-
-- **A request body and its answer do not name fields the same way.** The body you send to the partner calls names its fields in snake_case (`external_id`, `manager_id`), and the answer names them in camelCase (`externalId`). Read the camelCase name from an answer.
-
-These come from the SDK build, not from the API. When a newer version is published, check this list again.
+Every method returns the standard response envelope (`{ success, data, meta? }`) as sent by the API. Note that a few partner request bodies name their fields in snake_case (`external_id`, `manager_id`, `expires_in_seconds`), while every answer from the API names its fields in camelCase (`externalId`, `managerId`, `expiresAt`). Read the camelCase name from an answer.
 
 ## Embed Script
 
@@ -201,7 +186,7 @@ Our [API Reference](/api-reference/introduction) includes code samples in **8 la
 | Language | Sample Type |
 |----------|-------------|
 | **cURL** | HTTP examples |
-| **Node.js** | `@widgetic/api-sdk` |
+| **Node.js** | `@widgetic/api-sdk-ts` |
 | **Python** | HTTP examples |
 | **Go** | HTTP examples |
 | **Ruby** | HTTP examples |
