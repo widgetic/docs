@@ -96,11 +96,11 @@ In the answer, `data` is the invoice: `invoiceId`, `number`, `hostedInvoiceUrl` 
 
 - **Extra credits never expire**, unlike the credits of a billing period.
 - **An unpaid invoice for extra credits never stops your account.** Only an unpaid invoice of your contract does.
-- **You can buy whatever your standing is**: when you have run out of credits, and also when your account is stopped for an unpaid invoice.
+- **Available to partners with an active paid contract in good payment standing:** you can buy extra credits whenever your contract is in force and you do not owe an overdue contract invoice (`422` with `NO_PAID_CONTRACT` when no paid contract is in force, or `CONTRACT_INVOICE_OVERDUE` when a contract invoice is past its due date).
 - **Send one `Idempotency-Key` for each purchase you mean to make**, and send the same key again to retry that purchase after a timeout: the same key with the same body returns the invoice already issued and never makes a second one. The same key with a different body is refused with `422`, and a duplicate that arrives while the first is still running with `409`. A new purchase needs a new key.
 - **Limits:** at most 10 requests an hour (`429` after that). A `400` with `param` set to `usd` means the amount is under 10, over 100,000 or not a number of dollars and cents.
 - **Who may ask:** the key of the person who administers your partner account. A key limited to scopes needs `billing:write` (see [Limit what a key can do](/docs/authentication#limit-what-a-key-can-do)).
-- **When it fails:** `503` means Stripe could not issue the invoice and nothing was sent, so send the same request again with the same key. A `422` with `NO_BILLING_EMAIL`, `TAX_ID_INVALID` or `NO_PARTNER_ADMINISTRATOR` names what Widgetic has to put right in your billing profile: tell Widgetic.
+- **When it fails:** `503` means Stripe could not issue the invoice and nothing was sent, so send the same request again with the same key. A `422` with `NO_PAID_CONTRACT`, `CONTRACT_INVOICE_OVERDUE`, `NO_BILLING_EMAIL`, `TAX_ID_INVALID` or `NO_PARTNER_ADMINISTRATOR` names what must be settled or put right in your contract or billing profile before an invoice for extra credits can be issued.
 
 <Note>
   In the TypeScript SDK (`@widgetic/api-sdk`, version 1.0.33 or later) the call is `PartnerApi.createPartnerExtraCreditsInvoice`, with `partnerId`, `idempotencyKey` and `requestExtraCredits: { usd }`.
