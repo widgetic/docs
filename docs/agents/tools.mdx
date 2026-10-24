@@ -31,7 +31,7 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `list_widget_data` | Shows whether a published widget keeps what visitors send in (votes, RSVPs, form entries), and how much | `widgetic.read` | 0 |
 | `get_widget_data` | Counts those entries, or tallies them per option; shows the entries themselves only when you ask | `widgetic.read` | 0 |
 | `rename_widget` | Gives a widget a different name | `widgetic.write` | 0 |
-| `delete_widget` | Permanently deletes a widget, after you confirm its title | `widgetic.write` | 0 |
+| `delete_widget` | Permanently deletes a widget, after you confirm its title | `widgetic.delete` | 0 |
 | `save_to_media_library` | Saves images, videos or PDFs you provide to your media library | `widgetic.write` | 0 |
 | `list_media_library` | Lists the files in your media library | `widgetic.read` | 0 |
 
@@ -137,9 +137,11 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | Tool | Reads only | Can change or replace | Interacts with the outside world |
 |---|---|---|---|
 | `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library` | yes | no | no |
-| `create_widget`, `replicate_widget`, `revise_widget` | no | no (they add a draft) | no |
+| `create_widget`, `replicate_widget` | no | no (they add a draft) | yes (they fetch the links and files you give) |
+| `revise_widget` | no | yes (it starts a new build of an existing widget) | yes (it fetches the links and files you give) |
 | `duplicate_composition` | no | no (it adds a copy) | no |
-| `cancel_widget_creation`, `update_widget_customization`, `rename_widget` | no | yes | no |
+| `cancel_widget_creation`, `update_widget_customization` | no | yes | no |
+| `rename_widget` | no | no (it only changes the name) | no |
 | `delete_widget` | no | yes (it removes the widget for good) | no |
 | `publish_widget` | no | yes (it replaces what embeds show) | yes (it makes the widget publicly reachable) |
 | `save_to_media_library` | no | no | yes (it fetches the links you give) |

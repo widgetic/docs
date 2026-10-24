@@ -39,14 +39,15 @@ These are the permissions an assistant can ask for. The consent page uses exactl
 | Permission | What you are told you are approving |
 |---|---|
 | `widgetic.read` | See your widgets, your media library and your account details |
-| `widgetic.write` | Create, change and delete widgets and add files to your media library. Creating widgets uses your plan's credits |
+| `widgetic.write` | Create and change widgets and add files to your media library. Creating widgets uses your plan's credits |
 | `widgetic.publish` | Publish widgets, which makes them visible to anyone who has the link |
+| `widgetic.delete` | Delete widgets, with their versions and published copies. This cannot be undone, and embeds already on websites stop working |
 | `openid` | Confirm that you are signed in to Widgetic |
 | `email` | See your email address |
 | `profile` | See your name |
 | `offline_access` | Stay connected until you disconnect it, without asking you to sign in again |
 
-Each tool needs one of the first three; the [tools reference](/docs/agents/tools) says which. A tool called without its permission is refused and the assistant is told to ask you to connect again and approve it.
+Each tool needs one of the first four; the [tools reference](/docs/agents/tools) says which. A tool called without its permission is refused and the assistant is told to ask you to connect again and approve it.
 
 ## API keys
 
