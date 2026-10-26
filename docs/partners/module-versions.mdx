@@ -4,7 +4,7 @@ description: Pin the version of a piece, read what changed in each version, and 
 tag: "Preview"
 ---
 
-Every piece of the [UI SDK](/docs/partners/ui-components) (the File Browser, the composition editor and the widget creator) is released in numbered versions. **A version never changes once it is published**, and every version comes with a list of what it changed. So you decide when your page moves to a newer one, and you know what you are moving to.
+Every piece of the [UI SDK](/docs/partners/ui-components) (the File Browser, the composition editor, the widget creator and Workflows) is released in numbered versions. **A version never changes once it is published**, and every version comes with a list of what it changed. So you decide when your page moves to a newer one, and you know what you are moving to.
 
 ## Pin a version
 
@@ -25,7 +25,7 @@ console.log(creator.version); // the version that was loaded
 Without `version`, the SDK loads whatever version Widgetic has made current, and your page changes within a minute of each new release. That is what you want while you build, and not what you want in production: **pin the version in production**, and move when you have read what changed.
 
 <Note>
-  The three pieces are released together: each version number exists for all of them at the same time, and each piece has its own list of changes (a piece that did not change says so). Pin them all to the same number.
+  The four pieces are released together: each new version number exists for all of them at the same time, and each piece has its own list of changes (a piece that did not change says so). Workflows starts at the version it was added in, so the older numbers do not exist for it. Pin them all to the same number.
 </Note>
 
 ## What a version number tells you
@@ -52,6 +52,7 @@ Each piece has a changelog at a fixed address:
 https://cdn.widgetic.com/modules/file-browser/changelog.json
 https://cdn.widgetic.com/modules/composition-editor/changelog.json
 https://cdn.widgetic.com/modules/widget-creator/changelog.json
+https://cdn.widgetic.com/modules/workflows/changelog.json
 ```
 
 It lists every version up to the current one, newest first. This one is an example, to show the shape (it is not a real release):
