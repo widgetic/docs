@@ -60,6 +60,19 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
   </Accordion>
 </AccordionGroup>
 
+## What a build can start from
+
+`create_widget` and `revise_widget` take more than a description. When you attach a file or paste a Figma link, the assistant passes it along; you do not name anything yourself. Whatever cannot be read refuses the whole call before any credit is used, and the answer says which file or link and why.
+
+<AccordionGroup>
+  <Accordion title="Files you attach" icon="paperclip">
+    Up to 5 files per call: images, videos, PDF documents, CSV files (read for their columns and rows) and Markdown or text files (`.md`, `.txt`), whose words are read as your own brief, spec or copy. Other kinds, such as Excel spreadsheets, are refused. A file reaches Widgetic only through a file service Widgetic trusts (ChatGPT's, for example), never from an address typed into the chat; where your assistant cannot hand a file over that way, paste the text of a document into your description.
+  </Accordion>
+  <Accordion title="Figma links" icon="link">
+    Paste up to 3 links to a frame or a selection in Figma ("Copy link to selection"), and the widget is built to match that design. Widgetic reads each design with your own connected Figma account: connect Figma once from the [Design page](https://widgetic.com/design). A link to a file your account cannot open, or to a FigJam board or a Slides or Make file, is refused with the reason. Links written inside your description are read as well, and a design named twice is read once.
+  </Accordion>
+</AccordionGroup>
+
 ## Finding and publishing
 
 <AccordionGroup>
@@ -137,8 +150,8 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | Tool | Reads only | Can change or replace | Interacts with the outside world |
 |---|---|---|---|
 | `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library` | yes | no | no |
-| `create_widget`, `replicate_widget` | no | no (they add a draft) | yes (they fetch the links and files you give) |
-| `revise_widget` | no | yes (it starts a new build of an existing widget) | yes (it fetches the links and files you give) |
+| `create_widget`, `replicate_widget` | no | no (they add a draft) | yes (they fetch the links and files you give; `create_widget` also reads the Figma designs you link, with your connected Figma account) |
+| `revise_widget` | no | yes (it starts a new build of an existing widget) | yes (it fetches the links and files you give, and reads the Figma designs you link, with your connected Figma account) |
 | `duplicate_composition` | no | no (it adds a copy) | no |
 | `cancel_widget_creation`, `update_widget_customization` | no | yes | no |
 | `rename_widget` | no | no (it only changes the name) | no |
