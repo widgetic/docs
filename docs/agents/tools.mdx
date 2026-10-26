@@ -39,12 +39,16 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
 
 ## Building
 
+<Note>
+  When a build finishes, the widget is published for you, so it is ready to customize and embed without a separate publish step. A plan that does not include publishing keeps the finished draft instead, and the result says so. To look at a widget before it goes live, or to try a change without touching what live embeds show, ask the assistant to keep it as a draft.
+</Note>
+
 <AccordionGroup>
   <Accordion title="create_widget" icon="wand-magic-sparkles">
-    Starts a new widget from a description: a quiz, countdown, gallery, timeline, FAQ, chart, calculator, list, carousel or similar. It returns at once with a widget id; the build usually takes a few minutes. Each call starts a separate widget and uses 1 credit, charged up front. A call that repeats the title of a widget started in the last two minutes returns that widget and charges nothing, so a retry after a failure or timeout does not build twice. If you are unsure, check your widgets before creating again. When the description needs it (a vote, a rating, a comment, an RSVP or a sign-up), the widget it builds keeps what visitors send, and you can read it with `list_widget_data` and `get_widget_data`.
+    Starts a new widget from a description: a quiz, countdown, gallery, timeline, FAQ, chart, calculator, list, carousel or similar. It returns at once with a widget id; the build usually takes a few minutes, and the finished widget is published unless you asked for a draft. Each call starts a separate widget and uses 1 credit, charged up front. A call that repeats the title of a widget started in the last two minutes returns that widget and charges nothing, so a retry after a failure or timeout does not build twice. If you are unsure, check your widgets before creating again. When the description needs it (a vote, a rating, a comment, an RSVP or a sign-up), the widget it builds keeps what visitors send, and you can read it with `list_widget_data` and `get_widget_data`.
   </Accordion>
   <Accordion title="replicate_widget" icon="clone">
-    Starts a new widget from a temporary Widgetic capture link (`wgc_…` from the Widgetic Chrome extension), plus any adjustments you ask for. The widget it builds keeps no visitor entries. The capture is resolved inside Widgetic and never fetched over the network; expired or revoked links are refused before any build starts. Each call starts a separate widget and uses 1 credit, charged up front, with the same two-minute retry protection as `create_widget`.
+    Starts a new widget from a temporary Widgetic capture link (`wgc_…` from the Widgetic Chrome extension), plus any adjustments you ask for. The widget it builds keeps no visitor entries. The capture is resolved inside Widgetic and never fetched over the network; expired or revoked links are refused before any build starts. Each call starts a separate widget and uses 1 credit, charged up front, with the same two-minute retry protection as `create_widget`. Like `create_widget`, it publishes the finished widget unless you asked for a draft.
   </Accordion>
   <Accordion title="get_widget" icon="gauge">
     The current state of one widget: still being built and how far along, draft ready, failed or cancelled, the link to its preview, and whether it is published and being served. For a published widget it also lists its copies (compositions) with their ids. While a build runs, the assistant checks it every 5 to 10 seconds.
@@ -53,7 +57,7 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
     Shows a widget as a card, with the build progress and then the live preview, and actions to revise, publish, customize or copy the embed code. Assistants that cannot display cards get the same state as text.
   </Accordion>
   <Accordion title="revise_widget" icon="pen">
-    For changes that need new code: new features, a different layout, another visual style. It starts a new build from the latest draft (1 credit). If the widget is already published, the revision is a new draft: embeds keep showing the last published version until you publish again.
+    For changes that need new code: new features, a different layout, another visual style. It starts a new build from the latest draft (1 credit). When the build finishes, the new version is published again on its own, so every copy of the widget and every embed shows the new code, and the embed code does not change. Every earlier version is kept, and `publish_widget` can bring one back. To try a change without touching what live embeds show, ask for it as a draft: embeds then keep showing the last published version until you publish.
   </Accordion>
   <Accordion title="cancel_widget_creation" icon="ban">
     Cancels a build that is still queued or generating. A build already under way may still finish and leave a draft, and credits already charged are not refunded. It does nothing to a draft that is ready or a widget that is published.
@@ -80,7 +84,7 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
     All your widgets, only drafts that were never published, only published ones, or those whose name contains some words. It shows up to 8 at a time as a carousel and the assistant can ask for the next page.
   </Accordion>
   <Accordion title="publish_widget" icon="rocket">
-    Publishes the current draft (final build and upload), or an earlier version you choose, and returns the composition id and the published version. It can take up to a minute. It replaces the version existing embeds show, so the assistant calls it only after you agree. It needs a plan that includes publishing.
+    Publishes the current draft (final build and upload), or an earlier version you choose, and returns the composition id and the published version. It can take up to a minute. Builds publish themselves unless you asked for a draft, so this is for a draft you kept or an earlier version you want back. It replaces the version existing embeds show, so the assistant calls it only after you agree. It needs a plan that includes publishing.
   </Accordion>
   <Accordion title="list_widget_versions" icon="clock-rotate-left">
     The versions a widget has been through, newest first, with a short title for each when it has one, whether it was ever published and which one is live now. The assistant uses the numbers to bring an earlier version back with `publish_widget`. It shows up to 20 at a time and can ask for older ones. It does not show what a version contains.
@@ -150,8 +154,8 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | Tool | Reads only | Can change or replace | Interacts with the outside world |
 |---|---|---|---|
 | `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library` | yes | no | no |
-| `create_widget`, `replicate_widget` | no | no (they add a draft) | yes (they fetch the links and files you give; `create_widget` also reads the Figma designs you link, with your connected Figma account) |
-| `revise_widget` | no | yes (it starts a new build of an existing widget) | yes (it fetches the links and files you give, and reads the Figma designs you link, with your connected Figma account) |
+| `create_widget`, `replicate_widget` | no | no (they add a widget, and a first publish replaces nothing) | yes (the finished widget is published and can be reached on the public internet; `create_widget` also takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
+| `revise_widget` | no | yes (the finished revision is published again and replaces what embeds show; every earlier version is kept) | yes (it publishes, takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
 | `duplicate_composition` | no | no (it adds a copy) | no |
 | `cancel_widget_creation`, `update_widget_customization` | no | yes | no |
 | `rename_widget` | no | no (it only changes the name) | no |

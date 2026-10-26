@@ -18,10 +18,10 @@ That address is the whole setup: every supported assistant uses the same one.
     "Make a countdown to our launch on March 3, in our brand green." The assistant starts the build and shows you the preview as it comes together.
   </Card>
   <Card title="Change" icon="pen">
-    "Make the numbers bigger and add a title." Changes that need new code are rebuilt as a new draft; texts, images, colors, fonts and sizes of a published widget change at once.
+    "Make the numbers bigger and add a title." Changes that need new code are rebuilt, and the new version replaces the one your embeds show (ask for a draft to try it first); texts, images, colors, fonts and sizes of a published widget change at once.
   </Card>
   <Card title="Publish and embed" icon="rocket">
-    "Publish it and give me the React component." Publishing happens only when you agree, and you get plain HTML, an iframe, or React, Vue, Svelte and Angular code.
+    "Give me the React component for it." A finished widget is already published, so its embed code is ready: plain HTML, an iframe, or React, Vue, Svelte and Angular code. To look at a widget before it goes live, ask the assistant to keep it as a draft; publishing it later is a separate step.
   </Card>
   <Card title="Find, reuse and manage" icon="images">
     "Show my drafts." "Save these logos to my media library and use the first one." "Go back to the previous version." "Copy this widget for the pricing page." The assistant can also rename or delete a widget (deleting asks you to confirm its title) and tell you how many credits you have left.
@@ -37,8 +37,8 @@ That address is the whole setup: every supported assistant uses the same one.
   <Step title="Watch and review">
     `show_widget` displays the build progress and then the live preview (as a card in assistants that can show one, as text otherwise). Ask for changes with `revise_widget`.
   </Step>
-  <Step title="Publish when you are happy">
-    `publish_widget` makes the current draft live. It is only called after you approve the preview, because it replaces what existing embeds show.
+  <Step title="Publish, or keep a draft">
+    A finished build is published for you, unless your plan does not include publishing or you asked to keep it as a draft. `publish_widget` makes a kept draft live, or brings an earlier version back. It is only called after you agree, because it replaces what existing embeds show.
   </Step>
   <Step title="Customize and embed">
     `update_widget_customization` changes the texts, images, colors, fonts and sizes of a published widget without rebuilding it. `get_embed_code` returns the code and a share link.
@@ -51,7 +51,7 @@ The full list of tools is in the [tools reference](/docs/agents/tools).
 
 - **Creating and revising** a widget uses **1 credit per call**, charged when the build starts.
 - Everything else (previews, listing, versions, copies, renaming, deleting, customization, embed code, the media library, checking your usage) uses no credits. Saved files count against your storage allowance.
-- **Publishing** needs a plan that includes it. If yours does not, the assistant tells you.
+- **Publishing** needs a plan that includes it. If yours does not, builds stay drafts and the assistant tells you.
 
 ## What you need
 
