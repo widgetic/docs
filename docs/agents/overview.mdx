@@ -61,8 +61,8 @@ The full list of tools is in the [tools reference](/docs/agents/tools).
 ## Good to know
 
 <AccordionGroup>
-  <Accordion title="Widgets the assistant builds display content; they do not collect it">
-    A widget the assistant builds shows information (a quiz, a countdown, a gallery, a chart, a calculator). It does not store what a visitor types or votes, so sign-up forms, RSVPs and polls that need to keep answers are not something the assistant can build today. If you already have a published Widgetic widget that collects entries from your visitors, the assistant can read them for you: counts per option by default, and the entries themselves only when you ask.
+  <Accordion title="Widgets that keep what visitors send">
+    When your request needs it (a vote, a rating, a comment, an RSVP or a sign-up), the assistant can build a widget that keeps what its visitors send. Widgetic stores those entries in the widget's own database in your account, and the widget can show the results (a poll's tally, an average rating). You can ask the assistant for them whenever you like: counts per option by default, and the entries themselves only when you ask. A visitor can send more than once, and entries are not emailed or forwarded anywhere. Orders, payments and logins are not built. A widget made from a pasted widget link keeps nothing, and neither does one you did not ask to keep entries (a quiz, a countdown, a gallery, a chart or a calculator only displays information).
   </Accordion>
   <Accordion title="Retrying a build">
     Each `create_widget` call starts a separate widget and charges credits. A repeat of the same title within two minutes returns the widget already started and charges nothing, so a retry after a lost answer does not build twice. If a call times out, ask the assistant to check your widget list before it tries again.
