@@ -17,14 +17,14 @@ The UI SDK (`@widgetic/ui-sdk`) puts Widgetic's ready-made pieces in your own we
 | `file-browser` | Browse, upload and pick files, from Widgetic's media library (files kept in your own storage) or from your own | `files` (nothing, with your own [media library](#show-your-own-media-library)) |
 | `composition-editor` | Change the texts, pictures, colours and fonts of a widget beside a live preview, and save | `editor` and `files` |
 | `widget-creator` | The whole Widgetic canvas: draw, describe a widget to the AI, watch it being built, change it and publish it | `creator`, `editor` and `files` |
-| `workflows` | Where a team builds workflows: compositions chained together, with filters between them that decide which one a visitor sees next. **The first version is the screen without the builder**: a title and an empty state | nothing: it makes no request yet |
+| `workflows` | Where a team builds workflows: compositions chained together, with filters between them that decide which one a visitor sees next. The list of the team's workflows and, one click away, the editor of one: blocks and lines on a canvas, a draft that is saved while you work, and versions you publish | **the token of a signed-in person**, not an editor session (see [Workflows](#workflows)) |
 
 The File Browser is covered on this page, and so is [Workflows](#workflows). The composition editor and the widget creator have their own options and events, in [Canvas Embedding](/docs/partners/canvas-embedding).
 
 Four things hold for all of them:
 
-- **They work only for a partner in good standing, with storage.** A session is made only while your account is active and your own [storage](/docs/partners/storage) works (see [Every session needs your own storage](/docs/partners/editor-sessions#every-session-needs-your-own-storage)). While your account is paused, the pieces already on your customers' pages are refused too (see [Account Status](/docs/partners/account-status)). Workflows makes no request yet, so it has no session to make or to refuse.
-- **No API key in the browser.** Your server keeps the key and makes a short-lived [editor session](/docs/partners/editor-sessions) for the customer who is on the page. The page only ever holds that session's token, and it can reach only that customer's content.
+- **They work only for a partner in good standing, with storage.** A session is made only while your account is active and your own [storage](/docs/partners/storage) works (see [Every session needs your own storage](/docs/partners/editor-sessions#every-session-needs-your-own-storage)). While your account is paused, the pieces already on your customers' pages are refused too (see [Account Status](/docs/partners/account-status)). [Workflows](#workflows) is the exception: it is not used with an editor session.
+- **No API key in the browser.** Your server keeps the key and makes a short-lived [editor session](/docs/partners/editor-sessions) for the customer who is on the page. The page only ever holds that session's token, and it can reach only that customer's content. [Workflows](#workflows) holds the token of the signed-in person who uses it, and never a key.
 - **Your page stays yours.** A piece is drawn inside a shadow root: your CSS cannot restyle it and its CSS cannot touch your page. The SDK writes nothing to `<html>` or `<body>`, sends no `postMessage` and never clears your container.
 - **Small.** The SDK is a loader of about 30 KB. A piece is downloaded from Widgetic's CDN when you mount it, and only then.
 
@@ -88,7 +88,7 @@ await fileBrowser.unmount();
 | Option | Type | |
 |--------|------|---|
 | `container` | element or CSS selector | **Required.** Where the piece is drawn. |
-| `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. See [Tokens](#tokens). |
+| `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. Workflows takes the token of a signed-in person, not an editor session. See [Tokens](#tokens). |
 | `version` | `string` | Pin an exact version of the piece, such as `0.1.0`. Default: the newest. Pin it in production, and read [what changed](/docs/partners/module-versions) before you move. |
 | `theme` | `'light'`, `'dark'`, `'system'`, or `{ preset, mode, colors, radius, font }` | Default `light`. `system` follows the customer's setting. An object gives the piece your colours, corner radius and font. See [Make the pieces look like your product](#make-the-pieces-look-like-your-product). |
 | `locale` | `string` | A BCP 47 tag such as `en` or `de`. Every piece uses it for plural forms and for how numbers, dates and file sizes are written, and for the `lang` of its elements; a language written right to left also turns each piece around. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
@@ -99,7 +99,7 @@ await fileBrowser.unmount();
 | `signal` | `AbortSignal` | Cancels the mount, for components that can go away before the piece is up. |
 | `placeholder` | `boolean` | `false` skips the loading spinner shown while the piece downloads. |
 | `loadingLabel` | `string` | The words a screen reader says for that spinner. Default `Loading`. |
-| anything else | | Handed to the piece. File Browser: `maxSelections`, `initialFilter`, `selectLabel`, `mediaLibrary`. |
+| anything else | | Handed to the piece. File Browser: `maxSelections`, `initialFilter`, `selectLabel`, `mediaLibrary`. Workflows: `workspaceId` (required) and `workflowId`. |
 
 `mountModule` resolves with a handle once the piece is on screen:
 
@@ -123,6 +123,8 @@ await fileBrowser.unmount();
 | `ready` | | The piece is on screen. |
 | `error` | `{ message, code?, fatal }` | `fatal: true`: the piece has stopped. `false`: it carries on, for example after a failed token refresh that will be retried. When your own [media library](#show-your-own-media-library) fails, the File Browser adds `action` (what the customer was doing) and, for an upload, `file` (its name). |
 | `select` | `{ files: [{ id, name, url, mimeType?, size?, thumbnail? }] }` | File Browser: the customer confirmed a pick. |
+| `openWorkflow` | `{ workflowId }` | Workflows: the person opened a workflow, or went back to the list (`workflowId` is then `null`). Use it to keep your page's address in step. |
+| `showEmbedCode` | `{ workflowId }` | Workflows: the person asked for the embed code of a workflow. You show it, because your page knows how its embed tag is built. |
 
 The composition editor and the widget creator add events of their own (`dirty`, `saved`, `canvasChanged`, `widgetPublished`, `limitReached` and more), and say more in `ready` and `error`. They are listed in [Canvas Embedding](/docs/partners/canvas-embedding).
 
@@ -233,10 +235,18 @@ fileBrowser.setLanguage({ locale: 'de', messages: germanMessages });
 
 | Setting | |
 |---------|---|
-| `locale` | A BCP 47 tag (`de`, `pt-BR`). It decides the plural forms and how numbers, dates ("2 days ago") and file sizes are written. It translates nothing. Blank or left out is English. It is also the `lang` of the piece's elements, so a screen reader says the words in that language, and a language written right to left (`ar`, `he`, `fa`, `ur` and others) turns the whole screen of a piece around: see [Right to left](#right-to-left). `new WidgeticUI({ locale })` hands it to every piece of the page. |
+| `locale` | A BCP 47 tag (`de`, `pt-BR`). It decides the plural forms and how numbers, dates ("2 days ago") and file sizes are written. For twelve languages it also brings the words (see [Languages that come with the pieces](#languages-that-come-with-the-pieces)); for any other it translates nothing. Blank or left out is English. It is also the `lang` of the piece's elements, so a screen reader says the words in that language, and a language written right to left (`ar`, `he`, `fa`, `ur` and others) turns the whole screen of a piece around: see [Right to left](#right-to-left). `new WidgeticUI({ locale })` hands it to every piece of the page. |
 | `messages` | The words you want to change, as `{ 'action.cancel': 'Anuluj', ... }`. |
 | `selectLabel` | The text of the button that hands the pick to your page, for a page that only wants to rename that button (default `Select`). `messages['action.addToEditor']` does the same and wins when both are given. |
 | `setLanguage({ locale?, messages? })` | Changes the language at once, with no new mount. A value you leave out keeps what it was. The `messages` you give **replace** all the earlier ones: a page that switches from German to French passes the French only, and `setLanguage({ locale: '', messages: {} })` goes back to English. |
+
+### Languages that come with the pieces
+
+Twelve languages are built in: French (`fr`), German (`de`), Spanish (`es`), Brazilian Portuguese (`pt-BR`), Dutch (`nl`), Danish (`da`), Swedish (`sv`), Simplified Chinese (`zh-CN`), Arabic (`ar`), Hebrew (`he`), Persian (`fa`) and Urdu (`ur`). When your `locale` is one of them, or a regional form of one (`fr-CA` reads French, `pt` and `pt-PT` read `pt-BR`, `zh-Hans` reads `zh-CN`, `ar-EG` reads Arabic, and the old tag `iw` reads Hebrew), the piece downloads that language's words as one small file from the same folder of the CDN as the piece itself, and its first paint is already in that language. Any other `locale` (English, `zh-TW`, a tag nobody wrote words for) downloads nothing and the words stay English: plural forms, dates and direction still follow `locale`.
+
+- **Your `messages` win.** The built-in words come first and yours replace them, key by key.
+- **They are provisional.** The built-in words are machine translations that no native speaker has read yet. `module.localePackStatus('de')` says `'provisional'` (and `null` for a language with no words), and `module.supportedLocales` lists the twelve. Tell [support@widgetic.com](mailto:support@widgetic.com) about a word that is wrong, with the piece, the `locale` and the message key.
+- **A file that cannot be downloaded** is said once in the console, and the piece goes on in English.
 
 ### Which keys there are
 
@@ -327,7 +337,7 @@ creator.setLanguage({ locale: 'de', messages: germanMessages });
 
 ### The Workflows screen
 
-Workflows takes the same `locale`, `messages` and `setLanguage`, and its `module.defaultMessages` and `module.checkMessages(messages)` work as above. Its list is short: the title, the line under it, the empty state, and the words it shows when a part of it fails to draw. A key you leave out stays English.
+Workflows takes the same `locale`, `messages` and `setLanguage`, and its `module.defaultMessages` and `module.checkMessages(messages)` work as above. It has **one** `messages` object for all of it: a few hundred messages whose keys start with `workflows.`, for the list, the editor and its panels, the names of blocks, operators and units, what is wrong with a workflow that cannot be published, what a failed request means, and the words of the screen that says a part could not be drawn. The words of a block are made of parts the screen puts together (`{field} {value}`, `{count, plural, ...}`), so a language that puts them in another order can say so in its own message. All twelve [built-in languages](#languages-that-come-with-the-pieces) come with these words. A key you leave out stays English.
 
 ### Right to left
 
@@ -340,7 +350,7 @@ const fileBrowser = await ui.mount('file-browser', { container: '#media', getTok
 - **The File Browser.** The list starts on the right, the search box, the sort and filter controls, the selection bar, the upload panel and the windows are laid out from the right, the close button of a window is in the corner where a line starts, menus open toward the end of the line, the pop-ups come up in the bottom left corner, and the arrows that mean back and forward are mirrored. In the preview, the arrow key that points toward the end of the line goes on to the next file.
 - **The composition editor.** The settings panel is docked at the start of the line, on the right, and the preview on the other side, the same distance from the middle as in English. The Design and Content tabs run from the start of the line, the label of a control is at the start of its row, the calendars start their week at the start of the line, and sliders and switches run from the start. The file picker that opens from a file field is the File Browser above.
 - **The widget creator.** The tools of the toolbar run from the start of the line, the properties panel is docked at the end of it, the menus, the list of shapes, the publish history and the starting-point picker are laid out from the start, and the pop-up of the brand kit hangs from the start edge of its button. The composition editor and the File Browser inside it are turned around the same way.
-- **Workflows.** The title and the line under it start on the right, and the empty state stays in the middle.
+- **Workflows.** The list, the top bar of the editor, the tabs, the side panel, the menus and the dialogs are laid out from the start of the line, as a whole. **The canvas is the exception**: a workflow is read from its first block forward, so it is drawn from left to right in every language, and its lines run from a block on the left to the next one on its right.
 - **What a customer types.** A text field, the tags of the editor, the chat and the text fields of the quick edit are read by their own first letter: a sentence in Latin letters is set from the left and one in Arabic from the right, side by side. A field with nothing in it yet takes the direction of the screen. An email, a link and a colour code stay left to right on every screen.
 - **Only `locale` decides.** The direction of your page does not: a page written right to left (`<html dir="rtl">`) leaves an English piece alone, and a page written left to right does not stop an Arabic one. Changing `messages` alone changes nothing about it.
 - **Names.** File and folder names are read by their own first letter, so a Latin name next to Arabic ones is not put in the wrong order. In a language written right to left, a name inside a sentence ("Failed to delete 2024 report.pdf") sits between two invisible marks (Unicode isolates U+2068 and U+2069), so the words around it cannot turn it around. A screen reader does not say them; leave them out when a test compares the text of a pop-up.
@@ -354,6 +364,7 @@ const fileBrowser = await ui.mount('file-browser', { container: '#media', getTok
 - **`error` events.** Their `message` is English: it is for your logs.
 - **What is saved with a composition.** The title of a new item ("Item 03"), "Untitled Composition" and the names a font weight or a position is saved under ("ExtraBold", "top-left") are written into the composition when they are made, so they stay English. The editor shows the weights and the positions in your language.
 - **The widget author's words.** The names, labels, descriptions and placeholders of a widget's settings, its default texts and the names of typefaces are shown as the author wrote them.
+- **The team's words in Workflows.** The names of workflows and of compositions, the event names a team types into a trigger, and the names of the tables, columns and actions of a widget are shown as they were written.
 - **What the customer and the AI write.** The prompts, the answers, the names of widgets and the code are the customer's and the AI's. In the widget creator, lines the creator saved into the chat stay English in the API; on screen it translates known lines (a failed generation, a restore) at display time. The `message` of its `limitReached` event stays English (use `code`).
 - **What a session never draws.** The widget creator's sign-in screen, its standalone header, its debug panels, the preset **Libraries** section of the brand kit, its list of keyboard shortcuts and its composition steps are not shown in a session, so they are not translated.
 
@@ -370,6 +381,8 @@ Return the token itself, or `{ token, expiresAt }` (an ISO string, epoch millise
 When your `getToken` answers an `'expired'` call with the very token the API had refused, the piece takes it that you have no better one. It does not ask again for five seconds, whatever asks, so a session that was ended is reported once and not once per request.
 
 An `apiKey` option is refused with `API_KEY_NOT_ALLOWED`. The key must stay on your server.
+
+[Workflows](#workflows) is the one piece that does not take an editor session: its `getToken` gives the token of a signed-in person, and it asks for it in the same way.
 
 ## Show your own media library
 
@@ -411,24 +424,41 @@ const fileBrowser = await mountModule('file-browser', {
 
 ## Workflows
 
-`workflows` is the screen where a team builds workflows: compositions chained together, with filters between them that decide which composition a visitor sees next. **Its first version is the screen without the builder**: a title and an empty state that says workflows are on their way. What each later version changes is in [Versions & Changelog](/docs/partners/module-versions).
+`workflows` is the screen where a team builds workflows: compositions chained together, with filters between them that decide which composition a visitor sees next. It opens on the list of the workspace's workflows (search, sort, show or hide the archived ones, new, duplicate and delete), and a workflow opens in the editor: a canvas of blocks that go forward only (up to 25), a side panel for the block that is selected, a draft that is saved while you work, **Publish** (a published version never changes) and **Discard changes**, the history of versions, a **Test run** that plays a visitor through the draft, a **Runs** tab that counts the visitors who went through each block, and **Settings** (time zone, embed code, pause, archive). What each version of the screen changes is in [Versions & Changelog](/docs/partners/module-versions).
+
+What a workflow does **on a page** is the work of the Embed SDK: a workflow only decides which composition the embed shows next, and the embed follows it from one more attribute on the tag you already use. See [Show a path of compositions in one place](/resources/sdks#show-a-path-of-compositions-in-one-place).
 
 ```javascript
 import { mountModule } from '@widgetic/ui-sdk';
 
 const workflows = await mountModule('workflows', {
   container: document.querySelector('#workflows'), // give it a height: the screen fills it and scrolls inside it
+  workspaceId: 'personal', // or the id of the organization whose workflows are shown
+  getToken: async ({ reason }) => (await fetch(`/my-server/widgetic-token?reason=${reason}`)).text(),
+  workflowId: workflowOfTheAddress(), // optional: the workflow to open first. Leave it out for the list
   theme: 'system',
-  on: { ready: () => console.log('Workflows is on screen') },
+  on: {
+    ready: () => console.log('Workflows is on screen'),
+    openWorkflow: ({ workflowId }) => history.pushState(null, '', workflowId ? `/workflows/${workflowId}` : '/workflows'),
+    showEmbedCode: ({ workflowId }) => showMyEmbedCodeDialog(workflowId),
+    error: ({ message, code, fatal }) => report(code, message),
+  },
 });
+
+// The page owns where the person is: when it moves (the back button), tell the screen.
+window.addEventListener('popstate', () => workflows.module.setWorkflow(workflowOfTheAddress()));
 
 // later:
 await workflows.unmount();
 ```
 
-- **It needs no session yet.** The first version makes no request to the Widgetic API, so there is no token to make and a `getToken` you give is never called.
-- **Look and language are as for the other pieces.** `theme`, `setTheme`, `locale`, `messages` and `setLanguage` work as described in [Make the pieces look like your product](#make-the-pieces-look-like-your-product) and [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language), and a language written right to left turns the screen around.
-- **Events.** `ready` and `error`, as in [Events](#events), and none of its own. A part of the screen that fails to draw is shown with a "Try again" button and reported as `error` with the code `RENDER_FAILED` and `fatal: false`.
+- **`workspaceId` is required.** It is `'personal'`, or the id of the organization (the team) whose workflows are shown and edited. Workflows is for team accounts and partners: the API refuses any other workspace, and the screen says so.
+- **`getToken` gives the token of a signed-in person.** The screen calls the Widgetic API as the person who is using it, so `getToken` has to resolve with the token of a signed-in person who may work in that workspace (a member of the team, or your own account), the way the Widgetic app itself calls the API. **An editor session made for one of your customers is refused** with `403` and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`: workflows are not one of a session's [surfaces](/docs/partners/editor-sessions#what-a-session-never-does). `getToken` is called once before the screen appears (a `getToken` that fails fails the mount), and again when the token is about to run out or the API refuses it (`reason: 'expired'`, once per refusal), as in [Tokens](#tokens). The screen never stores a token, and no API key ever reaches the page.
+- **Your page owns where the person is.** The screen opens `workflowId` first, and the list when you leave it out. When the person opens a workflow or goes back to the list, the screen says so with `openWorkflow` (`workflowId` is `null` for the list), so your page can keep its address in step. When your page moves, as with the back button, `workflows.module.setWorkflow(workflowId)` moves the screen (`null` for the list). The screen writes nothing to your address bar, your storage or your cookies.
+- **The embed code is yours to show.** The screen has its **Embed code** button only when something listens for `showEmbedCode` at the moment it mounts, and only for a workflow that has been published. It tells your page which workflow, and your page shows the tag, because it knows how its own embed is built: the tag of the workflow's first composition with `workflow-id` added, as in [Show a path of compositions in one place](/resources/sdks#show-a-path-of-compositions-in-one-place).
+- **Look and language are as for the other pieces.** `theme`, `setTheme`, `locale`, `messages` and `setLanguage` work as described in [Make the pieces look like your product](#make-the-pieces-look-like-your-product) and [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language), the twelve built-in languages included, and a language written right to left turns the screen around.
+- **Events.** `ready`, `openWorkflow` and `showEmbedCode` (above), and `error` as in [Events](#events). `error` has `fatal: true` when the screen could not start (and `mountModule` rejects as well). With `fatal: false` the screen carries on: `RENDER_FAILED` (a part of it could not be drawn: the rest stays and the person is offered "Try again" in its place), `REQUEST_FAILED` (a request to the API failed: the screen tells the person by itself), `SESSION_ENDED` (the API no longer accepts the token `getToken` gives) and `TOKEN_REFRESH_FAILED` (a refresh of the token failed and will be tried again).
+- **What it weighs.** It is downloaded when you mount it, and only then: about 0.2 MB gzipped to start, and about 0.3 MB gzipped once all the parts of the editor have been loaded.
 
 ## Content Security Policy
 
@@ -449,7 +479,7 @@ worker-src  blob:;                                     # only to preview a PDF: 
 - The **composition editor** works under the same policy plus `frame-src https://cdn.widgetic.com` (the live preview is the widget's published page). Its font picker also needs `style-src https://fonts.googleapis.com` and `font-src https://fonts.gstatic.com`.
 - A **font of your own** (`theme.font.stylesheetUrl`) needs its stylesheet's host in `style-src` and its font files' host in `font-src`. See [A font your page does not load yet](#a-font-your-page-does-not-load-yet).
 - The **widget creator** needs what the composition editor needs plus `frame-src https://wbuilder.widgetic.com` and `connect-src https://wbuilder.widgetic.com` (the live previews of widgets are served from there).
-- **Workflows** needs less. Its own file asks for `script-src`, `style-src 'unsafe-inline'` and `font-src data:` and nothing else: no `connect-src` for the API, no `img-src`, `frame-src` or `worker-src`. The one other request is the SDK's, for the manifest, which needs `connect-src https://cdn.widgetic.com` as for every piece, unless you pin a `version` (then it is not made).
+- **Workflows** needs less than the File Browser: `script-src`, `style-src 'unsafe-inline'` and `font-src data:`, plus two sources that the first version of the screen did not need. `connect-src` has to allow the API (your `apiUrl`, `https://api.widgetic.com` unless you run your own), and `img-src https://cdn.widgetic.com` is for the pictures of compositions in the list and on the canvas. It needs no `frame-src`, no `worker-src`, no inline script and no `eval`. Together: `default-src 'none'; script-src 'self' https://cdn.widgetic.com; connect-src https://cdn.widgetic.com https://api.widgetic.com; style-src 'unsafe-inline'; font-src data:; img-src https://cdn.widgetic.com`. The `connect-src https://cdn.widgetic.com` is the SDK's request for the manifest, as for every piece, and it is not made when you pin a `version`. **A page that allowed only what version 0.1.5 needed has to add the API and the pictures.**
 
 ## What the SDK puts on your page
 

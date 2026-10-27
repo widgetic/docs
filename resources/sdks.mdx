@@ -155,13 +155,52 @@ getSDK();
 
 Load it in the browser only: it scans the page, and a server has no page. In React or Next.js, call it from an effect: `import('@widgetic/embed-sdk').then(({ getSDK }) => getSDK())`. The `<widgetic>` tag and its attributes are the same as above. For a page, a CMS or a template where you can add a `<script>` tag, the script from the CDN stays the supported way. It is published separately from the package, so it can be a different build from the version you installed.
 
+### Show a path of compositions in one place
+
+A [workflow](/docs/partners/ui-components#workflows) chains compositions together, with filters between them. On your page it is still one `<widgetic>` tag: add `workflow-id` to the tag you already use, and keep `composition-id` for the composition a new visitor starts on. The Workflows screen gives you this tag as **Embed code**, in its **Settings**.
+
+```html
+<widgetic workflow-id="WORKFLOW_ID" composition-id="FIRST_COMPOSITION_ID" resize="fill-width" width="800" embed-target="site"></widgetic>
+```
+
+When something happens (the visitor saves an entry, does something in the widget, your page tells the workflow, or a wait is over), the composition on screen is replaced by the next one, in place and without reloading the page. The box the widget sits in grows or shrinks to the height of the next composition: autoscale is always on for a workflow embed, so `autoscale="false"` and `fixed-height` are ignored, and the `autoscale-min-height`, `autoscale-max-height`, `autoscale-debounce`, `autoscale-threshold`, `autoscale-animate` and `autoscale-animation-duration` attributes still apply. A visitor whose device asks for reduced motion gets no animation.
+
+- **The first composition shows at once.** A workflow never makes a page wait: the composition the tag names (or the one a returning visitor was on) is shown while the workflow is read.
+- **Every composition takes the tag's look and data.** `width`, `height`, `resize`, the theme attributes and the page's `values`, `context` and `media-resolver` apply to every composition of the workflow, and follow a change you make to them. What you wrote *inside* the tag for one composition (inline `design` and `content` overrides) applies to the composition the tag names, and to no other.
+- **When it is not a workflow, it is a plain embed.** If the workflow is paused, does not exist, cannot be read, or does not contain the tag's `composition-id`, the tag shows that composition as any embed does. A workflow never keeps a page from showing something.
+- **One tag for a workflow per page.** Two tags with the same `workflow-id` share one position.
+- **Where the visitor is.** In their own browser, in `localStorage` under `widgetic_workflow_<workflowId>`: ids and times only, never a value and never who the visitor is. A visitor finishes the version they started on, even when a newer one is published, and after 30 days the position is forgotten and they start again on the latest version.
+- **What a visitor types.** The values of an entry a visitor saves, and of an event your page sends, are read by the conditions of a published workflow and then forgotten: they are never stored and never sent back to Widgetic.
+- **Counts.** The tag reports how many visitors reached a block, took a line, or could not be moved on, so the **Runs** tab can show them. A report holds ids and numbers only, never a visitor, a value, an address or a page. It is best effort and never delays the page.
+
+**What moves a visitor.** A step starts with one of four triggers: an **input added** (an entry the widget saved), an **action in the widget** (a click, a submit, a play), an **event from your page**, or a **scheduled** wait or date. The first two work only with a widget that can supply them: a widget that keeps what visitors send (a Pro widget) for an input, a widget that reports actions for an action, and a widget published after workflows were added (an older one cannot report either). The editor enables a step only when the composition's widget can supply it, and says why when it cannot. An **event from your page** and a **scheduled** step work with any widget. To send an event from your page:
+
+```javascript
+import { sendWorkflowEvent } from '@widgetic/embed-sdk';
+
+// Returns true when the event was sent, and false (and nothing happens) when its name or values do not fit.
+sendWorkflowEvent(document.querySelector('#signup'), 'checkout-started', { total: 42, member: true });
+```
+
+With the script from the CDN, send the same thing as a DOM event on the tag:
+
+```javascript
+document.querySelector('#signup').dispatchEvent(
+  new CustomEvent('widgetic:workflow-event', { detail: { name: 'checkout-started', values: { total: 42, member: true } } }),
+);
+```
+
+A name, of an event or of a value, is 1 to 64 letters, digits, `_`, `.`, `:` or `-`. An event has up to 12 values, each a text (cut to 200 characters), a number or a yes/no. What does not fit is dropped before the workflow sees it.
+
+**What the tag tells your page.** Besides the usual `widgetic:ready`, `widgetic:error` and `widgetic:submitted` of the composition on screen, the tag fires `widgetic:workflow-step` with `{ workflowId, from, to }` (composition ids) each time a visitor moves on. If the next composition cannot be shown, or does not appear within 8 seconds, the visitor stays on the one they are on, the tag fires `widgetic:error`, and one more try is made 30 seconds later.
+
 ## UI SDK (Partners)
 
 <Note>
   **Preview.** The UI SDK and the pieces it mounts are new. They are built and tested, and you can try them now, but small details can still change while this label is on.
 </Note>
 
-`@widgetic/ui-sdk` runs in your customer's browser. It downloads a piece (the File Browser, the composition editor, the widget creator or Workflows) from Widgetic's CDN and draws it in your page, inside a shadow root, so your styles and its own do not touch each other. It never holds your API key: your server makes an [editor session](/docs/partners/editor-sessions) and the page only gets the token.
+`@widgetic/ui-sdk` runs in your customer's browser. It downloads a piece (the File Browser, the composition editor, the widget creator or Workflows) from Widgetic's CDN and draws it in your page, inside a shadow root, so your styles and its own do not touch each other. It never holds your API key: your server makes an [editor session](/docs/partners/editor-sessions) and the page only gets the token (Workflows takes the token of a signed-in person instead).
 
 ```bash
 npm install @widgetic/ui-sdk
