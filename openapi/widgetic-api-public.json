@@ -12,10 +12,10 @@
   "servers": [
     {
       "url": "https://api.widgetic.com/v1",
-      "description": "Development server",
+      "description": "Production server",
       "variables": {
         "env": {
-          "default": "development",
+          "default": "production",
           "description": "Environment"
         },
         "apiUrl": {
@@ -72,6 +72,16 @@
             "description": "Signed per-composition write token handed to the widget in `widgetic:host` as `entries.writeToken` (and returned by `GET /embed/compositions/{compositionId}` as `entryWriteToken`). Required when the request comes from the shared Widgetic artifact origin; verified whenever present.",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Widgetic-Visitor-Id",
+            "required": false,
+            "description": "A random id the widget's browser makes once and keeps (16 to 64 characters of `A-Za-z0-9_-`), sent so a table's per-visitor `limit` (declared in the widget database file) can count this browser. Not an identity and not a secret. Without it, or with a malformed value, the limit counts only by network address.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{16,64}$"
             }
           }
         ],
@@ -157,7 +167,7 @@
             }
           },
           "429": {
-            "description": "Rate limited (`RATE_LIMITED`), always with `Retry-After`. Three limits answer this way: 20 entries a minute per visitor address and composition, 300 a minute per composition, and a day's allowance per composition (default 50,000 stored entries in 24 hours; `details.scope` is `composition_daily` for that one). Only an entry that was stored counts against the day's allowance.",
+            "description": "Rate limited (`RATE_LIMITED`), always with `Retry-After`. Three limits answer this way: 20 entries a minute per visitor address and composition, 300 a minute per composition, and a day's allowance per composition (default 50,000 stored entries in 24 hours; `details.scope` is `composition_daily` for that one). Only an entry that was stored counts against the day's allowance. A fourth answers a table that declares a per-visitor `limit`: `error.code` is `ENTRY_LIMIT_REACHED`, `details.scope` is `visitor_limit` (this browser) or `address_limit` (this network address), and `details.perVisitor` and `details.per` repeat what the table declares.",
             "content": {
               "application/json": {
                 "schema": {
@@ -168,6 +178,367 @@
           },
           "503": {
             "description": "Database unavailable or statement timeout, or the gateway could not tell just now whether the context must be signed (`CONTEXT_SIGNATURE_UNAVAILABLE`). Try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/embed/workflows/{workflowId}": {
+      "servers": [
+        {
+          "url": "https://api.widgetic.com",
+          "description": "The public embed routes are served at the root of the API host, not under /v1."
+        }
+      ],
+      "get": {
+        "operationId": "getPublicWorkflow",
+        "summary": "Read the published Workflow of an embed",
+        "description": "Public read of a workflow for the embed that carries `workflow-id`. No API key. The answer is the live version (its graph, the composition a new visitor starts on, the time zone, and the token that lets the browser report counts), or `status: paused` with nothing else, in which case the embed shows only its first composition. A workflow that is a draft, archived or unknown answers 404, and the embed then behaves as a plain embed of its `composition-id`.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\nThe answer may be reused for a few seconds (`Cache-Control: public, max-age=15`), so a publish or a pause reaches visitors within moments. The graph is readable by anyone who has the workflow's id: its rules run in the visitor's browser, so a rule must never hold a secret.",
+        "tags": [
+          "Partner",
+          "Public Embed"
+        ],
+        "x-visibility": "public",
+        "x-access-level": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflowId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The live version, or the word paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PublicWorkflow"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The id is not a workflow id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No published workflow with this id (`NOT_FOUND`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (`RATE_LIMITED`), always with `Retry-After`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be read right now. The embed then behaves as a plain embed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/embed/workflows/{workflowId}/versions/{versionId}": {
+      "servers": [
+        {
+          "url": "https://api.widgetic.com",
+          "description": "The public embed routes are served at the root of the API host, not under /v1."
+        }
+      ],
+      "get": {
+        "operationId": "getPublicWorkflowVersion",
+        "summary": "Read one published version of a Workflow",
+        "description": "Public read of one version of a workflow, for a visitor who started on it before a newer one was published: they finish on the version they started on (for up to 30 days; after that they get the latest). Versions never change once published. Like the read of the live version, it answers `status: paused` with nothing else while the workflow is paused, and 404 when the workflow is a draft or archived, or has no such version.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/versions/{versionId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
+        "tags": [
+          "Partner",
+          "Public Embed"
+        ],
+        "x-visibility": "public",
+        "x-access-level": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflowId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "versionId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The version, or the word paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PublicWorkflow"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "An id is not a workflow or version id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No published workflow with this id, or it has no such version (`NOT_FOUND`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (`RATE_LIMITED`), always with `Retry-After`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be read right now. The embed then behaves as a plain embed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/embed/workflows/{workflowId}/events": {
+      "servers": [
+        {
+          "url": "https://api.widgetic.com",
+          "description": "The public embed routes are served at the root of the API host, not under /v1."
+        }
+      ],
+      "post": {
+        "operationId": "reportPublicWorkflowEvents",
+        "summary": "Report what visitors did in a Workflow, as counts",
+        "description": "Public report of counts for a workflow, sent by the embed. No API key. Each event is one id and a number: a visitor reached a block (`n`), took a connection (`e`), or could not be moved on (`f`). Nothing else is kept: no visitor, no value a visitor typed, no address. A batch carries at most 100 events and 16 KB.\nA report is accepted only with the `token` the workflow's own read handed out for that `versionId`, so a page that never read the workflow cannot raise its numbers. An expired token (`EVENT_TOKEN_EXPIRED`) is refused with 401: read the workflow again for a new one. Counts for ids that are not in that version, or for a workflow that is not live, are not recorded and the answer says so (`recorded: false`) with 200: the visitor's page has nothing to fix.\nThe body is JSON, sent as `application/json` or as `text/plain` (a \"simple\" cross-origin request, which is what lets a report leave a page that is being closed).\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/events`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
+        "tags": [
+          "Partner",
+          "Public Embed"
+        ],
+        "x-visibility": "public",
+        "x-access-level": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflowId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicWorkflowEventsRequest"
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "description": "The same JSON, as text."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nothing was counted (`recorded` is false, with the reason)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PublicWorkflowEventsAccepted"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The counts were recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PublicWorkflowEventsAccepted"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The body is not what the door reads (`EVENTS_BODY_INVALID`, or a field that is not valid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The token is missing, wrong, or expired (`EVENT_TOKEN_REQUIRED`, `EVENT_TOKEN_INVALID`, `EVENT_TOKEN_EXPIRED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large (`PAYLOAD_TOO_LARGE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Not JSON or plain text (`UNSUPPORTED_MEDIA_TYPE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (`RATE_LIMITED`), always with `Retry-After`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Counts cannot be recorded right now (`EVENT_TOKEN_UNAVAILABLE`, or `SERVICE_UNAVAILABLE`). Dropping them is fine.",
             "content": {
               "application/json": {
                 "schema": {
@@ -230,7 +601,7 @@
                     },
                     "playerVersion": {
                       "type": "integer",
-                      "description": "Version of the player: the gateway frame wrapper that shows the widget, and the host bridge it speaks with the embedding page and the widget (currently 4). Raised when the messages between page, frame, and widget change in a way a widget could notice, such as a new `widgetic:host` field or a new forwarded event (2 added `entries`, 3 added `adapters`, 4 added `entries.writeToken`). It is not `widgetVersion` (the version of the published widget) and not the `version` inside a `widgetic:host` message."
+                      "description": "Version of the player: the gateway frame wrapper that shows the widget, and the host bridge it speaks with the embedding page and the widget (currently 6). Raised when the messages between page, frame, and widget change in a way a widget could notice, such as a new `widgetic:host` field or a new forwarded event (2 added `entries`, 3 added `adapters`, 4 added `entries.writeToken`, 5 added the A/B goal: `widgetic:ab-goal` to the widget and `widgetic:goal` back, 6 added the watch of a workflow: `widgetic:workflow-watch` to the widget, the watched values in `widgetic:submitted` and the watched action in `widgetic:goal`). It is not `widgetVersion` (the version of the published widget) and not the `version` inside a `widgetic:host` message."
                     },
                     "dataSource": {
                       "type": "object",
@@ -250,6 +621,18 @@
                     "entryWriteToken": {
                       "type": "string",
                       "description": "Signed per-composition write token for `POST /embed/compositions/{compositionId}/entries/{table}`, also handed to the widget inside `widgetic:host` as `entries.writeToken`."
+                    },
+                    "entries": {
+                      "type": "object",
+                      "description": "Where a direct or iframe embed writes visitor entries.",
+                      "properties": {
+                        "url": {
+                          "type": "string"
+                        },
+                        "writeToken": {
+                          "type": "string"
+                        }
+                      }
                     },
                     "width": {
                       "type": "integer"
@@ -274,6 +657,16 @@
                       "type": "string",
                       "description": "The browser features the widget needs the iframe that shows it to be allowed to use, as the value of that iframe's `allow` attribute (for example `camera; microphone`; the words are `camera`, `display-capture` and `microphone`). Present only for a widget that uses a module that needs one, and absent for every other widget. A page that embeds the frame itself copies it onto its own iframe (`allow=\"...\"`); a page that does not leaves the widget to say, in its own words, that the feature is blocked there. The frame wrapper already passes it on to the iframe it holds.",
                       "example": "camera; microphone"
+                    },
+                    "media": {
+                      "type": "object",
+                      "description": "How the owner wants the images of this embed delivered.",
+                      "properties": {
+                        "optimize": {
+                          "type": "boolean",
+                          "description": "The owner's \"Optimize images for the web\" account setting (ON until they turn it off). When true the Embed SDK may ask Cloudflare for a right-sized, modern-format copy of each content image; when false it uses the originals."
+                        }
+                      }
                     },
                     "direct": {
                       "type": "object",
@@ -14456,6 +14849,148 @@
   },
   "components": {
     "schemas": {
+      "PublicWorkflow": {
+        "type": "object",
+        "description": "What a visitor's browser reads for a workflow. `status` is `live` with the published version, or `paused`\nwith nothing else: the embed then shows only its first composition.\n",
+        "required": [
+          "workflowId",
+          "status"
+        ],
+        "properties": {
+          "workflowId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "live",
+              "paused"
+            ]
+          },
+          "versionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The published version this answer is for. A visitor who starts on it finishes on it."
+          },
+          "versionNumber": {
+            "type": "integer"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startCompositionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The composition a new visitor starts on, so the page can show it while the graph is still being read."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "The zone date and time triggers are read in."
+          },
+          "graph": {
+            "$ref": "#/components/schemas/WorkflowGraph"
+          },
+          "eventToken": {
+            "type": "string",
+            "description": "What lets the browser report counts for this version, valid for 24 hours. Absent when this server cannot\nsign one, and the browser then reports nothing.\n"
+          }
+        },
+        "example": {
+          "workflowId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "status": "Example status",
+          "versionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "versionNumber": 42,
+          "publishedAt": "2026-01-15T09:30:00.000Z",
+          "startCompositionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "timezone": "Example timezone",
+          "graph": null,
+          "eventToken": "Example eventToken"
+        }
+      },
+      "PublicWorkflowEventsRequest": {
+        "type": "object",
+        "required": [
+          "versionId",
+          "token",
+          "events"
+        ],
+        "properties": {
+          "versionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token": {
+            "type": "string",
+            "description": "The `eventToken` of the workflow, read for the same version."
+          },
+          "events": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "required": [
+                "k",
+                "id"
+              ],
+              "properties": {
+                "k": {
+                  "type": "string",
+                  "enum": [
+                    "n",
+                    "e",
+                    "f"
+                  ],
+                  "description": "`n` a visitor reached a block, `e` a visitor took a connection, `f` moving a visitor on failed."
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_-]{1,64}$",
+                  "description": "The block or connection counted."
+                },
+                "c": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 50,
+                  "description": "How many times (1 when not given)."
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "versionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "token": "Example token",
+          "events": []
+        }
+      },
+      "PublicWorkflowEventsAccepted": {
+        "type": "object",
+        "required": [
+          "recorded"
+        ],
+        "properties": {
+          "recorded": {
+            "type": "boolean",
+            "description": "False when nothing was counted (the workflow is not live any more, or the ids are not in that version)."
+          },
+          "counters": {
+            "type": "integer",
+            "description": "How many counters were raised."
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why nothing was counted, when `recorded` is false."
+          }
+        },
+        "example": {
+          "recorded": true,
+          "counters": 42,
+          "reason": "Example reason"
+        }
+      },
       "PublicEmbedFailure": {
         "type": "object",
         "required": [
@@ -14721,6 +15256,382 @@
         "example": {
           "success": true,
           "data": {}
+        }
+      },
+      "WorkflowNodePosition": {
+        "type": "object",
+        "description": "Where a block sits on the editor's canvas. Embeds never read it.",
+        "required": [
+          "x",
+          "y"
+        ],
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "example": {
+          "x": 42,
+          "y": 42
+        }
+      },
+      "WorkflowFieldReference": {
+        "type": "object",
+        "description": "A value a rule reads: a column the visitor filled in (`input`) or a value that came with a page event\n(`event`). The type is saved with the reference so the graph can be evaluated without the widget's schema.\n",
+        "required": [
+          "kind",
+          "name",
+          "type"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "input",
+              "event"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "boolean"
+            ]
+          }
+        },
+        "example": {
+          "kind": "Example kind",
+          "name": "Example name",
+          "type": "Example type"
+        }
+      },
+      "WorkflowConditionTest": {
+        "type": "object",
+        "description": "One comparison of a rule - a field, an operator and (for most operators) a value to compare with.",
+        "required": [
+          "field",
+          "operator"
+        ],
+        "properties": {
+          "field": {
+            "$ref": "#/components/schemas/WorkflowFieldReference"
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              "is",
+              "isNot",
+              "contains",
+              "doesNotContain",
+              "startsWith",
+              "endsWith",
+              "greaterThan",
+              "atLeast",
+              "lessThan",
+              "atMost",
+              "isEmpty",
+              "isNotEmpty"
+            ],
+            "description": "Text fields take is, isNot, contains, doesNotContain, startsWith, endsWith, isEmpty and isNotEmpty.\nNumber fields take is, isNot, greaterThan, atLeast, lessThan, atMost, isEmpty and isNotEmpty.\nYes/no fields take is and isNot.\n"
+          },
+          "value": {
+            "description": "What the field is compared with; not used by isEmpty and isNotEmpty.",
+            "nullable": true,
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          }
+        },
+        "example": {
+          "field": null,
+          "operator": "Example operator",
+          "value": null
+        }
+      },
+      "WorkflowConditionCase": {
+        "type": "object",
+        "description": "One rule of a condition block, and one path out of it. Rules are read in order and the first that matches wins;\nthe block's Default output is taken when none does.\n",
+        "required": [
+          "id",
+          "match",
+          "tests"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,64}$",
+            "description": "The output port of the rule. `default` is reserved for the Default output."
+          },
+          "label": {
+            "type": "string"
+          },
+          "match": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ],
+            "description": "`all` - every comparison must hold; `any` - one is enough."
+          },
+          "tests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowConditionTest"
+            }
+          }
+        },
+        "example": {
+          "id": "Example id",
+          "label": "Example label",
+          "match": "Example match",
+          "tests": [
+            "Example WorkflowConditionTest"
+          ]
+        }
+      },
+      "WorkflowSchedule": {
+        "type": "object",
+        "description": "When a Scheduled trigger fires - a wait counted from reaching the step, or a fixed moment.",
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "after",
+              "at"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "description": "How long to wait (mode `after`)."
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "seconds",
+              "minutes",
+              "hours",
+              "days",
+              "weeks"
+            ],
+            "description": "The unit of `amount` (mode `after`)."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The moment to fire at, as an ISO time in UTC (mode `at`)."
+          }
+        },
+        "example": {
+          "mode": "Example mode",
+          "amount": 42,
+          "unit": "Example unit",
+          "at": "2026-01-15T09:30:00.000Z"
+        }
+      },
+      "WorkflowTrigger": {
+        "type": "object",
+        "description": "What a trigger block waits for. `input`: a row the visitor adds to a table of the composition (`table`).\n`action`: an action the widget reports (`actionId`). `pageEvent`: an event the page sends (`name`, and the\n`values` it promises to carry). `scheduled`: a wait or a date (`schedule`).\n",
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "input",
+              "action",
+              "pageEvent",
+              "scheduled"
+            ]
+          },
+          "table": {
+            "type": "string"
+          },
+          "actionId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "type"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "text",
+                    "number",
+                    "boolean"
+                  ]
+                }
+              }
+            }
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/WorkflowSchedule"
+          }
+        },
+        "example": {
+          "kind": "Example kind",
+          "table": "Example table",
+          "actionId": "Example actionId",
+          "name": "Example name",
+          "values": [],
+          "schedule": null
+        }
+      },
+      "WorkflowNode": {
+        "type": "object",
+        "description": "A block. A `composition` block shows one composition (exactly one block of a workflow has `startsHere`);\na `trigger` block waits for one thing to happen while the composition before it is shown; a `condition`\nblock chooses the next step from what the trigger before it carried. At most 25 blocks.\n",
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,64}$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "composition",
+              "trigger",
+              "condition"
+            ]
+          },
+          "position": {
+            "$ref": "#/components/schemas/WorkflowNodePosition"
+          },
+          "compositionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The composition a `composition` block shows."
+          },
+          "startsHere": {
+            "type": "boolean",
+            "description": "Set on the one composition block a visitor starts at."
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/WorkflowTrigger"
+          },
+          "cases": {
+            "type": "array",
+            "description": "The rules of a `condition` block, in the order they are read.",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowConditionCase"
+            }
+          }
+        },
+        "example": {
+          "id": "Example id",
+          "type": "Example type",
+          "position": null,
+          "compositionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "startsHere": true,
+          "trigger": null,
+          "cases": [
+            "Example WorkflowConditionCase"
+          ]
+        }
+      },
+      "WorkflowEdge": {
+        "type": "object",
+        "description": "A connection from an output port of one block to the input of another. Connections run forward only.",
+        "required": [
+          "id",
+          "source",
+          "sourcePort",
+          "target"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,64}$"
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourcePort": {
+            "type": "string",
+            "description": "`out` for compositions and triggers; a rule's id, or `default`, for conditions."
+          },
+          "target": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "Example id",
+          "source": "Example source",
+          "sourcePort": "Example sourcePort",
+          "target": "Example target"
+        }
+      },
+      "WorkflowGraph": {
+        "type": "object",
+        "description": "A whole workflow, as the editor saves it and the gateway publishes it.",
+        "required": [
+          "schemaVersion",
+          "nodes",
+          "edges"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          },
+          "nodes": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/WorkflowNode"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "maxItems": 300,
+            "items": {
+              "$ref": "#/components/schemas/WorkflowEdge"
+            }
+          }
+        },
+        "example": {
+          "schemaVersion": 42,
+          "nodes": [
+            "Example WorkflowNode"
+          ],
+          "edges": [
+            "Example WorkflowEdge"
+          ]
         }
       },
       "PersonalWorkspaceDomain": {
@@ -18432,7 +19343,7 @@
           },
           "databaseSchema": {
             "type": "object",
-            "description": "The tables this composition keeps what visitors send it in (votes, ratings, answers). They are made when\nthe composition is created, in a schema of their own that no other composition can reach: in Widgetic's\ndatabase, or in your own Neon database when you have set one with `setPartnerDataDatabase`. They are\ndeleted with the composition.\n\nThe shape is `{ \"tables\": [ ... ] }`. A table has a `name`, a list of `columns` and, optionally, a list of\n`indexes`. A column has a `name` and a `type`, and optionally `primaryKey`, `notNull`, `unique` and\n`default`. An index has a `name` and the `columns` it covers (1 to 8), and optionally `unique`. Any other\nkey is refused.\n\n- Names (tables, columns, indexes) use lower-case letters, digits and underscores, start with a letter and\n  are at most 63 characters long. A name that starts with `_` or `pg_` is reserved.\n- `type` is one of `text`, `smallint`, `integer` (or `int`), `bigint`, `numeric`, `real`,\n  `double precision`, `boolean` (or `bool`), `date`, `timestamp`, `timestamptz` (or\n  `timestamp with time zone`), `uuid`, `json`, `jsonb`, `serial`, `bigserial`.\n- `default` is a number, `true` or `false`, a text of at most 500 characters (no backslash), a JSON value\n  for a `json` or `jsonb` column, or one of `now()`, `current_timestamp` and `current_date` (date and\n  timestamp columns) and `gen_random_uuid()` (a `uuid` column). A `serial` column numbers itself and has\n  no default.\n- A composition declares at most 20 tables, with at most 64 columns and 10 indexes each.\n\nA declaration that cannot be used is refused with `400` and `INVALID_DATABASE_SCHEMA`;\n`error.details.problems` lists what to change. Tables that already exist are never changed or dropped:\nsending more tables later, when you update the composition, adds the ones that are missing. When the\ncomposition is saved but its tables cannot be made just now, the answer says so in `meta.warnings`: send\nthe same `databaseSchema` again to retry.\n\nLeave it out and the composition gets the tables its widget declares in its own source\n(`src/lib/meta/database.json`), if any. Send `{ \"tables\": [] }` to give the composition no tables and\nkeep it from getting its widget's.\n",
+            "description": "The tables this composition keeps what visitors send it in (votes, ratings, answers). They are made when\nthe composition is created, in a schema of their own that no other composition can reach: in Widgetic's\ndatabase, or in your own Neon database when you have set one with `setPartnerDataDatabase`. They are\ndeleted with the composition.\n\nThe shape is `{ \"tables\": [ ... ] }`. A table has a `name`, a list of `columns` and, optionally, a list of\n`indexes`, and optionally `countable`. A column has a `name` and a `type`, and optionally `primaryKey`,\n`notNull`, `unique`, `default` and `readable`. An index has a `name` and the `columns` it covers (1 to 8),\nand optionally `unique`. Any other key is refused.\n\n`countable` and `readable` are the read policy of the composition's own page: nothing the visitors sent\ncan be read back by the page until you say so. `countable: true` on a table lets the widget show how many\nrows it has; `readable: true` on a column lets it show or total that column's values (a tally of votes,\nan average rating). Mark only what is safe to show to anyone who opens the page. A column whose name\nholds `email`, `phone`, `address`, `token`, `password`, `secret`, `ip` or the like, and a `json`, `jsonb`\nor `uuid` column, cannot be `readable`.\n\n- Names (tables, columns, indexes) use lower-case letters, digits and underscores, start with a letter and\n  are at most 63 characters long. A name that starts with `_` or `pg_` is reserved.\n- `type` is one of `text`, `smallint`, `integer` (or `int`), `bigint`, `numeric`, `real`,\n  `double precision`, `boolean` (or `bool`), `date`, `timestamp`, `timestamptz` (or\n  `timestamp with time zone`), `uuid`, `json`, `jsonb`, `serial`, `bigserial`.\n- `default` is a number, `true` or `false`, a text of at most 500 characters (no backslash), a JSON value\n  for a `json` or `jsonb` column, or one of `now()`, `current_timestamp` and `current_date` (date and\n  timestamp columns) and `gen_random_uuid()` (a `uuid` column). A `serial` column numbers itself and has\n  no default.\n- A composition declares at most 20 tables, with at most 64 columns and 10 indexes each.\n\nA declaration that cannot be used is refused with `400` and `INVALID_DATABASE_SCHEMA`;\n`error.details.problems` lists what to change. Tables that already exist are never changed or dropped:\nsending more tables later, when you update the composition, adds the ones that are missing. When the\ncomposition is saved but its tables cannot be made just now, the answer says so in `meta.warnings`: send\nthe same `databaseSchema` again to retry.\n\nLeave it out and the composition gets the tables its widget declares in its own source\n(`src/lib/meta/database.json`), if any. Send `{ \"tables\": [] }` to give the composition no tables and\nkeep it from getting its widget's.\n",
             "example": {
               "tables": [
                 {
@@ -21864,33 +22775,6 @@
         }
       }
     },
-    "securitySchemes": {
-      "apiKeyAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      },
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      },
-      "BearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      },
-      "ApiKeyAuth": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "Authorization"
-      },
-      "webhookSignature": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "X-Webhook-Signature"
-      }
-    },
     "parameters": {
       "CompositionEntryLimit": {
         "in": "query",
@@ -22014,6 +22898,33 @@
           "maxLength": 255,
           "example": "customer-1042"
         }
+      }
+    },
+    "securitySchemes": {
+      "apiKeyAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization"
+      },
+      "webhookSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Webhook-Signature"
       }
     }
   },
