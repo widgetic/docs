@@ -40,7 +40,7 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
 ## Building
 
 <Note>
-  When a build finishes, the widget is published for you, so it is ready to customize and embed without a separate publish step. A plan that does not include publishing keeps the finished draft instead, and the result says so. To look at a widget before it goes live, or to try a change without touching what live embeds show, ask the assistant to keep it as a draft.
+  When a build finishes, the widget is published for you, so it is ready to customize and embed without a separate publish step. A plan that does not include publishing keeps the finished draft instead, and so does a connection you approved without the permission to publish (`widgetic.publish`); the result says so, and how to publish. To look at a widget before it goes live, or to try a change without touching what live embeds show, ask the assistant to keep it as a draft.
 </Note>
 
 <AccordionGroup>
@@ -73,7 +73,7 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
     Up to 5 files per call: images, videos, PDF documents, CSV files (read for their columns and rows) and Markdown or text files (`.md`, `.txt`), whose words are read as your own brief, spec or copy. Other kinds, such as Excel spreadsheets, are refused. A file reaches Widgetic only through a file service Widgetic trusts (ChatGPT's, for example), never from an address typed into the chat; where your assistant cannot hand a file over that way, paste the text of a document into your description.
   </Accordion>
   <Accordion title="Figma links" icon="link">
-    Paste up to 3 links to a frame or a selection in Figma ("Copy link to selection"), and the widget is built to match that design. Widgetic reads each design with your own connected Figma account: connect Figma once from the [Design page](https://widgetic.com/design). A link to a file your account cannot open, or to a FigJam board or a Slides or Make file, is refused with the reason. Links written inside your description are read as well, and a design named twice is read once.
+    Paste up to 3 links to a frame or a selection in Figma ("Copy link to selection"), and the widget is built to match that design. Widgetic reads each design with your own connected Figma account: connect Figma once from the [Design page](https://widgetic.com/design). If you have not connected it yet, the assistant tells you to open that page, choose Connect Figma and send the link again; nothing is charged until the design can be read. A link to a file your account cannot open, or to a FigJam board or a Slides or Make file, is refused with the reason. Links written inside your description are read as well, and a design named twice is read once.
   </Accordion>
 </AccordionGroup>
 

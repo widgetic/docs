@@ -47,7 +47,7 @@ These are the permissions an assistant can ask for. The consent page uses exactl
 | `profile` | See your name |
 | `offline_access` | Stay connected until you disconnect it, without asking you to sign in again |
 
-Each tool needs one of the first four; the [tools reference](/docs/agents/tools) says which. A tool called without its permission is refused and the assistant is told to ask you to connect again and approve it.
+Each tool needs one of the first four; the [tools reference](/docs/agents/tools) says which. A tool called without its permission is refused and the assistant is told to ask you to connect again and approve it. A finished build also needs `widgetic.publish` to publish itself: a connection approved without it still builds, and keeps the result as a draft until you connect again and approve publishing, or publish it in Widgetic.
 
 ## API keys
 

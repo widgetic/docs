@@ -38,7 +38,7 @@ That address is the whole setup: every supported assistant uses the same one.
     `show_widget` displays the build progress and then the live preview (as a card in assistants that can show one, as text otherwise). Ask for changes with `revise_widget`.
   </Step>
   <Step title="Publish, or keep a draft">
-    A finished build is published for you, unless your plan does not include publishing or you asked to keep it as a draft. `publish_widget` makes a kept draft live, or brings an earlier version back. It is only called after you agree, because it replaces what existing embeds show.
+    A finished build is published for you, unless your plan does not include publishing, you approved the connection without the permission to publish, or you asked to keep it as a draft. `publish_widget` makes a kept draft live, or brings an earlier version back. It is only called after you agree, because it replaces what existing embeds show.
   </Step>
   <Step title="Customize and embed">
     `update_widget_customization` changes the texts, images, colors, fonts and sizes of a published widget without rebuilding it. `get_embed_code` returns the code and a share link.
@@ -51,7 +51,7 @@ The full list of tools is in the [tools reference](/docs/agents/tools).
 
 - **Creating and revising** a widget uses **1 credit per call**, charged when the build starts.
 - Everything else (previews, listing, versions, copies, renaming, deleting, customization, embed code, the media library, checking your usage) uses no credits. Saved files count against your storage allowance.
-- **Publishing** needs a plan that includes it. If yours does not, builds stay drafts and the assistant tells you.
+- **Publishing** needs a plan that includes it and a connection approved with the publish permission. If either is missing, builds stay drafts and the assistant tells you.
 
 ## What you need
 
