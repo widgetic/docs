@@ -34,6 +34,13 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `delete_widget` | Permanently deletes a widget, after you confirm its title | `widgetic.delete` | 0 |
 | `save_to_media_library` | Saves images, videos or PDFs you provide to your media library | `widgetic.write` | 0 |
 | `list_media_library` | Lists the files in your media library | `widgetic.read` | 0 |
+| `list_workflows` | Lists your workflows, a few at a time, with their state | `widgetic.read` | 0 |
+| `get_workflow_options` | Lists which of your published widgets a workflow can use, and what a visitor can do on each | `widgetic.read` | 0 |
+| `get_workflow` | Shows one workflow as a script: its start, steps and moves, its state and, once published, its embed code | `widgetic.read` | 0 |
+| `save_workflow` | Creates a workflow or saves a change to its draft; nothing a visitor sees changes | `widgetic.write` | 0 |
+| `test_workflow` | Plays made-up visitor events through a workflow and says where each one ends up; nothing is saved | `widgetic.read` | 0 |
+| `publish_workflow` | Makes the saved draft what visitors get on the embed, and returns the embed code | `widgetic.publish` | 0 |
+| `set_workflow_state` | Pauses, resumes, archives or brings back a workflow | `widgetic.write` | 0 |
 
 Permissions are the scopes you approve when you sign in; see [Authentication](/docs/agents/authentication#permissions).
 
@@ -125,6 +132,38 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
   </Accordion>
 </AccordionGroup>
 
+## Workflows
+
+A workflow chains published widgets on one embed: a visitor sees the first, and when something happens on it (an entry they send, a goal the widget reports, an event your page sends, or a wait) the embed shows the next one in place. You describe it in words and the assistant writes it as a script: a start, the steps (each a published widget) and the moves between them, with rules that choose the next step. A workflow made this way opens in the workflow editor on widgetic.com, and the other way round.
+
+<Note>
+  The workflow tools work in the workspace you are signed in to on widgetic.com, your own or a team's, and every answer says which. The assistant cannot pick another one: switch workspace on widgetic.com first. Workflows belong to the plans that include them; on another plan the tools say so in plain words. None of them uses credits and none builds a widget: the widgets must already be published (see [Finding and publishing](#finding-and-publishing)).
+</Note>
+
+<AccordionGroup>
+  <Accordion title="list_workflows" icon="diagram-project">
+    Your workflows in the workspace you are signed in to, newest first, up to 20 at a time: the name, the state (draft, live, paused or archived), whether the saved draft has changes visitors do not have yet, how many widgets it shows and how many visitors started it. Archived workflows are left out unless you ask for them. It only reads.
+  </Accordion>
+  <Accordion title="get_workflow_options" icon="list-check">
+    Which of your published widgets a workflow can use: the id to use as a step, the tables visitors can add entries to (with the columns a rule may read) and the actions the widget reports, such as a click. A move can wait only for what is listed here. Private columns such as an email or a phone number are never listed. It only reads.
+  </Accordion>
+  <Accordion title="get_workflow" icon="eye">
+    One workflow as a script, in exactly the shape `save_workflow` takes: the start step, the steps and the moves between them, with the rules that choose the next step. It also gives the state, the revision, any problems and the names of the widgets. For a published workflow it returns the embed code and the snippet for events your page sends, and, when asked, how many visitors reached each step in the last 30 days. A draft drawn in the editor that a script cannot express is reported as unreadable, with the reasons. It only reads.
+  </Accordion>
+  <Accordion title="save_workflow" icon="floppy-disk">
+    Creates a workflow (it needs a name) or replaces the draft script of one you name, starting from the revision the assistant read. If the draft changed since, in the editor or by another call, nothing is saved and the assistant is told to read it again, so a change made elsewhere is never overwritten. The answer lists any problems in plain words. Saving changes only the draft: nothing reaches visitors until `publish_workflow`. Every call without a workflow id creates another workflow, so after a failed call the assistant checks `list_workflows` before it tries again.
+  </Accordion>
+  <Accordion title="test_workflow" icon="flask">
+    Plays up to 20 visitor events (an entry added to a table, an action the widget reports, an event your page sends, or a wait that is over) through the saved draft, or through a script that is not saved, and says where the visitor ends up and why. Nothing is saved, no visitor is moved and no entry is created.
+  </Accordion>
+  <Accordion title="publish_workflow" icon="rocket">
+    Checks the saved draft and makes it the version visitors get on embeds. The assistant passes the revision it last read: if the draft changed since, nothing is published. Problems are listed in plain words and nothing is published until there are none. The result returns the embed code and, when the workflow waits for events from your page, the snippet that sends them. It replaces the version that is live now (every earlier version is kept), so the assistant calls it only after you agree. A paused workflow stays paused. It needs a plan that includes workflows and a connection approved with the publish permission.
+  </Accordion>
+  <Accordion title="set_workflow_state" icon="pause">
+    Pauses a live workflow (its embeds then show only the first widget and move no visitor on), resumes a paused one, archives a workflow to set it aside (it leaves the list and nothing is deleted) or brings an archived one back (a published one comes back paused, a never-published one as a draft). Every change can be undone. Resuming puts the workflow back in front of visitors, so it needs a connection approved with the publish permission.
+  </Accordion>
+</AccordionGroup>
+
 ## Media library
 
 <AccordionGroup>
@@ -162,3 +201,7 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | `delete_widget` | no | yes (it removes the widget for good) | no |
 | `publish_widget` | no | yes (it replaces what embeds show) | yes (it makes the widget publicly reachable) |
 | `save_to_media_library` | no | no | yes (it fetches the links you give) |
+| `list_workflows`, `get_workflow_options`, `get_workflow`, `test_workflow` | yes | no | no |
+| `save_workflow` | no | yes (it replaces the draft; what visitors see is not touched, and a change made elsewhere since the revision the assistant read is never overwritten) | no |
+| `publish_workflow` | no | yes (it replaces the version visitors get; every earlier version is kept) | yes (it makes the workflow what embeds on the public internet show) |
+| `set_workflow_state` | no | yes (it changes what visitors get; nothing is deleted and each change can be undone) | yes (it changes what embeds on the public internet show) |
