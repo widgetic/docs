@@ -172,7 +172,7 @@ The same two headers work on the calls of [Workflows](/docs/partners/workflows#f
 
 ## Preset Widgets
 
-A preset is a widget of your own that you offer your customers as a ready-made starting point: a rating, a quiz, a poll. You choose which of your widgets are presets and give each one a short key that your code uses. Your server reads the list, your page draws its own picker, and your server makes what the customer picked.
+A preset is a widget of your own that you offer your customers as a ready-made starting point: a rating, a quiz, a poll. You choose which of your widgets are presets and give each one a short key that your code uses. Your server reads the list, your page draws its own picker, and your server makes what the customer picked. A workflow of yours can be offered as a starting point too, as long as every widget it chains is one of these presets: see [Starting points](/docs/partners/workflows#starting-points).
 
 <Note>
   These are your presets, kept in your account. They are not the starter widgets that Widgetic puts on every new Widgetic account when it is made. Those belong to Widgetic and are copied at sign-up.
@@ -204,7 +204,7 @@ curl -sS -X PUT "https://api.widgetic.com/v1/partners/$WIDGETIC_PARTNER_ID/prese
 
 Sending the same key again replaces the preset, so the call is safe to repeat and needs no `Idempotency-Key`. It replaces the whole preset: a `title`, `description` or `position` you leave out goes back to its default. A widget can be a preset under one key only, and an account can have 100 presets.
 
-`DELETE /partners/{partnerId}/presets/{key}` takes a widget off the list and answers `{ "removed": true }`, or `false` (not an error) when there was no such preset. It leaves the widget, its copies and its compositions alone. Deleting the widget removes its preset.
+`DELETE /partners/{partnerId}/presets/{key}` takes a widget off the list and answers `{ "removed": true }`, or `false` (not an error) when there was no such preset. It leaves the widget, its copies and its compositions alone. Deleting the widget removes its preset. A workflow you offer as a [starting point](/docs/partners/workflows#starting-points) can chain only widgets that are presets, so taking a widget off the list makes the starting points that chain it unavailable until you offer the widget again (`unavailableReason` is `widget_not_preset`).
 
 ### List the presets
 

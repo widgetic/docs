@@ -3,7 +3,7 @@ title: Partner Dashboard
 description: What you can see and do for your partner account on widgetic.com, and the API calls behind each screen
 ---
 
-Once Widgetic has approved your partner account, the person who administers it gets a dashboard on widgetic.com that is made for a partner: your credits and invoices, your managed users, the preset widgets you offer, and how your customers' widgets are used. Everything on it is also available through the API, so you can build the same views into your own tools.
+Once Widgetic has approved your partner account, the person who administers it gets a dashboard on widgetic.com that is made for a partner: your credits and invoices, your managed users, the presets you offer (widgets and workflows), and how your customers' widgets are used. Everything on it is also available through the API, so you can build the same views into your own tools.
 
 Sign in with the account that administers the partner, open the settings menu of your personal workspace and choose **Partner dashboard**. An account that administers no partner does not have that entry.
 
@@ -25,7 +25,7 @@ A banner at the top says where your account stands (see [Account Status](/docs/p
 | **Overview** | Where your partner account stands, and where to go next | `GET /partners/mine` |
 | **Billing and credits** | Your credits and a button to add extra credits, what your customers used, your invoices with their tax, and your contract | `GET /partners/{partnerId}/credits/balance`, `POST /partners/{partnerId}/credits/extra-invoice`, `GET /partners/{partnerId}/billing-overview`, `GET /partners/{partnerId}/contract` and the invoice routes (see [Credits & Billing](/docs/partners/credits-billing)) |
 | **Managed users** | Your customers: switch them on or off, and see what each one used and keeps in storage | `GET /users/{managerId}/managed-users`, `GET /managed-users/{id}/usage`, `GET /partners/{partnerId}/storage/usage` (see [Managed Users](/docs/partners/managed-users)) |
-| **Presets** | The widgets you offer your customers as starting points | `GET`, `PUT` and `DELETE` on `/partners/{partnerId}/presets` |
+| **Presets** | The widgets and the workflows you offer your customers as starting points | `GET`, `PUT` and `DELETE` on `/partners/{partnerId}/presets` for widgets, and on `/partners/{partnerId}/workflow-presets` for workflows (see [Starting points](/docs/partners/workflows#starting-points)) |
 | **Widgets** | The widgets you and your customers made | `GET /widgets`, with `managedUserId` to narrow it to one customer |
 | **Analytics** | How your customers' published compositions are viewed and used | The four routes under `/partners/{partnerId}/analytics` (below) |
 | **Notifications** | What Widgetic told you, and where it is sent | See [Notifications](/docs/partners/notifications) |
