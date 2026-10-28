@@ -3,7 +3,7 @@ title: Managed Users
 description: Keep a record of your platform's customers in Widgetic, and file what they make under them
 ---
 
-A managed user is a record in your partner registry, one for each of your platform's customers. **It is not a login, and it does not own anything.** Everything you create through the API still belongs to your administering account. What you can do is **file** a composition, a widget or an upload under a managed user when you create it, and later list only what one customer made, so your customers never see each other's work. A workflow that a customer makes in their own [editor session](/docs/partners/workflows) is filed under them by itself.
+A managed user is a record in your partner registry, one for each of your platform's customers. **It is not a login, and it does not own anything.** Everything you create through the API still belongs to your administering account. What you can do is **file** a composition, a widget or an upload under a managed user when you create it, and later list only what one customer made, so your customers never see each other's work. A workflow that a customer makes in their own [editor session](/docs/partners/workflows), or that you make with your key and the customer's header, is filed under them by itself.
 
 ## Overview
 
@@ -11,12 +11,12 @@ A managed user is:
 
 - A record with a Widgetic `id` (a UUID), your own `externalId` (unique among your managed users, for example your customer number), a free-form `metadata` object and an `isActive` switch.
 - Visible only to you. A record that belongs to another partner answers `404`, never `403`, so nothing about other partners can be learned.
-- A label you can put on compositions, widgets and uploads, to list them by customer. See [Filing Content Under a Managed User](#filing-content-under-a-managed-user). A customer's editor session puts the same label on the [workflows](/docs/partners/workflows) it makes.
+- A label you can put on compositions, widgets and uploads, to list them by customer. See [Filing Content Under a Managed User](#filing-content-under-a-managed-user). A customer's editor session, and your key with the customer's header, put the same label on the [workflows](/docs/partners/workflows) they make.
 
 A managed user is not:
 
 - **A login.** It has no password and no API key, and you cannot sign in as a managed user. The one thing that acts for a managed user is an [editor session](/docs/partners/editor-sessions): a short-lived token your server makes, so that the customer's browser can use Widgetic's editors on what is filed under them and nothing else.
-- **An owner.** Compositions, widgets, uploads, workflows, credits, storage and the list of allowed websites belong to your administering account, and an unscoped call with your key can read, change and delete all of them. To restrict a composition call made with your server key so it reaches only one customer's compositions, send `X-Managed-User-Id` or `X-Managed-User-External-Id` on the request (see [Scoping a Composition Call to One Customer](#scoping-a-composition-call-to-one-customer)), or mint an [editor session](/docs/partners/editor-sessions) for the customer's browser.
+- **An owner.** Compositions, widgets, uploads, workflows, credits, storage and the list of allowed websites belong to your administering account, and an unscoped call with your key can read, change and delete all of them. To restrict a composition or workflow call made with your server key so it reaches only one customer's, send `X-Managed-User-Id` or `X-Managed-User-External-Id` on the request (see [Scoping a Composition Call to One Customer](#scoping-a-composition-call-to-one-customer) and [Scoping a Workflow Call to One Customer](#scoping-a-workflow-call-to-one-customer)), or mint an [editor session](/docs/partners/editor-sessions) for the customer's browser.
 - **A billing unit.** There are no per-customer credits, storage or invoices. You are invoiced once, for the contract. What a customer's editor sessions spent on the AI can be read per customer, so you can bill them for it yourself (see [What a Managed User Spent](#what-a-managed-user-spent)). See [Credits & Billing](/docs/partners/credits-billing).
 
 The examples on this page are for your server. Keep the key in an environment variable, such as `WIDGETIC_PARTNER_KEY`.
@@ -139,7 +139,7 @@ A resumable upload (`POST /uploads/tus`, which needs a signed-in session, not an
 - A value that is not a UUID (for `managedUserId`), is not text, or is longer than 255 characters (for `managedUserExternalId`) is refused with `400 MANAGED_USER_REFERENCE_INVALID`. So is a field spelled the other way (`managed_user_id` where the call reads `managedUserId`, or `managedUserId` on `/uploads`): it is refused, never ignored, so an item is never filed under no one, and a list is never unfiltered, without you knowing. Sending both fields is `400 MANAGED_USER_REFERENCE_AMBIGUOUS`.
 - The label is set when the item is created, from your request only, and a `PUT` or `PATCH` does not change it. There is no way yet to move an item to another managed user or to take the label off (see [Not Available Yet](#not-available-yet)).
 - A copy of a composition that you duplicate is filed under the same managed user as the original.
-- A workflow is filed under a managed user when a customer's [editor session](/docs/partners/workflows#what-belongs-to-whom) makes it, and in no other way for now. A workflow you copy yourself is your account's own, not the customer's.
+- A workflow is filed under a managed user when a customer's [editor session](/docs/partners/workflows#what-belongs-to-whom) makes it, or when you make it with your key and the customer's header (see [Scoping a Workflow Call to One Customer](#scoping-a-workflow-call-to-one-customer)), and in no other way. A workflow you make or copy without the header is your account's own, not the customer's.
 
 <Note>
   Filing under a managed user does not change who owns the item: the item belongs to your account and the credits it spends are your account's. What filing decides is what an [editor session](/docs/partners/editor-sessions) for that managed user can open, and what a server call carrying `X-Managed-User-Id` or `X-Managed-User-External-Id` may reach.
@@ -160,6 +160,15 @@ In `@widgetic/api-sdk-ts`, pass `xManagedUserId` or `xManagedUserExternalId` in 
 - `GET /compositions` lists only that customer's compositions, and `POST /compositions` files the new composition under that customer.
 - Any call to `/compositions/{id}` or its sub-routes (content, design, entries, database records, duplicate, publish, delete) succeeds only if the composition is filed under that customer; another customer's composition or an unfiled composition returns `404`.
 - Calling an account-wide route with either header returns `403` `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`, and an empty or malformed header returns `400` `MANAGED_USER_SCOPE_INVALID`.
+
+### Scoping a Workflow Call to One Customer
+
+The same two headers work on the calls of [Workflows](/docs/partners/workflows#from-your-server), which are made in your own workspace, written as the word `personal`:
+
+- `GET /workspaces/personal/workflows` lists only that customer's workflows, and `POST /workspaces/personal/workflows` files the new workflow under that customer, as does duplicating one of theirs.
+- Any call on `/workspaces/personal/workflows/{workflowId}` or its sub-routes (save, delete, publish, discard, versions, restore, pause, resume, archive, unarchive, counts) succeeds only if the workflow is filed under that customer. Another customer's workflow, one you made without a header, another account's and one that does not exist all return `404` `RESOURCE_WORKFLOW_NOT_FOUND`.
+- A workspace other than `personal`, such as the id of an organization, returns `403` `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`.
+- A customer you switched off keeps its workflows and you can still read and change them, but making or copying one for it returns `409` `MANAGED_USER_INACTIVE`.
 
 ## Preset Widgets
 
@@ -301,7 +310,7 @@ What the managed user already has stays, and can still be listed. Switching a ma
 
 `DELETE /managed-users/{id}` removes the record and answers `200` with `{"message": "...", "id": "..."}`. It does not delete anything else, but it does remove the label: the compositions, widgets, uploads and workflows that were filed under the managed user stay in your account, with `managedUserId` back to `null`. Its editor sessions end. So when a customer leaves, list their items first (`GET /compositions?managedUserId=...`), delete what you want gone (`DELETE /compositions/{id}`), and only then delete the managed user.
 
-A customer's workflows stay too, and **keep running on every page that shows them**. Pause or delete the ones that should stop before you delete the managed user: a session made for that customer lists theirs, and your own sign-in lists every customer's (see [Workflows](/docs/partners/workflows#what-belongs-to-whom)).
+A customer's workflows stay too, and **keep running on every page that shows them**. Pause or delete the ones that should stop before you delete the managed user: a session made for that customer, or your key with their header, lists theirs, and your own sign-in lists every customer's (see [Workflows](/docs/partners/workflows#what-belongs-to-whom)).
 
 ## Managed User Entitlements
 
@@ -401,7 +410,6 @@ Widgetic stores this object and gives it back. It does not act on it: a `role` h
 
 - Signing in as, or getting a key for, a managed user. A managed user's browser can use Widgetic's editors with an [editor session](/docs/partners/editor-sessions), and nothing more.
 - Moving a composition, a widget or an upload to another managed user, or taking its label off, after it was created. The same holds for a workflow.
-- Making a workflow for a customer, or listing one customer's workflows, with your key. A customer makes theirs in an [editor session](/docs/partners/workflows), and your own sign-in sees every customer's.
 - A charge for storage per customer. What each customer keeps is counted (see [What a Managed User Keeps](#what-a-managed-user-keeps)), and what you charge for it is yours to decide. The credits an editor session spends are noted for its customer (see [What a Managed User Spent](#what-a-managed-user-spent)); the credits you spend with your own key are not.
 - Searching managed users by `external_id` in `GET /managed-users`. To file or list by your own id, send `managedUserExternalId`.
 - A picker of preset widgets inside Widgetic's editors. Your page draws the picker and your server makes the copy (see [Preset Widgets](#preset-widgets)).

@@ -6,7 +6,7 @@ tag: "Preview"
 
 A workflow chains compositions together, with filters between them that decide which composition a visitor sees next. On a page it is still the `<widgetic>` tag you already use: the embed follows the workflow, so the composition on screen is replaced by the next one, in the same place.
 
-You can put the screen where workflows are built in your own page, for **one customer at a time**. Your customer makes workflows from their own compositions, tries them, publishes them and pauses them, without leaving your product and without a Widgetic account. Your server keeps your API key. The page only holds an [editor session](/docs/partners/editor-sessions).
+You can put the screen where workflows are built in your own page, for **one customer at a time**. Your customer makes workflows from their own compositions, tries them, publishes them and pauses them, without leaving your product and without a Widgetic account. Your server keeps your API key. The page only holds an [editor session](/docs/partners/editor-sessions). Your server can also read and change your customers' workflows itself, one customer at a time (see [From your server](#from-your-server)).
 
 <Note>
   **Preview.** Workflows are new. They are built and tested, and you can try them now, but small details can still change while this label is on. Tell us what you find at [support@widgetic.com](mailto:support@widgetic.com).
@@ -96,7 +96,7 @@ A session reaches nothing else of the customer's account, and nothing of yours (
 - **A customer chains their own compositions only.** The compositions the screen offers are the ones filed under that customer (see [Content the editors can open](/docs/partners/editor-sessions#content-the-editors-can-open)). Another customer's composition, one you made without naming a customer and one of another account all read as missing: starting a workflow from one answers `404` with `RESOURCE_COMPOSITION_NOT_FOUND`, and a draft that holds one as a block cannot be published (`422` with `BUSINESS_OPERATION_INVALID`, and the block is named).
 - **A customer is not told who published.** The versions a customer reads carry no name of the person who published them.
 - **Your account owns the workflows.** They run under your account and your agreement, as your compositions do. While your account is paused, a workflow is not served either (see [Account Status](/docs/partners/account-status)). A customer is never asked to upgrade a plan, and is never shown yours: workflows are part of the partner contract.
-- **You see all of them.** Signed in as your own account, the same screen lists every customer's workflows next to yours, and you can open, pause or delete any of them. A copy you make is yours, not the customer's.
+- **You see all of them.** Signed in as your own account, the same screen lists every customer's workflows next to yours, and you can open, pause or delete any of them. Your key without a customer header does the same: the list holds every customer's workflows, each with the id of its customer in `managedUserId`. A workflow or a copy you make that way is yours, not the customer's.
 - **Deleting a managed user does not delete their workflows.** The workflows stay in your account and keep working on every page that shows them, and only the label that said whose they were is removed. Pause or delete a customer's workflows first when they should stop. See [Deleting Managed Users](/docs/partners/managed-users#deleting-managed-users).
 
 ## Limits and cost
@@ -136,6 +136,52 @@ async function showMyEmbedCodeDialog(workflowId) {
 - **A visitor's position stays in their own browser.** See [Show a path of compositions in one place](/resources/sdks#show-a-path-of-compositions-in-one-place) for what a visitor's browser keeps and what it tells your page.
 - **Counts reach the screen.** What the tag reports (how many visitors reached a block or took a line) is what the customer reads in **Runs**.
 
+## From your server
+
+Everything the screen does, your server can do with your API key, for one customer at a time: the same calls, on the same addresses, with the customer named in a header. Send `X-Managed-User-Id` (Widgetic's id for the managed user) or `X-Managed-User-External-Id` (your own `external_id`), one of the two, and the word `personal` as the workspace.
+
+```bash
+# The customer's workflows
+curl -sS "https://api.widgetic.com/v1/workspaces/personal/workflows" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "X-Managed-User-Id: $MANAGED_USER_ID"
+
+# A new workflow for the customer, started from one of their compositions
+curl -sS -X POST "https://api.widgetic.com/v1/workspaces/personal/workflows" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "X-Managed-User-Id: $MANAGED_USER_ID" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "Welcome journey", "compositionId": "COMPOSITION_ID" }'
+```
+
+The calls are in the [API reference](/api-reference/introduction) under Workflows. They are in **Preview**, like this page, so small details can still change. They are: the list, making a workflow, reading, saving and deleting one, duplicating, publishing, discarding changes, the versions and restoring one, pausing, resuming, archiving and unarchiving, the counts of runs, and the compositions a workflow can start from. Making, duplicating and publishing a workflow take an `Idempotency-Key`, as the reference says (see [Idempotency](/docs/reference/idempotency)). Saving a workflow takes the `revision` you read, so that two writers do not overwrite each other.
+
+Your key reaches no more through the header than the screen does through a session:
+
+- **The customer is the one in the header, and nothing else.** A body or a query that names a customer, an organization or another owner changes nothing: the workflow is filed under the customer in the header, for good.
+- **The customer's workflows only.** A workflow of another customer, one you made without a header, one of another account and one that does not exist all answer `404` with `RESOURCE_WORKFLOW_NOT_FOUND`, so you cannot tell them apart. A workflow chains the compositions filed under that customer only: another composition answers `404` with `RESOURCE_COMPOSITION_NOT_FOUND`, and a draft that holds one cannot be published.
+- **The workspace is `personal`.** Another workspace, such as the id of an organization, answers `403` with `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`, as does any call that does not take the header.
+- **The customer must be yours.** An id that is not one of your managed users, or is another partner's, answers `404` with `MANAGED_USER_NOT_FOUND`. An empty, repeated or malformed header is `400` with `MANAGED_USER_SCOPE_INVALID`, and only an API key may send the header (`403` with `MANAGED_USER_SCOPE_NOT_ALLOWED`).
+- **A customer you switched off** keeps its workflows, and you can still read and change them, but you cannot make or copy one for it: `409` with `MANAGED_USER_INACTIVE`.
+- **The limits are the same.** Up to 50 workflows for each customer, archived ones included, and no credits (see [Limits and cost](#limits-and-cost)).
+
+Without the header, the call is your own account's, as it always was: it sees every customer's workflows next to yours.
+
+Keep your key on your server. A page in a browser uses an [editor session](#make-a-session) instead.
+
+## What you are told
+
+Your webhook can be told when a customer makes, publishes or changes a workflow, with or without the screen:
+
+| Event | When |
+|-------|------|
+| `workflow.created` | A workflow was created for a customer, new or copied from another of theirs |
+| `workflow.published` | A workflow was published as a new version |
+| `workflow.state_changed` | A workflow was paused, resumed, archived or unarchived |
+
+They are about your customers' workflows only: what you make yourself, in your own account, is not told. They carry the ids and the names, and none of the workflow's blocks, so read the workflow for what it holds now. A webhook that receives every event receives these too, and one that lists its events needs them added. What each one carries is in [Notifications](/docs/partners/notifications#what-each-event-carries).
+
 ## Errors
 
 The screen handles these for you and tells your page (`error` event). The ones of the session itself are in [Errors](/docs/partners/editor-sessions#errors).
@@ -144,9 +190,14 @@ The screen handles these for you and tells your page (`error` event). The ones o
 |--------|------|---------|------------|
 | 403 | `EDITOR_SESSION_ROUTE_NOT_ALLOWED` | The call is not one a session may make: a `workspaceId` that is not `personal`, or an id that is not an id | Mount the screen with `workspaceId: 'personal'` |
 | 403 | `EDITOR_SESSION_FIELD_NOT_ALLOWED` | The request sets a field a session may not set | Not caused by the screen. Remove the field when you call the API yourself |
+| 403 | `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE` | Your key named a customer on a call that is not a workflow call of the workspace `personal` | Use `personal`, or leave the header out for a call that is not about one customer |
 | 404 | `RESOURCE_WORKFLOW_NOT_FOUND` | The workflow is not this customer's, or does not exist | Check which customer the session was made for |
 | 404 | `RESOURCE_COMPOSITION_NOT_FOUND` | A workflow was started from a composition that is not this customer's | File the composition under the customer (see [Filing Content Under a Managed User](/docs/partners/managed-users#filing-content-under-a-managed-user)) |
+| 404 | `MANAGED_USER_NOT_FOUND` | The customer in the header is not one of your managed users | Check the id, or the `external_id` |
+| 409 | `MANAGED_USER_INACTIVE` | You tried to make or copy a workflow for a customer you switched off | Switch the customer on, or make the workflow without the header |
 | 422 | `BUSINESS_OPERATION_INVALID` | The customer has 50 workflows already, or the draft cannot be published as it is (`details.issues` names what to fix) | Archive or delete a workflow, or fix the block |
+
+`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`, `MANAGED_USER_NOT_FOUND` and `MANAGED_USER_INACTIVE` come only to a call made with your key and a customer header: the screen cannot cause them.
 
 ## Next Steps
 
@@ -162,5 +213,8 @@ The screen handles these for you and tells your page (`error` event). The ones o
   </Card>
   <Card title="Embed SDK" icon="code" href="/resources/sdks#show-a-path-of-compositions-in-one-place">
     What a workflow does on a page
+  </Card>
+  <Card title="Notifications" icon="bell" href="/docs/partners/notifications">
+    Be told when a customer makes or publishes a workflow
   </Card>
 </CardGroup>
