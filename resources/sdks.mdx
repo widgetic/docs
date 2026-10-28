@@ -194,6 +194,28 @@ A name, of an event or of a value, is 1 to 64 letters, digits, `_`, `.`, `:` or 
 
 **What the tag tells your page.** Besides the usual `widgetic:ready`, `widgetic:error` and `widgetic:submitted` of the composition on screen, the tag fires `widgetic:workflow-step` with `{ workflowId, from, to }` (composition ids) each time a visitor moves on. If the next composition cannot be shown, or does not appear within 8 seconds, the visitor stays on the one they are on, the tag fires `widgetic:error`, and one more try is made 30 seconds later.
 
+### Show a workflow where you cannot add a tag
+
+Some places take an address or an iframe and no script: a chat messenger, a link page, a site builder, a blog or a notes tool that follows oEmbed. For those, a workflow has a **frame**, as a composition has ([Embed Script](#embed-script)): one page of Widgetic's that holds the tag above with the embed script, so it runs the workflow from its first composition to its last and does what the tag does. Its address is
+
+```text
+https://api.widgetic.com/embed/workflows/WORKFLOW_ID/frame
+```
+
+`WORKFLOW_ID` is the `workflow-id` of the tag that the workflow's **Embed code** gives you. Paste the address where the place asks for one, or put it in an iframe:
+
+```html
+<iframe src="https://api.widgetic.com/embed/workflows/WORKFLOW_ID/frame" width="800" height="600" title="Widgetic interactive content" frameborder="0" allowfullscreen></iframe>
+```
+
+A place that follows oEmbed can ask for the card of the workflow instead, at `https://api.widgetic.com/oembed/workflows/WORKFLOW_ID`. It answers an oEmbed `rich` card in JSON whose `html` is that iframe, 800 by 600 at most: a `maxwidth` or a `maxheight` in the request lowers the size, and never raises it. `json` is the only `format` it gives. The frame page also links to the card in its head, for a place that finds it from the address of the frame. Whether a given place accepts an address it does not already know is that place's own rule.
+
+- **A frame sees less than a page does.** A workflow in a frame moves a visitor on only by what the frame can see itself: the entries the visitor saves, an action in the widget, and waits. An **event from your page** never reaches it, because the events of a page do not cross a frame, so a step that waits for one does not start there. The `widgetic:workflow-step` event of the tag stays in the frame as well. A workflow that depends on events from your page needs the tag on your own page.
+- **What the frame shows when there is nothing to run.** A workflow that is paused shows its first composition, as a plain embed. A workflow that is not published, is archived, or does not exist, and a workflow whose owner is no longer being served (a plan that has lapsed, for example), show one short page that says "This workflow is unavailable." with a `404`, and the same words for every reason. When Widgetic cannot read the workflow at that moment, the answer is `503`.
+- **It is never kept by a cache.** Whether the frame can be shown depends on the state of the workflow and of its owner, so the answer carries `Cache-Control: no-store`.
+- **The websites you list apply.** If you limit the [websites that may show your widgets](/resources/security#domain-validation), the frame is shown only on the websites that the owner of the workflow's **first composition** listed, and the card answers `403` with `DOMAIN_NOT_ALLOWED` to a website that is not on that list. Later compositions of the workflow are not asked about. Add the address of the place that will show the frame, for example the domain of the link page.
+- **There are limits.** The frame and the card count together, for one network address on one workflow and for one workflow as a whole. Past a limit the answer is `429` with a `Retry-After` header.
+
 ## UI SDK (Partners)
 
 <Note>
