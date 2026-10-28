@@ -1,0 +1,166 @@
+---
+title: Workflows
+description: Let your customers build paths of compositions in your page, and show them with one embed tag
+tag: "Preview"
+---
+
+A workflow chains compositions together, with filters between them that decide which composition a visitor sees next. On a page it is still the `<widgetic>` tag you already use: the embed follows the workflow, so the composition on screen is replaced by the next one, in the same place.
+
+You can put the screen where workflows are built in your own page, for **one customer at a time**. Your customer makes workflows from their own compositions, tries them, publishes them and pauses them, without leaving your product and without a Widgetic account. Your server keeps your API key. The page only holds an [editor session](/docs/partners/editor-sessions).
+
+<Note>
+  **Preview.** Workflows are new. They are built and tested, and you can try them now, but small details can still change while this label is on. Tell us what you find at [support@widgetic.com](mailto:support@widgetic.com).
+</Note>
+
+## How it works
+
+<Steps>
+  <Step title="Your server makes an editor session">
+    When the page that holds the screen opens, your server asks Widgetic for a session for the signed-in customer, with the `workflows` surface, and returns the token. See [Make a session](#make-a-session).
+  </Step>
+  <Step title="Your page mounts the screen">
+    The [UI SDK](/docs/partners/ui-components) draws it in your container, with `workspaceId: 'personal'` and a `getToken` that fetches the token from your server. See [Mount the screen](#mount-the-screen).
+  </Step>
+  <Step title="Your customer builds and publishes">
+    They chain their own compositions, play a visitor through the draft with **Test run**, and publish. Every call the screen makes carries the token, so it reaches that customer's workflows and compositions and nobody else's. See [What belongs to whom](#what-belongs-to-whom).
+  </Step>
+  <Step title="Your page shows the embed tag">
+    The screen tells your page which workflow the customer asked the embed code of, and your page shows the `<widgetic>` tag that goes on the customer's own page. See [Show a workflow on a page](#show-a-workflow-on-a-page).
+  </Step>
+</Steps>
+
+## Make a session
+
+Call this from your server, as for any other piece (see [Editor Sessions](/docs/partners/editor-sessions#make-a-session)). `{id}` is Widgetic's `id` for the managed user, not your own `external_id`.
+
+```bash
+curl -sS -X POST "https://api.widgetic.com/v1/managed-users/$MANAGED_USER_ID/editor-sessions" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "surfaces": ["workflows"],
+    "expires_in_seconds": 3600,
+    "allowed_origin": "https://app.example.com"
+  }'
+```
+
+- **`workflows` is enough on its own.** The screen uploads no file and calls nothing outside its own workflow calls. A page that also mounts the composition editor or the widget creator asks for their surfaces in the same call, because [the surfaces do not imply one another](/docs/partners/editor-sessions#surfaces).
+- **The rest is the same as for every session.** The token is shown once, the session lasts up to four hours, `allowed_origin` binds it to your page, and it is made only while your account is in force and your own [storage](/docs/partners/storage) works, even though this screen stores no file.
+- **One endpoint of yours serves every piece.** The endpoint in [A server endpoint for your page](/docs/partners/editor-sessions#a-server-endpoint-for-your-page) makes the session with the surfaces the page needs.
+
+## Mount the screen
+
+Give the container a height: the screen fills it and scrolls inside it.
+
+```javascript
+import { mountModule } from '@widgetic/ui-sdk';
+
+const workflows = await mountModule('workflows', {
+  container: document.querySelector('#workflows'),
+  workspaceId: 'personal', // always 'personal' with an editor session
+  getToken: async () => (await fetch('/widgetic-session', { method: 'POST' })).json(), // { token, expiresAt }
+  workflowId: workflowOfTheAddress(), // optional: the workflow to open first. Leave it out for the list
+  on: {
+    openWorkflow: ({ workflowId }) => history.pushState(null, '', workflowId ? `/workflows/${workflowId}` : '/workflows'),
+    showEmbedCode: ({ workflowId }) => showMyEmbedCodeDialog(workflowId),
+    error: ({ message, code, fatal }) => report(code, message),
+  },
+});
+
+// later:
+await workflows.unmount();
+```
+
+- **`workspaceId` is `'personal'`.** An editor session can make only the workflow calls of the workspace called `personal`, which is where the customer's workflows are. Another `workspaceId`, such as the id of an organization, is refused with `403` and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`. The screen then says that something went wrong, with a **Try again** button, and does not show an empty list in its place.
+- **`getToken` gives the session's token.** It is called when the screen starts and again shortly before the token runs out, as in [Tokens](/docs/partners/ui-components#tokens). When the session ends, the screen tells your page with an `error` event (`SESSION_ENDED`).
+- **The options, the events and the methods are the ones in [UI Components](/docs/partners/ui-components#workflows).** `theme`, `locale` and `messages` work as for the other pieces.
+
+## What a customer can do
+
+With a session, the screen offers a customer what it offers anybody:
+
+- **The list.** The customer's own workflows, with search, sort and a switch for the archived ones.
+- **A new workflow.** Started empty, or from one of their own compositions.
+- **The editor.** A canvas of blocks that go forward only, a draft that is saved while they work, and **Test run**, which plays a visitor through the draft.
+- **Publish and Discard changes.** A published version never changes. The customer can read the history of versions and restore one as a new draft.
+- **Settings.** The time zone, the **Embed code** button, **pause** and **resume**, **archive** and **unarchive**.
+- **Duplicate and delete.**
+- **Runs.** How many visitors went through each block.
+
+A session reaches nothing else of the customer's account, and nothing of yours (see [What a session never does](/docs/partners/editor-sessions#what-a-session-never-does)). It may set only the fields the screen sets: a request that names another one, such as the customer or the state of a workflow, is refused with `403` and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.
+
+## What belongs to whom
+
+- **A workflow is filed under the customer when it is made.** A workflow made in a session is filed under the session's managed user, at that moment, and for good: there is no field to name another customer, and no way to move it.
+- **A customer sees their own workflows only.** Another customer's workflow, one of yours and one that does not exist all answer `404` with the code `RESOURCE_WORKFLOW_NOT_FOUND` and the same words, so the customer cannot tell them apart. A workflow id that is not an id is not a route at all: it answers `403` and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`.
+- **A customer chains their own compositions only.** The compositions the screen offers are the ones filed under that customer (see [Content the editors can open](/docs/partners/editor-sessions#content-the-editors-can-open)). Another customer's composition, one you made without naming a customer and one of another account all read as missing: starting a workflow from one answers `404` with `RESOURCE_COMPOSITION_NOT_FOUND`, and a draft that holds one as a block cannot be published (`422` with `BUSINESS_OPERATION_INVALID`, and the block is named).
+- **A customer is not told who published.** The versions a customer reads carry no name of the person who published them.
+- **Your account owns the workflows.** They run under your account and your agreement, as your compositions do. While your account is paused, a workflow is not served either (see [Account Status](/docs/partners/account-status)). A customer is never asked to upgrade a plan, and is never shown yours: workflows are part of the partner contract.
+- **You see all of them.** Signed in as your own account, the same screen lists every customer's workflows next to yours, and you can open, pause or delete any of them. A copy you make is yours, not the customer's.
+- **Deleting a managed user does not delete their workflows.** The workflows stay in your account and keep working on every page that shows them, and only the label that said whose they were is removed. Pause or delete a customer's workflows first when they should stop. See [Deleting Managed Users](/docs/partners/managed-users#deleting-managed-users).
+
+## Limits and cost
+
+- **Up to 50 workflows for each customer, archived ones included.** Another one is refused with `422` and `BUSINESS_OPERATION_INVALID`, with `reason: "too_many_workflows"` in its details and the words "You can have up to 50 workflows. Delete or archive some first." The limit is counted for each customer, so one customer cannot use up the room of another, or yours. What you make yourself has a larger limit of its own, and your customers' workflows do not count towards it.
+- **Workflows take no credits.** Making, saving and publishing one is not an AI call, so it does not use your credits and it is not counted against a customer's allowance.
+- **A workflow has up to 25 blocks.** See [UI Components](/docs/partners/ui-components#workflows).
+
+## Show a workflow on a page
+
+The screen has an **Embed code** button only when your page listens for `showEmbedCode` at the moment it mounts, and only for a workflow that has been published. It tells your page which workflow, and your page shows the tag: the tag of the workflow's first composition, with `workflow-id` added (see [Show a path of compositions in one place](/resources/sdks#show-a-path-of-compositions-in-one-place)).
+
+A published workflow tells anyone which composition a new visitor starts on, so your page can read it without a key:
+
+```javascript
+async function showMyEmbedCodeDialog(workflowId) {
+  try {
+    const answer = await fetch(`https://api.widgetic.com/embed/workflows/${workflowId}`);
+    if (!answer.ok) throw new Error(`The workflow could not be read (${answer.status})`);
+
+    const { data: published } = await answer.json(); // every answer of the API is { success, data }
+    // A paused workflow answers with its status and nothing else: there is no first composition to name.
+    if (!published.startCompositionId) return showMessage('Resume the workflow to get its embed code.');
+
+    showCode(
+      `<widgetic workflow-id="${workflowId}" composition-id="${published.startCompositionId}" ` +
+        `resize="fill-width" width="800" embed-target="site"></widgetic>`,
+    );
+  } catch (error) {
+    console.error('[workflows] Could not build the embed code', error);
+    showMessage('The embed code is not available right now.');
+  }
+}
+```
+
+- **The tag goes on a page that has the Embed SDK on it,** as for any widget. The visitors on that page need no account and sign in to nothing.
+- **A visitor's position stays in their own browser.** See [Show a path of compositions in one place](/resources/sdks#show-a-path-of-compositions-in-one-place) for what a visitor's browser keeps and what it tells your page.
+- **Counts reach the screen.** What the tag reports (how many visitors reached a block or took a line) is what the customer reads in **Runs**.
+
+## Errors
+
+The screen handles these for you and tells your page (`error` event). The ones of the session itself are in [Errors](/docs/partners/editor-sessions#errors).
+
+| Status | Code | Meaning | What to do |
+|--------|------|---------|------------|
+| 403 | `EDITOR_SESSION_ROUTE_NOT_ALLOWED` | The call is not one a session may make: a `workspaceId` that is not `personal`, or an id that is not an id | Mount the screen with `workspaceId: 'personal'` |
+| 403 | `EDITOR_SESSION_FIELD_NOT_ALLOWED` | The request sets a field a session may not set | Not caused by the screen. Remove the field when you call the API yourself |
+| 404 | `RESOURCE_WORKFLOW_NOT_FOUND` | The workflow is not this customer's, or does not exist | Check which customer the session was made for |
+| 404 | `RESOURCE_COMPOSITION_NOT_FOUND` | A workflow was started from a composition that is not this customer's | File the composition under the customer (see [Filing Content Under a Managed User](/docs/partners/managed-users#filing-content-under-a-managed-user)) |
+| 422 | `BUSINESS_OPERATION_INVALID` | The customer has 50 workflows already, or the draft cannot be published as it is (`details.issues` names what to fix) | Archive or delete a workflow, or fix the block |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Editor Sessions" icon="key" href="/docs/partners/editor-sessions">
+    Make sessions, and what a session can do
+  </Card>
+  <Card title="UI Components" icon="puzzle-piece" href="/docs/partners/ui-components#workflows">
+    The options, events and methods of the Workflows screen
+  </Card>
+  <Card title="Managed Users" icon="users" href="/docs/partners/managed-users">
+    File your customers' content under them
+  </Card>
+  <Card title="Embed SDK" icon="code" href="/resources/sdks#show-a-path-of-compositions-in-one-place">
+    What a workflow does on a page
+  </Card>
+</CardGroup>
