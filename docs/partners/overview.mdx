@@ -3,7 +3,7 @@ title: Partner Overview
 description: Build widgets for your customers with the Widgetic API and show them in your platform
 ---
 
-Partners build widgets for their own customers with the Widgetic API, and show them in their own platform with the embed code. In preview, you can also mount Widgetic's own editors (a file browser, a composition editor and the AI widget creator) in your own page for one customer at a time, without your API key ever reaching the browser.
+Partners build widgets for their own customers with the Widgetic API, and show them in their own platform with the embed code. In preview, you can also mount Widgetic's own editors (a file browser, a composition editor, the AI widget creator and the screen where workflows are built) in your own page for one customer at a time, without your API key ever reaching the browser.
 
 ## What Partners Can Do
 
@@ -15,7 +15,7 @@ Partners build widgets for their own customers with the Widgetic API, and show t
     Keep a record of your customers as managed users
   </Card>
   <Card title="Editors in Your Page (preview)" icon="paintbrush" href="/docs/partners/ui-components">
-    Mount Widgetic's File Browser, composition editor and AI widget creator in your own page for one customer at a time
+    Mount Widgetic's File Browser, composition editor, AI widget creator and Workflows in your own page for one customer at a time
   </Card>
   <Card title="Credits & Billing" icon="credit-card" href="/docs/partners/credits-billing">
     Pay by invoice, with tax, and track the AI credits on your account
@@ -59,7 +59,7 @@ flowchart TD
     API --> Sessions[Editor Sessions]
     Embed --> Published[Published Widget]
     Partner --> UI["UI SDK (preview)"]
-    UI --> Editors["File Browser, Composition Editor, Widget Creator (preview)"]
+    UI --> Editors["File Browser, Composition Editor, Widget Creator, Workflows (preview)"]
     Sessions -.-> Editors
 ```
 
@@ -91,13 +91,14 @@ An editor session is a short-lived token that your server makes for one managed 
   **Preview.** The editors are new. They are built and tested, and you can try them now, but small details can still change while this label is on.
 </Note>
 
-The UI SDK (`@widgetic/ui-sdk`) mounts three pieces in your own page. Each draws inside a shadow root, so your page's styles and its own do not touch each other:
+The UI SDK (`@widgetic/ui-sdk`) mounts four pieces in your own page. Each draws inside a shadow root, so your page's styles and its own do not touch each other:
 
 - **File Browser**: browse, upload and pick files, from Widgetic's media library or from your own.
 - **Composition Editor**: change the texts, pictures, colours and fonts of a widget, beside a live preview.
 - **Widget Creator**: the whole Widgetic canvas, with the AI that builds a widget from a description.
+- **Workflows**: chain a customer's compositions into a path, with filters between them that decide which composition a visitor sees next.
 
-See [UI Components](/docs/partners/ui-components) for the SDK and the File Browser, and [Canvas Embedding](/docs/partners/canvas-embedding) for the composition editor and the widget creator.
+See [UI Components](/docs/partners/ui-components) for the SDK and the File Browser, [Canvas Embedding](/docs/partners/canvas-embedding) for the composition editor and the widget creator, and [Workflows](/docs/partners/workflows) for the screen where a customer builds a path.
 
 ### Preset Widgets
 

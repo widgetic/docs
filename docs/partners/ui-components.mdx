@@ -1,6 +1,6 @@
 ---
 title: UI Components
-description: Put Widgetic's File Browser, composition editor and widget creator in your own page
+description: Put Widgetic's File Browser, composition editor, widget creator and Workflows in your own page
 tag: "Preview"
 ---
 
@@ -17,14 +17,14 @@ The UI SDK (`@widgetic/ui-sdk`) puts Widgetic's ready-made pieces in your own we
 | `file-browser` | Browse, upload and pick files, from Widgetic's media library (files kept in your own storage) or from your own | `files` (nothing, with your own [media library](#show-your-own-media-library)) |
 | `composition-editor` | Change the texts, pictures, colours and fonts of a widget beside a live preview, and save | `editor` and `files` |
 | `widget-creator` | The whole Widgetic canvas: draw, describe a widget to the AI, watch it being built, change it and publish it | `creator`, `editor` and `files` |
-| `workflows` | Where a team builds workflows: compositions chained together, with filters between them that decide which one a visitor sees next. The list of the team's workflows and, one click away, the editor of one: blocks and lines on a canvas, a draft that is saved while you work, and versions you publish | **the token of a signed-in person**, not an editor session (see [Workflows](#workflows)) |
+| `workflows` | Where a team, or one of your customers, builds workflows: compositions chained together, with filters between them that decide which one a visitor sees next. The list of their workflows and, one click away, the editor of one: blocks and lines on a canvas, a draft that is saved while you work, and versions you publish | `workflows`. A signed-in person of your own team uses their own token instead (see [Workflows](#workflows)) |
 
 The File Browser is covered on this page, and so is [Workflows](#workflows). The composition editor and the widget creator have their own options and events, in [Canvas Embedding](/docs/partners/canvas-embedding).
 
 Four things hold for all of them:
 
-- **They work only for a partner in good standing, with storage.** A session is made only while your account is active and your own [storage](/docs/partners/storage) works (see [Every session needs your own storage](/docs/partners/editor-sessions#every-session-needs-your-own-storage)). While your account is paused, the pieces already on your customers' pages are refused too (see [Account Status](/docs/partners/account-status)). [Workflows](#workflows) is the exception: it is not used with an editor session.
-- **No API key in the browser.** Your server keeps the key and makes a short-lived [editor session](/docs/partners/editor-sessions) for the customer who is on the page. The page only ever holds that session's token, and it can reach only that customer's content. [Workflows](#workflows) holds the token of the signed-in person who uses it, and never a key.
+- **They work only for a partner in good standing, with storage.** A session is made only while your account is active and your own [storage](/docs/partners/storage) works (see [Every session needs your own storage](/docs/partners/editor-sessions#every-session-needs-your-own-storage)). While your account is paused, the pieces already on your customers' pages are refused too (see [Account Status](/docs/partners/account-status)).
+- **No API key in the browser.** Your server keeps the key and makes a short-lived [editor session](/docs/partners/editor-sessions) for the customer who is on the page. The page only ever holds that session's token, and it can reach only that customer's content. Workflows can also be shown to a signed-in person of your own team, with that person's token: it never holds a key either.
 - **Your page stays yours.** A piece is drawn inside a shadow root: your CSS cannot restyle it and its CSS cannot touch your page. The SDK writes nothing to `<html>` or `<body>`, sends no `postMessage` and never clears your container.
 - **Small.** The SDK is a loader of about 30 KB. A piece is downloaded from Widgetic's CDN when you mount it, and only then.
 
@@ -88,7 +88,7 @@ await fileBrowser.unmount();
 | Option | Type | |
 |--------|------|---|
 | `container` | element or CSS selector | **Required.** Where the piece is drawn. |
-| `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. Workflows takes the token of a signed-in person, not an editor session. See [Tokens](#tokens). |
+| `getToken` | `({ reason }) => Promise<string \| { token, expiresAt }>` | Required to show the customer's Widgetic data. Not needed for the File Browser with your own `mediaLibrary`. Workflows takes an editor session with the `workflows` surface, or the token of a signed-in person. See [Tokens](#tokens). |
 | `version` | `string` | Pin an exact version of the piece, such as `0.1.0`. Default: the newest. Pin it in production, and read [what changed](/docs/partners/module-versions) before you move. |
 | `theme` | `'light'`, `'dark'`, `'system'`, or `{ preset, mode, colors, radius, font }` | Default `light`. `system` follows the customer's setting. An object gives the piece your colours, corner radius and font. See [Make the pieces look like your product](#make-the-pieces-look-like-your-product). |
 | `locale` | `string` | A BCP 47 tag such as `en` or `de`. Every piece uses it for plural forms and for how numbers, dates and file sizes are written, and for the `lang` of its elements; a language written right to left also turns each piece around. See [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language). |
@@ -382,7 +382,7 @@ When your `getToken` answers an `'expired'` call with the very token the API had
 
 An `apiKey` option is refused with `API_KEY_NOT_ALLOWED`. The key must stay on your server.
 
-[Workflows](#workflows) is the one piece that does not take an editor session: its `getToken` gives the token of a signed-in person, and it asks for it in the same way.
+[Workflows](#workflows) takes an editor session with the `workflows` surface, like the other pieces, or the token of a signed-in person, and asks for it in the same way.
 
 ## Show your own media library
 
@@ -428,12 +428,14 @@ const fileBrowser = await mountModule('file-browser', {
 
 What a workflow does **on a page** is the work of the Embed SDK: a workflow only decides which composition the embed shows next, and the embed follows it from one more attribute on the tag you already use. See [Show a path of compositions in one place](/resources/sdks#show-a-path-of-compositions-in-one-place).
 
+To give the screen to your customers, one at a time, with an editor session, see [Workflows](/docs/partners/workflows). The rest of this section is true for a session and for a signed-in person alike, except where it says otherwise.
+
 ```javascript
 import { mountModule } from '@widgetic/ui-sdk';
 
 const workflows = await mountModule('workflows', {
   container: document.querySelector('#workflows'), // give it a height: the screen fills it and scrolls inside it
-  workspaceId: 'personal', // or the id of the organization whose workflows are shown
+  workspaceId: 'personal', // always 'personal' with an editor session. A person may give the id of the organization whose workflows are shown
   getToken: async ({ reason }) => (await fetch(`/my-server/widgetic-token?reason=${reason}`)).text(),
   workflowId: workflowOfTheAddress(), // optional: the workflow to open first. Leave it out for the list
   theme: 'system',
@@ -452,8 +454,8 @@ window.addEventListener('popstate', () => workflows.module.setWorkflow(workflowO
 await workflows.unmount();
 ```
 
-- **`workspaceId` is required.** It is `'personal'`, or the id of the organization (the team) whose workflows are shown and edited. Workflows is for team accounts and partners: the API refuses any other workspace, and the screen says so.
-- **`getToken` gives the token of a signed-in person.** The screen calls the Widgetic API as the person who is using it, so `getToken` has to resolve with the token of a signed-in person who may work in that workspace (a member of the team, or your own account), the way the Widgetic app itself calls the API. **An editor session made for one of your customers is refused** with `403` and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`: workflows are not one of a session's [surfaces](/docs/partners/editor-sessions#what-a-session-never-does). `getToken` is called once before the screen appears (a `getToken` that fails fails the mount), and again when the token is about to run out or the API refuses it (`reason: 'expired'`, once per refusal), as in [Tokens](#tokens). The screen never stores a token, and no API key ever reaches the page.
+- **`workspaceId` is required.** It is `'personal'`, or the id of the organization (the team) whose workflows are shown and edited. Workflows is for team accounts and partners: the API refuses any other workspace, and the screen says so. **With an editor session it is always `'personal'`:** a session works in that one workspace, and the workflows it shows are its customer's own. Any other `workspaceId` is refused with `403` and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`.
+- **`getToken` gives an editor session's token, or the token of a signed-in person.** For one of your customers it resolves with the token of an editor session made for them with the `workflows` surface (see [Workflows](/docs/partners/workflows)): the screen then reaches that customer's own workflows and compositions, and nothing else. For your own team it resolves with the token of a signed-in person who may work in that workspace (a member of the team, or your own account), the way the Widgetic app itself calls the API. **An editor session that was made without the `workflows` surface is refused** with `403` and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`. `getToken` is called once before the screen appears (a `getToken` that fails fails the mount), and again when the token is about to run out or the API refuses it (`reason: 'expired'`, once per refusal), as in [Tokens](#tokens). The screen never stores a token, and no API key ever reaches the page.
 - **Your page owns where the person is.** The screen opens `workflowId` first, and the list when you leave it out. When the person opens a workflow or goes back to the list, the screen says so with `openWorkflow` (`workflowId` is `null` for the list), so your page can keep its address in step. When your page moves, as with the back button, `workflows.module.setWorkflow(workflowId)` moves the screen (`null` for the list). The screen writes nothing to your address bar, your storage or your cookies.
 - **The embed code is yours to show.** The screen has its **Embed code** button only when something listens for `showEmbedCode` at the moment it mounts, and only for a workflow that has been published. It tells your page which workflow, and your page shows the tag, because it knows how its own embed is built: the tag of the workflow's first composition with `workflow-id` added, as in [Show a path of compositions in one place](/resources/sdks#show-a-path-of-compositions-in-one-place).
 - **Look and language are as for the other pieces.** `theme`, `setTheme`, `locale`, `messages` and `setLanguage` work as described in [Make the pieces look like your product](#make-the-pieces-look-like-your-product) and [Show the pieces in your customers' language](#show-the-pieces-in-your-customers-language), the twelve built-in languages included, and a language written right to left turns the screen around.
