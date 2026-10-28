@@ -104,6 +104,8 @@ See [UI Components](/docs/partners/ui-components) for the SDK and the File Brows
 
 A preset is a widget of your own that you offer your customers as a starting point, under a short key your code uses. Your server lists them and gives a customer a copy (or a composition) of the one they pick. See [Preset Widgets](/docs/partners/managed-users#preset-widgets).
 
+A workflow of yours can be a starting point too: your customers copy it, with a copy of every widget it chains, and build on it. See [Starting points](/docs/partners/workflows#starting-points).
+
 ### Credits System
 
 You pay Widgetic by invoice, and Widgetic issues each invoice by itself: one for the credits of every billing period, at your price for a credit. Paying it adds those credits to your account, and when they run out you can buy extra credits with one API call. Credits pay for Widgetic's AI: each generation uses 1 credit (the list price of a credit is $0.10). Creating compositions, embedding widgets, storage and API calls do not use credits. An invoice of your contract that is unpaid after its due date stops the account until it is paid. See [Credits & Billing](/docs/partners/credits-billing).
@@ -147,6 +149,9 @@ All partner endpoints require a `wgt_prt_` API key. Key endpoints include:
 | `GET /partners/{id}/presets` | List the widgets you offer as presets |
 | `PUT /partners/{id}/presets/{key}` | Offer one of your widgets as a preset, or replace the preset with that key |
 | `POST /managed-users/{id}/presets/{key}/copy` | Give a customer a copy of one of your presets |
+| `GET /partners/{id}/workflow-presets` | List the workflows you offer as starting points |
+| `PUT /partners/{id}/workflow-presets/{key}` | Offer one of your published workflows as a starting point, or replace the one with that key |
+| `POST /workspaces/personal/workflows/from-preset` | Start a workflow for a customer (named in a header) from one of your starting points |
 | `GET /partners/mine` | Find the partner you administer, its status and its platform domain |
 | `GET /partners/{id}/contract` | Read your contract |
 | `PUT /partners/{id}/storage` | Set the bucket your customers' files are kept in |

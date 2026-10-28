@@ -6,7 +6,7 @@ tag: "Preview"
 
 A workflow chains compositions together, with filters between them that decide which composition a visitor sees next. On a page it is still the `<widgetic>` tag you already use: the embed follows the workflow, so the composition on screen is replaced by the next one, in the same place.
 
-You can put the screen where workflows are built in your own page, for **one customer at a time**. Your customer makes workflows from their own compositions, tries them, publishes them and pauses them, without leaving your product and without a Widgetic account. Your server keeps your API key. The page only holds an [editor session](/docs/partners/editor-sessions). Your server can also read and change your customers' workflows itself, one customer at a time (see [From your server](#from-your-server)).
+You can put the screen where workflows are built in your own page, for **one customer at a time**. Your customer makes workflows from their own compositions, tries them, publishes them and pauses them, without leaving your product and without a Widgetic account. Your server keeps your API key. The page only holds an [editor session](/docs/partners/editor-sessions). Your server can also read and change your customers' workflows itself, one customer at a time (see [From your server](#from-your-server)). And you can give your customers somewhere to start: workflows of your own that they copy and build on (see [Starting points](#starting-points)).
 
 <Note>
   **Preview.** Workflows are new. They are built and tested, and you can try them now, but small details can still change while this label is on. Tell us what you find at [support@widgetic.com](mailto:support@widgetic.com).
@@ -80,14 +80,22 @@ await workflows.unmount();
 With a session, the screen offers a customer what it offers anybody:
 
 - **The list.** The customer's own workflows, with search, sort and a switch for the archived ones.
-- **A new workflow.** Started empty, or from one of their own compositions.
+- **A new workflow.** Started empty, from one of their own compositions, or from one of your [starting points](#starting-points).
 - **The editor.** A canvas of blocks that go forward only, a draft that is saved while they work, and **Test run**, which plays a visitor through the draft.
 - **Publish and Discard changes.** A published version never changes. The customer can read the history of versions and restore one as a new draft.
 - **Settings.** The time zone, the **Embed code** button, **pause** and **resume**, **archive** and **unarchive**.
-- **Duplicate and delete.**
+- **Duplicate and delete.** A duplicate is a new draft. A customer can delete a workflow in any state (see [Delete a workflow](#delete-a-workflow)).
 - **Runs.** How many visitors went through each block.
 
 A session reaches nothing else of the customer's account, and nothing of yours (see [What a session never does](/docs/partners/editor-sessions#what-a-session-never-does)). It may set only the fields the screen sets: a request that names another one, such as the customer or the state of a workflow, is refused with `403` and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.
+
+### Delete a workflow
+
+A customer can delete a workflow in **any state**: a draft, a live workflow, a paused one or an archived one. The screen asks them to confirm and says what goes: the draft, the published versions and the counts, with how many visitors the workflow had so far. **It cannot be undone**: archiving is what keeps a workflow. The compositions it chained are not touched.
+
+A page whose embed still names the deleted workflow does not break. It shows the embed's first composition, as it does for a paused workflow. Your webhook is told (`workflow.deleted`, see [What you are told](#what-you-are-told)).
+
+Your server deletes with `DELETE /workspaces/personal/workflows/{workflowId}` and the customer's header (see [From your server](#from-your-server)). A workflow that is already gone answers `404` with `RESOURCE_WORKFLOW_NOT_FOUND`.
 
 ## What belongs to whom
 
@@ -101,9 +109,175 @@ A session reaches nothing else of the customer's account, and nothing of yours (
 
 ## Limits and cost
 
-- **Up to 50 workflows for each customer, archived ones included.** Another one is refused with `422` and `BUSINESS_OPERATION_INVALID`, with `reason: "too_many_workflows"` in its details and the words "You can have up to 50 workflows. Delete or archive some first." The limit is counted for each customer, so one customer cannot use up the room of another, or yours. What you make yourself has a larger limit of its own, and your customers' workflows do not count towards it.
-- **Workflows take no credits.** Making, saving and publishing one is not an AI call, so it does not use your credits and it is not counted against a customer's allowance.
+- **Up to 50 workflows for each customer, archived ones included.** Another one is refused with `422` and `BUSINESS_OPERATION_INVALID`, with `reason: "too_many_workflows"` in its details and the words "You can have up to 50 workflows. Delete or archive some first." The limit is counted for each customer, so one customer cannot use up the room of another, or yours. What you make yourself has a larger limit of its own, and your customers' workflows do not count towards it. A workflow that a customer starts from one of your [starting points](#starting-points) is one of their 50, and the limit is checked before anything is copied.
+- **Workflows take no credits.** Making, saving and publishing one is not an AI call, so it does not use your credits and it is not counted against a customer's allowance. Neither does starting one from a starting point: that copies what already exists and generates nothing.
 - **A workflow has up to 25 blocks.** See [UI Components](/docs/partners/ui-components#workflows).
+- **You can offer up to 50 starting points, and each chains at most 10 different widgets.** See [What can be offered](#what-can-be-offered).
+
+## Starting points
+
+A starting point is a workflow of yours that your customers can copy and build on, so that they do not begin with an empty canvas: a welcome page that leads to an offer, a quiz with a result page for each answer. You build and publish it once, in your own account, offer it under a key, and your customers start from it.
+
+<Note>
+  The screen calls them **presets**: its **New workflow** dialog lists yours under **Start from**, next to **Blank workflow**. They are not the [preset widgets](/docs/partners/managed-users#preset-widgets), which are single widgets that your server hands out. A starting point can chain only widgets that you offer that way (see [What can be offered](#what-can-be-offered)).
+</Note>
+
+### What a customer gets
+
+A customer who starts from one of yours gets, in their own account:
+
+- **Their own copy of every widget** the workflow chains: an ordinary private widget, filed under the customer, that serves the published code of yours.
+- **A composition of their own on each copy**: a draft, with the content, design, embed settings and tables of the original.
+- **A draft workflow**, wired like the live version of yours at that moment. It is named as the customer asks, or after the starting point.
+
+The workflow stays a draft: the customer tries it, changes it and publishes it themselves. **Nothing is shared afterwards.** What a customer changes never reaches your workflow, and what you change later never reaches their copy. Publishing a new version of yours changes what the customers who start after that get, and never what the customers who already started have.
+
+A customer sees only the starting points of **your** account. Widgetic's own are never shown to your customers, and another partner's customers never see yours.
+
+### What can be offered
+
+A starting point is one of **your own published workflows**: one made in your own account (not filed under a customer, and not a team's), that is not archived and has a live version. Because a customer gets copies, it also has to be something you are willing to give away:
+
+- **Every composition in it is one you made for yourself.** A composition made for a customer or for a team is not yours to give.
+- **It chains at most 10 different widgets**, because every start copies them.
+- **Every one of those widgets is already one of your [preset widgets](/docs/partners/managed-users#preset-widgets).** Offering a widget as a preset is how you say that it may be copied.
+
+You can offer up to 50 workflows. A workflow is offered once, under one key.
+
+### Offer one
+
+Offer a workflow in your [dashboard](/docs/partners/dashboard) (**Presets**, then **Workflow starting points**, then **Add a starting point**), or from your server with `PUT /partners/{partnerId}/workflow-presets/{key}`:
+
+```bash
+curl -sS -X PUT "https://api.widgetic.com/v1/partners/$WIDGETIC_PARTNER_ID/workflow-presets/welcome-then-offer" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workflowId": "WORKFLOW_ID",
+    "title": "Welcome, then an offer",
+    "description": "A welcome page that leads to an offer.",
+    "position": 1
+  }'
+```
+
+| Field | What it is |
+|-------|------------|
+| `key` (in the address) | The name your code and the picker use: 1 to 64 lowercase letters, digits, hyphens and underscores, starting with a letter or a digit, such as `welcome-then-offer` |
+| `workflowId` | **Required.** One of your own published workflows |
+| `title` | What the picker shows, up to 120 characters. Without one, it shows the workflow's name |
+| `description` | Up to 500 characters |
+| `position` | 0 to 10000, and 0 when left out. The list comes back with the smallest first, then by key |
+
+- **Sending the same key again replaces it.** The call answers `200` both times, so it is safe to repeat and needs no `Idempotency-Key`. It replaces the whole starting point: a `title`, `description` or `position` you leave out goes back to its default.
+- **What customers get is the live version as it is when they start.** Publishing the workflow changes what the next start gets, so look at a new version before you publish it.
+- **Your key makes the call,** or the person who administers your account. An [editor session](/docs/partners/editor-sessions) cannot: it is for your server.
+
+### Read and remove
+
+`GET /partners/{partnerId}/workflow-presets` lists what you offer, ordered by `position` and then by `key`. Each one says what it is made from and whether customers can start from it now:
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "key": "welcome-then-offer",
+        "workflowId": "5c1d2e3f-4a5b-4c6d-8e7f-90a1b2c3d4e5",
+        "title": "Welcome, then an offer",
+        "description": "A welcome page that leads to an offer.",
+        "position": 1,
+        "available": true,
+        "unavailableReason": null,
+        "workflowName": "Welcome journey",
+        "blockCount": 4,
+        "widgets": [
+          {
+            "id": "4b2f9c1e-6d3a-4f08-9a57-1c2e8b7d5a30",
+            "name": "Welcome page",
+            "thumbnailUrl": "https://cdn.widgetic.com/thumbnails/welcome-page.png"
+          }
+        ],
+        "createdAt": "2026-10-28T12:00:00.000Z",
+        "updatedAt": "2026-10-28T12:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+A starting point that cannot be started has `available` set to `false`, and `unavailableReason` says why: `workflow_missing` (the workflow was deleted), `workflow_not_own`, `workflow_archived` (unarchive it), `workflow_not_published`, `workflow_empty`, `composition_not_own`, `too_many_widgets` or `widget_not_preset` (a widget it chains is no longer offered as a preset). A customer is never shown one that is not available, so read this list to notice a starting point that went stale.
+
+`DELETE /partners/{partnerId}/workflow-presets/{key}` stops offering it and answers `{ "removed": true }`, or `false` (not an error) when nothing was offered under that key. It leaves the workflow, and every workflow a customer already started from it, alone. Deleting the workflow takes its starting point off the list too.
+
+### When an offer is refused
+
+The reason is in `error.details.reason`:
+
+| Status | Code | `reason` | What it means |
+|--------|------|----------|---------------|
+| 404 | `RESOURCE_WORKFLOW_NOT_FOUND` | | The workflow does not exist, or is not one of your account's own (the two look the same) |
+| 409 | `BUSINESS_STATE_CONFLICT` | `workflow_archived` | It is archived. Unarchive it first |
+| 409 | `BUSINESS_STATE_CONFLICT` | `workflow_not_published` | It was never published. A starting point is what visitors get, never a draft |
+| 409 | `BUSINESS_STATE_CONFLICT` | `workflow_already_offered` | It is already offered, under the key in `details.key`. Remove that one, or replace it |
+| 409 | `BUSINESS_STATE_CONFLICT` | `too_many_presets` | You already offer 50 (`details.limit`). Remove one first |
+| 409 | `BUSINESS_STATE_CONFLICT` | `preset_changed_meanwhile` | Another change to your starting points landed at the same moment. Ask again |
+| 422 | `BUSINESS_OPERATION_INVALID` | `workflow_empty` | It shows no composition |
+| 422 | `BUSINESS_OPERATION_INVALID` | `composition_not_own` | A block shows a composition made for a customer or for a team |
+| 422 | `BUSINESS_OPERATION_INVALID` | `too_many_widgets` | It chains more than 10 widgets (`details.limit`) |
+| 422 | `BUSINESS_OPERATION_INVALID` | `widget_not_preset` | A widget it chains is not one of your preset widgets. `details.widgets` lists them, each with its `id` and `name`, so that you can offer them first |
+
+### Start one
+
+A customer starts in the screen: they open **New workflow** and choose one of yours under **Start from**, which shows its title, its description, a picture of every widget it shows and its size. Choosing it makes the copies, which takes a few seconds, and opens the new draft. You write no code for it. A customer you offer nothing to sees the dialog as it was.
+
+<Note>
+  The picker comes with the version of the Workflows module that adds it. A page that pins an older version (see [Versions & Changelog](/docs/partners/module-versions)) starts blank only.
+</Note>
+
+Your server makes the same two calls, with your key and the customer's header (see [From your server](#from-your-server)):
+
+```bash
+# What this customer is offered
+curl -sS "https://api.widgetic.com/v1/workspaces/personal/workflows/presets" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "X-Managed-User-Id: $MANAGED_USER_ID"
+
+# A workflow of the customer's own, started from one of yours
+curl -sS -X POST "https://api.widgetic.com/v1/workspaces/personal/workflows/from-preset" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "X-Managed-User-Id: $MANAGED_USER_ID" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/json" \
+  -d '{ "key": "welcome-then-offer", "name": "Our welcome journey" }'
+```
+
+The list holds only what can be started now, in your order, and shows nothing about who made it and no id of its own:
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "key": "welcome-then-offer",
+        "title": "Welcome, then an offer",
+        "description": "A welcome page that leads to an offer.",
+        "blockCount": 4,
+        "widgets": [{ "name": "Welcome page", "thumbnailUrl": "https://cdn.widgetic.com/thumbnails/welcome-page.png" }]
+      }
+    ]
+  }
+}
+```
+
+- **`key` is the one the list gives, and `name` is optional.** It is up to 120 characters. Without it, the new workflow is named after the starting point's title.
+- **The answer is `201` with the new workflow,** a draft, as for any new workflow.
+- **Send an `Idempotency-Key`.** A start takes a few seconds, because every widget is copied, and an answer lost to a timeout is then repeated and not made twice.
+- **A start that is not offered to this customer, or can no longer be started, is `404`** with `RESOURCE_WORKFLOW_PRESET_NOT_FOUND`. The customer cannot fix it, and a half-made copy would be worse, so it reads as missing.
+- **The customer's 50 workflows are counted first.** At the limit, nothing is copied and the answer is `422` with `reason: "too_many_workflows"`.
+- **A start that fails leaves nothing to clean up.** The answer is `503` with `SERVICE_UNAVAILABLE` and `reason: "preset_copy_failed"`: the compositions it made are removed again, so asking again is safe. The copies of widgets it made stay in the customer's account as ordinary widgets, which they can delete like any other.
+- **Your webhook is told** (`workflow.created`, with `presetKey` set to the key). See [What you are told](#what-you-are-told).
 
 ## Show a workflow on a page
 
@@ -155,7 +329,7 @@ curl -sS -X POST "https://api.widgetic.com/v1/workspaces/personal/workflows" \
   -d '{ "name": "Welcome journey", "compositionId": "COMPOSITION_ID" }'
 ```
 
-The calls are in the [API reference](/api-reference/introduction) under Workflows. They are in **Preview**, like this page, so small details can still change. They are: the list, making a workflow, reading, saving and deleting one, duplicating, publishing, discarding changes, the versions and restoring one, pausing, resuming, archiving and unarchiving, the counts of runs, and the compositions a workflow can start from. Making, duplicating and publishing a workflow take an `Idempotency-Key`, as the reference says (see [Idempotency](/docs/reference/idempotency)). Saving a workflow takes the `revision` you read, so that two writers do not overwrite each other.
+The calls are in the [API reference](/api-reference/introduction) under Workflows. They are in **Preview**, like this page, so small details can still change. They are: the list, making a workflow, reading, saving and deleting one, duplicating, publishing, discarding changes, the versions and restoring one, pausing, resuming, archiving and unarchiving, the counts of runs, the compositions a workflow can start from, and the starting points a customer is offered and starting one from them (see [Start one](#start-one)). The calls you make about your own starting points are under Workflows too, and under Partners (see [Offer one](#offer-one)). Making, duplicating, starting from a starting point and publishing a workflow take an `Idempotency-Key`, as the reference says (see [Idempotency](/docs/reference/idempotency)). Saving a workflow takes the `revision` you read, so that two writers do not overwrite each other.
 
 Your key reaches no more through the header than the screen does through a session:
 
@@ -163,7 +337,7 @@ Your key reaches no more through the header than the screen does through a sessi
 - **The customer's workflows only.** A workflow of another customer, one you made without a header, one of another account and one that does not exist all answer `404` with `RESOURCE_WORKFLOW_NOT_FOUND`, so you cannot tell them apart. A workflow chains the compositions filed under that customer only: another composition answers `404` with `RESOURCE_COMPOSITION_NOT_FOUND`, and a draft that holds one cannot be published.
 - **The workspace is `personal`.** Another workspace, such as the id of an organization, answers `403` with `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`, as does any call that does not take the header.
 - **The customer must be yours.** An id that is not one of your managed users, or is another partner's, answers `404` with `MANAGED_USER_NOT_FOUND`. An empty, repeated or malformed header is `400` with `MANAGED_USER_SCOPE_INVALID`, and only an API key may send the header (`403` with `MANAGED_USER_SCOPE_NOT_ALLOWED`).
-- **A customer you switched off** keeps its workflows, and you can still read and change them, but you cannot make or copy one for it: `409` with `MANAGED_USER_INACTIVE`.
+- **A customer you switched off** keeps its workflows, and you can still read and change them, but you cannot make, copy or start one for it: `409` with `MANAGED_USER_INACTIVE`.
 - **The limits are the same.** Up to 50 workflows for each customer, archived ones included, and no credits (see [Limits and cost](#limits-and-cost)).
 
 Without the header, the call is your own account's, as it always was: it sees every customer's workflows next to yours.
@@ -172,15 +346,16 @@ Keep your key on your server. A page in a browser uses an [editor session](#make
 
 ## What you are told
 
-Your webhook can be told when a customer makes, publishes or changes a workflow, with or without the screen:
+Your webhook can be told when a customer makes, publishes, changes or deletes a workflow, with or without the screen:
 
 | Event | When |
 |-------|------|
-| `workflow.created` | A workflow was created for a customer, new or copied from another of theirs |
+| `workflow.created` | A workflow was created for a customer: new, copied from another of theirs, or started from one of your starting points (`presetKey` says which, and is `null` for the others) |
 | `workflow.published` | A workflow was published as a new version |
 | `workflow.state_changed` | A workflow was paused, resumed, archived or unarchived |
+| `workflow.deleted` | A workflow was deleted, in whatever state it was, with its versions and counts |
 
-They are about your customers' workflows only: what you make yourself, in your own account, is not told. They carry the ids and the names, and none of the workflow's blocks, so read the workflow for what it holds now. A webhook that receives every event receives these too, and one that lists its events needs them added. What each one carries is in [Notifications](/docs/partners/notifications#what-each-event-carries).
+They are about your customers' workflows only: what you make yourself, in your own account, is not told. They carry the ids and the names, and none of the workflow's blocks, so read the workflow for what it holds now. A deleted workflow can no longer be read, so `workflow.deleted` carries its name and the state it was in. A webhook that receives every event receives these too, and one that lists its events needs them added. What each one carries is in [Notifications](/docs/partners/notifications#what-each-event-carries).
 
 ## Errors
 
@@ -193,9 +368,12 @@ The screen handles these for you and tells your page (`error` event). The ones o
 | 403 | `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE` | Your key named a customer on a call that is not a workflow call of the workspace `personal` | Use `personal`, or leave the header out for a call that is not about one customer |
 | 404 | `RESOURCE_WORKFLOW_NOT_FOUND` | The workflow is not this customer's, or does not exist | Check which customer the session was made for |
 | 404 | `RESOURCE_COMPOSITION_NOT_FOUND` | A workflow was started from a composition that is not this customer's | File the composition under the customer (see [Filing Content Under a Managed User](/docs/partners/managed-users#filing-content-under-a-managed-user)) |
+| 404 | `RESOURCE_WORKFLOW_PRESET_NOT_FOUND` | A start named a starting point that is not offered to this customer, or that can no longer be started | Read the list again and start one of those (see [Start one](#start-one)) |
 | 404 | `MANAGED_USER_NOT_FOUND` | The customer in the header is not one of your managed users | Check the id, or the `external_id` |
-| 409 | `MANAGED_USER_INACTIVE` | You tried to make or copy a workflow for a customer you switched off | Switch the customer on, or make the workflow without the header |
-| 422 | `BUSINESS_OPERATION_INVALID` | The customer has 50 workflows already, or the draft cannot be published as it is (`details.issues` names what to fix) | Archive or delete a workflow, or fix the block |
+| 409 | `MANAGED_USER_INACTIVE` | You tried to make, copy or start a workflow for a customer you switched off | Switch the customer on, or make the workflow without the header |
+| 409 | `BUSINESS_STATE_CONFLICT` | You offered a workflow that cannot be offered now (archived, never published, already offered), or you already offer 50 (`details.reason` says which) | See [When an offer is refused](#when-an-offer-is-refused) |
+| 422 | `BUSINESS_OPERATION_INVALID` | The customer has 50 workflows already, the draft cannot be published as it is (`details.issues` names what to fix), or the workflow you offered cannot be given away as it is (`details.reason` says why) | Archive or delete a workflow, fix the block, or see [When an offer is refused](#when-an-offer-is-refused) |
+| 503 | `SERVICE_UNAVAILABLE` | A start could not set up the starting point right now (`details.reason` is `preset_copy_failed`) | Ask again: nothing was left that you must clean up (see [Start one](#start-one)) |
 
 `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`, `MANAGED_USER_NOT_FOUND` and `MANAGED_USER_INACTIVE` come only to a call made with your key and a customer header: the screen cannot cause them.
 
