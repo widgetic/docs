@@ -42,7 +42,9 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `publish_workflow` | Makes the saved draft what visitors get on the embed, and returns the embed code | `widgetic.publish` | 0 |
 | `set_workflow_state` | Pauses, resumes, archives or brings back a workflow | `widgetic.write` | 0 |
 | `suggest_widgets` | Suggests which widgets would fit what you want to make (a page, a workflow), asking a few questions first when it needs to; builds nothing | `widgetic.read` | 0 |
-| `create_widget_batch` | Starts several of the suggested widgets at once, up to 25, each as its own widget; 1 credit for each widget | `widgetic.write` | 1 |
+| `create_widget_batch` | Starts several of the suggested widgets at once, up to 25, each as its own widget, in one project if you like and with a draft workflow that chains them if you ask; 1 credit for each widget | `widgetic.write` | 1 |
+| `cancel_widget_batch` | Cancels the builds of several widgets at once; a build that had not started gets its credit back | `widgetic.write` | 0 |
+| `draft_workflow_from_widgets` | Saves a draft workflow from widgets you built, one step for each, in the order you give; nothing a visitor sees changes | `widgetic.write` | 0 |
 
 Permissions are the scopes you approve when you sign in; see [Authentication](/docs/agents/authentication#permissions).
 
@@ -88,7 +90,9 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
 
 ## Several widgets at once
 
-A landing page, a course or an event is rarely one widget. Say what you want to make and the assistant can suggest the widgets that would fit (a scoreboard, a schedule, a gallery, cards for the team, a countdown), ask a few questions if it needs them, and, once you have chosen, start all of them in one go, each in its own canvas. The same works for a workflow: describe it, and the assistant offers to build the widgets its steps need before it chains them (see [Workflows](#workflows)).
+A landing page, a course or an event is rarely one widget. Say what you want to make and the assistant can suggest the widgets that would fit (a scoreboard, a schedule, a gallery, cards for the team, a countdown), ask a few questions if it needs them, and, once you have chosen, start all of them in one go, each in its own canvas. The same works for a workflow: describe it, and the assistant offers to build the widgets its steps need, and can save a draft workflow that chains them (see [Workflows](#workflows)).
+
+In a client that can draw them, the suggestions appear as a list you tick and the questions as a form with one field for each; in any other client the assistant shows the same as text and asks in the chat. Ticking a widget only tells the assistant which ones you want: the list builds nothing and uses no credits, and the assistant starts the batch when you agree.
 
 <AccordionGroup>
   <Accordion title="suggest_widgets" icon="lightbulb">
@@ -96,6 +100,11 @@ A landing page, a course or an event is rarely one widget. Say what you want to 
   </Accordion>
   <Accordion title="create_widget_batch" icon="layer-group">
     Starts the widgets you chose, up to 25 in one call, each as its own widget with its own canvas, the way `create_widget` starts one: 1 credit for each widget, charged when its build starts, and published when it finishes unless you asked for drafts (a workflow needs published widgets). The assistant tells you how many widgets and credits that is and waits for your yes first, and it passes the total you agreed to, so nothing is started if the widgets would cost more. The call returns at once with one entry per widget; the builds usually finish within a few minutes, and the assistant follows each one until it is ready. A title that repeats a widget started in the last two minutes is returned as it is and charged nothing, so a retry after a lost answer starts only what is missing; after those two minutes a repeat is charged again, so if you are unsure, check your widgets before starting the batch again. If one widget cannot be started, the ones before it keep building and stay charged, and the rest are not started and not charged. A batch can be started once a minute. Each widget can use up to 5 images from your media library; for attached files or Figma links, the assistant starts that widget with `create_widget` instead.
+
+    Two things you can ask for with the batch. **A project:** the widgets are filed in one project of yours with the name you give (a project you already have with that name is used, otherwise a new one is made, in your personal workspace); a name that cannot be used never stops the batch, the widgets then go to your default project and the assistant says so. **A workflow:** with a name for it, Widgetic saves a draft workflow that chains the widgets in the order you gave once every one of them is built and published, even if the conversation has closed by then. It is only a draft, made once, in the workspace you asked in: you publish it yourself, after trying it, and a widget that failed leaves it waiting (for up to three days) until you have it rebuilt. If the draft is not made, `draft_workflow_from_widgets` makes it from the finished widgets.
+  </Accordion>
+  <Accordion title="cancel_widget_batch" icon="ban">
+    Stops the builds of several widgets at once, for when you change your mind about a batch: the assistant passes the widgets the batch returned. A build still waiting to start is stopped and its credit is returned. A build already being written is stopped too, but its credit is returned only if the model had not begun to write, and it can still finish as a draft, so the assistant tells you which is which. Each widget gets its own answer (cancelled, nothing was running, or not one of your widgets) and one never stops the others. If a draft workflow was waiting for those widgets, it is cancelled too. It uses no credits.
   </Accordion>
 </AccordionGroup>
 
@@ -168,6 +177,9 @@ A workflow chains published widgets on one embed: a visitor sees the first, and 
   <Accordion title="save_workflow" icon="floppy-disk">
     Creates a workflow (it needs a name) or replaces the draft script of one you name, starting from the revision the assistant read. If the draft changed since, in the editor or by another call, nothing is saved and the assistant is told to read it again, so a change made elsewhere is never overwritten. The answer lists any problems in plain words. Saving changes only the draft: nothing reaches visitors until `publish_workflow`. Every call without a workflow id creates another workflow, so after a failed call the assistant checks `list_workflows` before it tries again.
   </Accordion>
+  <Accordion title="draft_workflow_from_widgets" icon="link">
+    Saves a draft workflow from widgets you already built: one step for each widget, in the order the assistant passes (the order visitors should meet them), under the name you gave. A step leads on to the next when its widget keeps entries (a visitor sends one) or reports an action (a click, a choice); a widget that offers neither is saved with no way on and the assistant asks you what should take visitors on, then sets it with `save_workflow`. A workflow holds up to 25 blocks, so a chain of more than 13 widgets cannot lead on from every step: the assistant is told which. Every widget must be built and published; if not, nothing is saved and the answer says which are not. It never publishes (visitors see nothing until `publish_workflow`), changes nothing that exists, and uses no credits.
+  </Accordion>
   <Accordion title="test_workflow" icon="flask">
     Plays up to 20 visitor events (an entry added to a table, an action the widget reports, an event your page sends, or a wait that is over) through the saved draft, or through a script that is not saved, and says where the visitor ends up and why. Nothing is saved, no visitor is moved and no entry is created.
   </Accordion>
@@ -212,12 +224,13 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | `create_widget_batch` | no | no (it adds widgets, and a first publish replaces nothing) | yes (the finished widgets are published and can be reached on the public internet; it uses images already in your media library and fetches nothing) |
 | `revise_widget` | no | yes (the finished revision is published again and replaces what embeds show; every earlier version is kept) | yes (it publishes, takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
 | `duplicate_composition` | no | no (it adds a copy) | no |
-| `cancel_widget_creation`, `update_widget_customization` | no | yes | no |
+| `cancel_widget_creation`, `cancel_widget_batch`, `update_widget_customization` | no | yes | no |
 | `rename_widget` | no | no (it only changes the name) | no |
 | `delete_widget` | no | yes (it removes the widget for good) | no |
 | `publish_widget` | no | yes (it replaces what embeds show) | yes (it makes the widget publicly reachable) |
 | `save_to_media_library` | no | no | yes (it fetches the links you give) |
 | `list_workflows`, `get_workflow_options`, `get_workflow`, `test_workflow` | yes | no | no |
+| `draft_workflow_from_widgets` | no | no (it adds a draft workflow and changes nothing that exists; what visitors see is not touched) | no |
 | `save_workflow` | no | yes (it replaces the draft; what visitors see is not touched, and a change made elsewhere since the revision the assistant read is never overwritten) | no |
 | `publish_workflow` | no | yes (it replaces the version visitors get; every earlier version is kept) | yes (it makes the workflow what embeds on the public internet show) |
 | `set_workflow_state` | no | yes (it changes what visitors get; nothing is deleted and each change can be undone) | yes (it changes what embeds on the public internet show) |
