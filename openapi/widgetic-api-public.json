@@ -1526,6 +1526,254 @@
         }
       }
     },
+    "/workspaces/{workspaceId}/workflows/presets": {
+      "get": {
+        "operationId": "listWorkspaceWorkflowPresets",
+        "summary": "List the starting points for a new Workflow",
+        "description": "The workflows you can start from in this workspace: published workflows that Widgetic offers or, for one of a\npartner's managed users, that the partner offers (a managed user is never shown Widgetic's, and a person is never\nshown a partner's). Only what can be started now is listed, in the order the offerer set (smallest `position`\nfirst, then by `key`). Each shows what you would get, and none shows who made it or any id of its own.\nStart from one with `createWorkspaceWorkflowFromPreset`.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read the list.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The starting points (an empty list when none is offered)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowPresetChoices"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/from-preset": {
+      "post": {
+        "operationId": "createWorkspaceWorkflowFromPreset",
+        "summary": "Start a Workflow from a starting point",
+        "description": "Makes your own copy of a starting point (`listWorkspaceWorkflowPresets`): a copy of every widget it chains (an\nordinary private widget that serves the starting point's published code), a composition of your own on each copy\n(a draft, with the content, design, embed settings and tables of the original), and a draft workflow wired like the\nstarting point's live version. The workflow is named as you ask, or after the starting point. Nothing you do to the\ncopy reaches the starting point, and nothing its offerer changes afterwards reaches your copy. The workflow stays a\ndraft: publish it when it is ready.\n\nA start takes a few seconds, because each widget is copied. Send an `Idempotency-Key` so that asking again after\na timeout makes one copy. When a start fails (503 with `details.reason` `preset_copy_failed`) the compositions it\nmade are removed again, so asking again is safe; the widget copies it made stay in the workspace as ordinary\nwidgets. The workspace's limit of workflows is checked before anything is copied.\n\nA starting point that is not offered to you, or that can no longer be started, is 404.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can start one.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyRequired"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "key"
+                ],
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+                    "description": "The starting point, as `listWorkspaceWorkflowPresets` gives it.",
+                    "example": "welcome-then-offer"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "nullable": true,
+                    "description": "The new workflow's name. The starting point's title when left out."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The workflow was made, as a draft",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowDetail"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace, the key or the name is not acceptable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No starting point with this key is offered to you, or it can no longer be started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The workspace already holds as many workflows as it may",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The starting point could not be set up right now (`details.reason` is `preset_copy_failed`; nothing was left that you must clean up), or workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspaceId}/workflows": {
       "get": {
         "operationId": "listWorkspaceWorkflows",
@@ -2084,7 +2332,7 @@
       "delete": {
         "operationId": "deleteWorkspaceWorkflow",
         "summary": "Delete a Workflow",
-        "description": "Deletes a workflow that was never published. One that was ever published cannot be deleted (visitors may be\npartway through it, and its counts are kept): archive it instead.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can delete.\n",
+        "description": "Deletes a workflow, in whatever state it is in (draft, live, paused or archived), with all its versions and\ncounts. It cannot be undone: archive the workflow instead to keep it. The compositions it chained are not\ntouched, and a page whose embed still names the workflow shows the embed's first composition, as for a paused\none. Asking for a workflow that is already gone is \"not found\".\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can delete.\n",
         "tags": [
           "Partner",
           "Workflows",
@@ -2170,16 +2418,6 @@
           },
           "404": {
             "description": "No such workflow in this workspace",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The workflow was published at some point, so it can only be archived",
             "content": {
               "application/json": {
                 "schema": {
@@ -3232,7 +3470,7 @@
       "post": {
         "operationId": "archiveWorkspaceWorkflow",
         "summary": "Archive a Workflow",
-        "description": "Takes a workflow out of the default list and stops it serving: its embeds show only their first composition,\nas when paused. It is kept, with its versions and counts. A workflow that was ever published can be archived\nbut never deleted.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can archive.\n",
+        "description": "Takes a workflow out of the default list and stops it serving: its embeds show only their first composition,\nas when paused. It is kept, with its versions and counts, until it is deleted.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can archive.\n",
         "tags": [
           "Partner",
           "Workflows",
@@ -3590,6 +3828,401 @@
           },
           "404": {
             "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/partners/{partnerId}/workflow-presets": {
+      "get": {
+        "operationId": "listPartnerWorkflowPresets",
+        "summary": "List the workflows a partner offers as places to start",
+        "description": "The partner's starting points, ordered by `position` and then by `key`: the published workflows it offers its managed\nusers when they make a new workflow. Each says whether people can start from it now and, when they cannot, why. The\nlist is the same for every managed user, and a managed user is shown only what is available.\n\nA starting point is one of the partner account's own published workflows, built from compositions the account made\nfor itself (not for a customer or a team) and from widgets the partner already offers as presets\n(`setPartnerPreset`), and it uses at most 10 widgets. A partner offers up to 50.\n\nThe caller must be the person who administers the partner (an API key of that account works), or a Widgetic\nadministrator.\n",
+        "tags": [
+          "Partner",
+          "Partners",
+          "Workflows"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "partner",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "partnerId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The partner whose starting points to list"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The partner's starting points (an empty list when it offers none)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/OfferedWorkflowPresetList"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The partner id is not an id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller does not administer this partner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such partner (reported to administrators only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The partner has no administrator account (PARTNER_HAS_NO_ADMINISTRATOR)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/partners/{partnerId}/workflow-presets/{key}": {
+      "put": {
+        "operationId": "setPartnerWorkflowPreset",
+        "summary": "Offer a workflow as a place to start, or replace what a key offers",
+        "description": "Offers one of the partner account's own published workflows to its managed users under `key`. If the partner already\noffers something under that key it is replaced, so sending the same request twice is safe. Saving replaces the whole\nstarting point: a `title`, `description` or `position` you leave out goes back to its default.\n\nKeys are 1 to 64 characters: lowercase letters, digits, hyphens and underscores, the first a letter or a digit.\n\nA workflow is offered once. What people get is the workflow's live version as it is when they start, so publishing\nthe workflow changes what new starts get; workflows people already started are never touched. The offer is\nrefused, and `error.details.reason` says why, when the workflow:\n\n- is not the partner account's own (a workflow of a team or of a customer, or of somebody else), or does not exist:\n  404, the same for both;\n- is archived (409 `workflow_archived`), or was never published (409 `workflow_not_published`);\n- shows no composition (422 `workflow_empty`), or a block shows a composition made for a customer or a team\n  (422 `composition_not_own`);\n- chains more than 10 widgets (422 `too_many_widgets`), or a widget that the partner does not offer as a preset\n  (422 `widget_not_preset`; `error.details.widgets` lists them, each with its `id` and `name`, so they can be offered\n  first with `setPartnerPreset`);\n- is already offered under another key (409 `workflow_already_offered`; `error.details.key` says which), or the\n  partner already offers 50 (409 `too_many_presets`).\n\nThe caller must be the person who administers the partner (an API key of that account works), or a Widgetic\nadministrator, who offers the partner's workflow on its behalf.\n",
+        "tags": [
+          "Partner",
+          "Partners",
+          "Workflows"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "partner",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "partnerId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The partner whose starting point to set"
+          },
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            "description": "The name your code and the picker use for the starting point"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OfferWorkflowPresetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The starting point as saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/OfferedWorkflowPreset"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The key or a field is malformed or not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller does not administer this partner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such partner (reported to administrators only), or the workflow is not one of the partner account's own",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The workflow is archived, was never published, is already offered, the partner already offers as many as it may, or the partner has no administrator account (PARTNER_HAS_NO_ADMINISTRATOR)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The workflow cannot be given away as it is (see the description for the reasons)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removePartnerWorkflowPreset",
+        "summary": "Stop offering a workflow as a place to start",
+        "description": "Removes the starting point under `key`. The workflow itself is not touched, and neither are the workflows people\nalready started from it.\n\nRemoving a starting point the partner does not offer is not an error: the answer is `removed: false`.\n",
+        "tags": [
+          "Partner",
+          "Partners",
+          "Workflows"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "partner",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "partnerId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The partner whose starting point to remove"
+          },
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            "description": "The key of the starting point to remove"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whether a starting point was removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowPresetRemoval"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The key is malformed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller does not administer this partner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such partner (reported to administrators only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The partner has no administrator account (PARTNER_HAS_NO_ADMINISTRATOR)",
             "content": {
               "application/json": {
                 "schema": {
@@ -9831,7 +10464,7 @@
       "post": {
         "operationId": "createManagedUserEditorSession",
         "summary": "Create an editor session for a managed user",
-        "description": "Makes a short-lived credential that lets the browser of ONE of your managed users use Widgetic's editor\npieces, such as the File Browser and the composition editor, without your API key ever reaching that\nbrowser. Call this from your server when the page that hosts the editor opens, and hand the `token` in\nthe answer to that page.\n\nThe token is shown once. It starts with `wgt_ses_` and the browser sends it as\n`Authorization: Bearer <token>`. It can do only what the `surfaces` you name allow, and only for this\nmanaged user:\n\n- `files`: upload a file (`uploadsPost`) and list the files uploaded for this user (`uploadsGet`). Every\n  file is filed for this user and stored in your own storage destination, never in Widgetic's: a file a\n  customer uploads is yours to keep, and takes none of your storage allowance. Partner storage is not\n  optional, so no session, whatever its surfaces, can be made until you have set a destination\n  (`setPartnerStorageDestination`); until then it is refused with 409 and `PARTNER_STORAGE_REQUIRED`, and\n  when the destination cannot be used with 503 and `STORAGE_DESTINATION_UNAVAILABLE`. A destination you\n  remove after the session was made stops its uploads too (the same 409; the browser is only told that\n  the feature is not available right now). To keep a customer from uploading, leave `files` out of the\n  session and hand the editors your own media library instead (`mediaLibrary`).\n- `editor`: edit one of this user's compositions: read it (`getCompositionById`, its content, design,\n  embed settings and schemas), check a content change (`validateCompositionContent`), and change its\n  name, content, design and embed settings (`updateComposition`, `setDynamicContent`). It can reach\n  only compositions you created for this managed user (tag them with `managedUserId` when you create\n  them); any other composition, including another of your users', answers 404.\n- `creator`: use Widgetic's widget creator for this user, including its AI. Draw on canvases and save\n  them (`getAllCanvases`, `getCanvas`, `createCanvas`, `updateCanvas`, `previewDeleteCanvas`,\n  `deleteCanvas`); make, change, copy and delete the widgets on them (`createWidget`, `getWidgets`,\n  `getWidgetsBatch`, `updateWidget`, `uploadWidgetThumbnail`, `duplicateWidget`, `deleteWidget`);\n  list and make the compositions of a widget it built (`getAllCompositions`, `createComposition`), which\n  is how it shows the widget with sample values; keep the\n  conversation of each widget (`getConversationsByWidgetId`, `createConversationForWidget`,\n  `updateConversation`, `getMessages`, `createMessage`, `updateMessage`, `restoreCheckpoint`); and read a\n  widget's schemas and give it its repository (`getWidgetContentSchema`, `getWidgetDesignSchema`,\n  `updateWidgetRepository`). The AI that builds a widget is part of it: list the models\n  (`agentModelsGet`), open the widget's repository (`agentRepositoriesPost`,\n  `agentRepositoriesRepoIdGet`), start a generation and follow or cancel it (`agentCodeGeneratePost`,\n  `operationsStreamGet`, `operationsIdGet`, `operationsIdCancelPost`), build and preview the result\n  (`agentWidgetBuilderRepoHeadWidgetIdGet`, `buildWidgetFromRepo`, `previewWidgetVersion`), publish a\n  version of the widget and move between its versions (`agentWidgetBuilderPublishWidgetIdPost`,\n  `getWidgetPublishHistory`, `setWidgetPublishHistoryLive`, `renameWidgetPublishHistoryTitle`), and\n  turn a stroke or a sentence into a decision (`agentShapeRecognizePost`, `agentDesignResolvePost`). It can\n  also offer the customer your presets as starting points: read them and ask for a copy for this customer\n  (`listMyPresets`, `copyMyPreset`; you choose the presets with `setPartnerPreset`).\n  What the session makes is filed for this managed user, and the lists it reads hold only this user's\n  canvases, widgets and compositions. It can reach only canvases, widgets, compositions, repositories,\n  uploaded files and operations made for this managed user (tag the canvases and widgets you create\n  with `managedUserId`); any other canvas, widget, composition, conversation, message, repository, file\n  or operation, including another of your users', answers 404. The creator also saves the composition\n  it is editing (`updateComposition`, from the `editor` surface) and attaches pictures to its chat\n  (`uploadsPost`, from the `files` surface), and the surfaces do not imply one another: to open the\n  whole creator for a user, ask for `creator`, `editor` and `files` together. A generation or a build\n  one user starts can be followed and cancelled by that user and by you, never by another of your\n  users. The AI is paid for by your account, as your own calls are: its credits and allowances are\n  yours. A session cannot make a widget public (publishing a version does not), file one under a\n  project or an organization, or set anything the creator does not set: a body with another field is\n  refused with 403 and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n- `workflows`: use Widgetic's Workflows editor for this user. List their workflows and the compositions\n  a workflow of theirs can chain (`listWorkspaceWorkflows`, `listWorkspaceWorkflowCompositionOptions`);\n  make, open, change and delete one (`createWorkspaceWorkflow`, `getWorkspaceWorkflow`,\n  `saveWorkspaceWorkflow`, `deleteWorkspaceWorkflow`) and copy it (`duplicateWorkspaceWorkflow`); publish\n  it or discard the changes of its draft (`publishWorkspaceWorkflow`,\n  `discardWorkspaceWorkflowChanges`); read and restore its versions (`listWorkspaceWorkflowVersions`,\n  `getWorkspaceWorkflowVersion`, `restoreWorkspaceWorkflowVersion`); pause, resume, archive and unarchive it\n  (`pauseWorkspaceWorkflow`, `resumeWorkspaceWorkflow`, `archiveWorkspaceWorkflow`,\n  `unarchiveWorkspaceWorkflow`); and read its counts (`getWorkspaceWorkflowStats`). The workspace in each\n  path is `personal`: a session has no other, and a path that names an organization is refused. What the\n  session makes is filed for this managed user (`managedUserId`), the lists hold only this user's workflows,\n  and it can reach only workflows made for this managed user; any other workflow, including one of yours\n  or of another of your users, answers 404. A workflow can chain only the compositions you made for this\n  managed user (tag them with `managedUserId`): one that belongs to anybody else is not available, and\n  publishing a workflow that uses it is refused. A customer can have at most 50 workflows, and what a\n  customer's session reads never says who published a version. A session cannot set who a workflow belongs\n  to or which workspace it is in: a body with another field is refused with 403 and\n  `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n\nEverything else is refused with 403 and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`: a session cannot read your\naccount, make more sessions, change your presets or delete a composition, and a session without the `creator` surface cannot\ncreate or list compositions. Create the composition yourself with your API key, then open the editor on it.\n\nA session ends at `expiresAt` (at most four hours), when you end it (`revokeManagedUserEditorSession`),\nor when the managed user is switched off or deleted. A managed user can have at most 100 live sessions at\nonce (`429 EDITOR_SESSION_LIMIT_REACHED`). A session that is bound to a web page (`allowedOrigin`) is\nrefused from any other origin.\n\nThe AI the session runs is paid for with your credits. Set `maxCredits` to hold the session to a number\nof them: once its generations have taken that many (a generation that fails is refunded and does not\ncount), the next one is refused with 402 and `EDITOR_SESSION_CREDIT_LIMIT_REACHED`, and the browser is told\nonly that the feature is not available right now. Without it, the limit Widgetic has set for your account\napplies when it has set one (the same limit for every session you make, and `maxCredits: null` asks for\nnone), and otherwise the credits of your account are the only ceiling. What each of your users' sessions\nhas spent is in `getManagedUserUsage`.\n\nEach call makes a new session. It does not take an `Idempotency-Key`: the answer holds the token, and\nthe token is never stored where a retry could read it back. The answer is sent with\n`Cache-Control: no-store`.\n",
+        "description": "Makes a short-lived credential that lets the browser of ONE of your managed users use Widgetic's editor\npieces, such as the File Browser and the composition editor, without your API key ever reaching that\nbrowser. Call this from your server when the page that hosts the editor opens, and hand the `token` in\nthe answer to that page.\n\nThe token is shown once. It starts with `wgt_ses_` and the browser sends it as\n`Authorization: Bearer <token>`. It can do only what the `surfaces` you name allow, and only for this\nmanaged user:\n\n- `files`: upload a file (`uploadsPost`) and list the files uploaded for this user (`uploadsGet`). Every\n  file is filed for this user and stored in your own storage destination, never in Widgetic's: a file a\n  customer uploads is yours to keep, and takes none of your storage allowance. Partner storage is not\n  optional, so no session, whatever its surfaces, can be made until you have set a destination\n  (`setPartnerStorageDestination`); until then it is refused with 409 and `PARTNER_STORAGE_REQUIRED`, and\n  when the destination cannot be used with 503 and `STORAGE_DESTINATION_UNAVAILABLE`. A destination you\n  remove after the session was made stops its uploads too (the same 409; the browser is only told that\n  the feature is not available right now). To keep a customer from uploading, leave `files` out of the\n  session and hand the editors your own media library instead (`mediaLibrary`).\n- `editor`: edit one of this user's compositions: read it (`getCompositionById`, its content, design,\n  embed settings and schemas), check a content change (`validateCompositionContent`), and change its\n  name, content, design and embed settings (`updateComposition`, `setDynamicContent`). It can reach\n  only compositions you created for this managed user (tag them with `managedUserId` when you create\n  them); any other composition, including another of your users', answers 404.\n- `creator`: use Widgetic's widget creator for this user, including its AI. Draw on canvases and save\n  them (`getAllCanvases`, `getCanvas`, `createCanvas`, `updateCanvas`, `previewDeleteCanvas`,\n  `deleteCanvas`); make, change, copy and delete the widgets on them (`createWidget`, `getWidgets`,\n  `getWidgetsBatch`, `updateWidget`, `uploadWidgetThumbnail`, `duplicateWidget`, `deleteWidget`);\n  list and make the compositions of a widget it built (`getAllCompositions`, `createComposition`), which\n  is how it shows the widget with sample values; keep the\n  conversation of each widget (`getConversationsByWidgetId`, `createConversationForWidget`,\n  `updateConversation`, `getMessages`, `createMessage`, `updateMessage`, `restoreCheckpoint`); and read a\n  widget's schemas and give it its repository (`getWidgetContentSchema`, `getWidgetDesignSchema`,\n  `updateWidgetRepository`). The AI that builds a widget is part of it: list the models\n  (`agentModelsGet`), open the widget's repository (`agentRepositoriesPost`,\n  `agentRepositoriesRepoIdGet`), start a generation and follow or cancel it (`agentCodeGeneratePost`,\n  `operationsStreamGet`, `operationsIdGet`, `operationsIdCancelPost`), build and preview the result\n  (`agentWidgetBuilderRepoHeadWidgetIdGet`, `buildWidgetFromRepo`, `previewWidgetVersion`), publish a\n  version of the widget and move between its versions (`agentWidgetBuilderPublishWidgetIdPost`,\n  `getWidgetPublishHistory`, `setWidgetPublishHistoryLive`, `renameWidgetPublishHistoryTitle`), and\n  turn a stroke or a sentence into a decision (`agentShapeRecognizePost`, `agentDesignResolvePost`). It can\n  also offer the customer your presets as starting points: read them and ask for a copy for this customer\n  (`listMyPresets`, `copyMyPreset`; you choose the presets with `setPartnerPreset`).\n  What the session makes is filed for this managed user, and the lists it reads hold only this user's\n  canvases, widgets and compositions. It can reach only canvases, widgets, compositions, repositories,\n  uploaded files and operations made for this managed user (tag the canvases and widgets you create\n  with `managedUserId`); any other canvas, widget, composition, conversation, message, repository, file\n  or operation, including another of your users', answers 404. The creator also saves the composition\n  it is editing (`updateComposition`, from the `editor` surface) and attaches pictures to its chat\n  (`uploadsPost`, from the `files` surface), and the surfaces do not imply one another: to open the\n  whole creator for a user, ask for `creator`, `editor` and `files` together. A generation or a build\n  one user starts can be followed and cancelled by that user and by you, never by another of your\n  users. The AI is paid for by your account, as your own calls are: its credits and allowances are\n  yours. A session cannot make a widget public (publishing a version does not), file one under a\n  project or an organization, or set anything the creator does not set: a body with another field is\n  refused with 403 and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n- `workflows`: use Widgetic's Workflows editor for this user. List their workflows and the compositions\n  a workflow of theirs can chain (`listWorkspaceWorkflows`, `listWorkspaceWorkflowCompositionOptions`);\n  list the starting points you offer them and make a workflow from one, which gives the user their own copy\n  of every widget it chains, a composition of their own on each copy, and a draft\n  (`listWorkspaceWorkflowPresets`, `createWorkspaceWorkflowFromPreset`; you offer them with\n  `setPartnerWorkflowPreset`);\n  make, open, change and delete one (`createWorkspaceWorkflow`, `getWorkspaceWorkflow`,\n  `saveWorkspaceWorkflow`, `deleteWorkspaceWorkflow`) and copy it (`duplicateWorkspaceWorkflow`); publish\n  it or discard the changes of its draft (`publishWorkspaceWorkflow`,\n  `discardWorkspaceWorkflowChanges`); read and restore its versions (`listWorkspaceWorkflowVersions`,\n  `getWorkspaceWorkflowVersion`, `restoreWorkspaceWorkflowVersion`); pause, resume, archive and unarchive it\n  (`pauseWorkspaceWorkflow`, `resumeWorkspaceWorkflow`, `archiveWorkspaceWorkflow`,\n  `unarchiveWorkspaceWorkflow`); and read its counts (`getWorkspaceWorkflowStats`). The workspace in each\n  path is `personal`: a session has no other, and a path that names an organization is refused. What the\n  session makes is filed for this managed user (`managedUserId`), the lists hold only this user's workflows,\n  and it can reach only workflows made for this managed user; any other workflow, including one of yours\n  or of another of your users, answers 404. A workflow can chain only the compositions you made for this\n  managed user (tag them with `managedUserId`): one that belongs to anybody else is not available, and\n  publishing a workflow that uses it is refused. A customer can have at most 50 workflows, and what a\n  customer's session reads never says who published a version. A session cannot set who a workflow belongs\n  to or which workspace it is in: a body with another field is refused with 403 and\n  `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n\nEverything else is refused with 403 and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`: a session cannot read your\naccount, make more sessions, change your presets or delete a composition, and a session without the `creator` surface cannot\ncreate or list compositions. Create the composition yourself with your API key, then open the editor on it.\n\nA session ends at `expiresAt` (at most four hours), when you end it (`revokeManagedUserEditorSession`),\nor when the managed user is switched off or deleted. A managed user can have at most 100 live sessions at\nonce (`429 EDITOR_SESSION_LIMIT_REACHED`). A session that is bound to a web page (`allowedOrigin`) is\nrefused from any other origin.\n\nThe AI the session runs is paid for with your credits. Set `maxCredits` to hold the session to a number\nof them: once its generations have taken that many (a generation that fails is refunded and does not\ncount), the next one is refused with 402 and `EDITOR_SESSION_CREDIT_LIMIT_REACHED`, and the browser is told\nonly that the feature is not available right now. Without it, the limit Widgetic has set for your account\napplies when it has set one (the same limit for every session you make, and `maxCredits: null` asks for\nnone), and otherwise the credits of your account are the only ceiling. What each of your users' sessions\nhas spent is in `getManagedUserUsage`.\n\nEach call makes a new session. It does not take an `Idempotency-Key`: the answer holds the token, and\nthe token is never stored where a retry could read it back. The answer is sent with\n`Cache-Control: no-store`.\n",
         "tags": [
           "Partner",
           "Managed Users"
@@ -17517,7 +18150,7 @@
           "paused",
           "archived"
         ],
-        "description": "`draft`: never published. `live`: visitors get the live version. `paused`: embeds show only their first\ncomposition (the live version is kept). `archived`: out of the default list, kept; a workflow that was ever\npublished can be archived but never deleted.\n"
+        "description": "`draft`: never published. `live`: visitors get the live version. `paused`: embeds show only their first\ncomposition (the live version is kept). `archived`: out of the default list, kept. A workflow can be deleted\nin any of the four states, with its versions and counts.\n"
       },
       "WorkflowNodePosition": {
         "type": "object",
@@ -18145,7 +18778,7 @@
               },
               "everPublished": {
                 "type": "boolean",
-                "description": "Whether it was ever published (it can then be archived but not deleted)."
+                "description": "Whether it was ever published (it then has versions and counts, and visitors may have run it)."
               }
             }
           }
@@ -18546,6 +19179,297 @@
           "removed": {
             "type": "boolean",
             "example": true
+          }
+        },
+        "example": {
+          "removed": true
+        }
+      },
+      "WorkflowPresetWidget": {
+        "type": "object",
+        "description": "A widget a starting point shows.",
+        "required": [
+          "name",
+          "thumbnailUrl"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "example": {
+          "name": "Example name",
+          "thumbnailUrl": "Example thumbnailUrl"
+        }
+      },
+      "WorkflowPresetChoice": {
+        "type": "object",
+        "description": "A place to start a new workflow: a published workflow that Widgetic offers (or, for one of a partner's customers,\nthat the partner offers). Starting from it gives you your own copy of every widget it chains, a composition of\nyour own on each copy, and a draft workflow wired like it.\n",
+        "required": [
+          "key",
+          "title",
+          "description",
+          "blockCount",
+          "widgets"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "What `createWorkspaceWorkflowFromPreset` takes to say which starting point.",
+            "example": "welcome-then-offer"
+          },
+          "title": {
+            "type": "string",
+            "description": "The title the offerer gave it, or the name of the workflow it is made from."
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "blockCount": {
+            "type": "integer",
+            "description": "How many blocks it has (compositions, triggers and conditions)."
+          },
+          "widgets": {
+            "type": "array",
+            "description": "The widgets it shows, once each, in the order they first appear.",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowPresetWidget"
+            }
+          }
+        },
+        "example": {
+          "key": "welcome-then-offer",
+          "title": "Example title",
+          "description": "Example description",
+          "blockCount": 42,
+          "widgets": [
+            "Example WorkflowPresetWidget"
+          ]
+        }
+      },
+      "WorkflowPresetChoices": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "The starting points, in the order the offerer set (smallest position first, then by key).",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowPresetChoice"
+            }
+          }
+        },
+        "example": {
+          "items": [
+            "Example WorkflowPresetChoice"
+          ]
+        }
+      },
+      "OfferedWorkflowPresetWidget": {
+        "type": "object",
+        "description": "A widget an offered starting point shows.",
+        "required": [
+          "id",
+          "name",
+          "thumbnailUrl"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Your own widget."
+          },
+          "name": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "example": {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "name": "Example name",
+          "thumbnailUrl": "Example thumbnailUrl"
+        }
+      },
+      "OfferedWorkflowPreset": {
+        "type": "object",
+        "description": "A workflow you offer as a place to start, and what became of it. People start from it with their own copy of every\nwidget it chains, a composition of their own on each copy, and a draft workflow wired like its live version.\n",
+        "required": [
+          "key",
+          "workflowId",
+          "title",
+          "description",
+          "position",
+          "available",
+          "unavailableReason",
+          "workflowName",
+          "blockCount",
+          "widgets",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The name your code and the picker use for the starting point.",
+            "example": "welcome-then-offer"
+          },
+          "workflowId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The workflow it is made from. What people get is its live version as it is when they start."
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the picker shows. Null means show the workflow's name."
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "integer",
+            "description": "The list is ordered by this, smallest first, then by key."
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Whether people can start from it now. A starting point that is not available is not shown to anyone, and says why."
+          },
+          "unavailableReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "workflow_missing",
+              "workflow_not_own",
+              "workflow_archived",
+              "workflow_not_published",
+              "workflow_empty",
+              "composition_not_own",
+              "too_many_widgets",
+              "widget_not_preset"
+            ],
+            "description": "Why it is not available. `workflow_missing`: the workflow was deleted. `workflow_not_own`: it is no longer a\nworkflow of your own. `workflow_archived`: unarchive it. `workflow_not_published`: it has no live version.\n`workflow_empty`: it shows no composition. `composition_not_own`: a block shows a composition made for a\ncustomer or a team. `too_many_widgets`: it chains more than 10 widgets. `widget_not_preset`: a widget it\nchains is no longer offered as a preset.\n"
+          },
+          "workflowName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The workflow's name. Null when the workflow is gone."
+          },
+          "blockCount": {
+            "type": "integer",
+            "nullable": true,
+            "description": "How many blocks its live version has. Null when it is not available."
+          },
+          "widgets": {
+            "type": "array",
+            "description": "The widgets it chains, once each, in the order they first appear. Empty when it is not available.",
+            "items": {
+              "$ref": "#/components/schemas/OfferedWorkflowPresetWidget"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "example": {
+          "key": "welcome-then-offer",
+          "workflowId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "title": "Example title",
+          "description": "Example description",
+          "position": 42,
+          "available": true,
+          "unavailableReason": "Example unavailableReason",
+          "workflowName": "Example workflowName",
+          "blockCount": 42,
+          "widgets": [
+            "Example OfferedWorkflowPresetWidget"
+          ],
+          "createdAt": "2026-01-15T09:30:00.000Z",
+          "updatedAt": "2026-01-15T09:30:00.000Z"
+        }
+      },
+      "OfferedWorkflowPresetList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfferedWorkflowPreset"
+            }
+          }
+        },
+        "example": {
+          "items": [
+            "Example OfferedWorkflowPreset"
+          ]
+        }
+      },
+      "OfferWorkflowPresetRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "workflowId"
+        ],
+        "properties": {
+          "workflowId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "One of your own published workflows."
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "What the picker shows. Leave it out to show the workflow's name."
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "default": 0,
+            "description": "Where it sits in the list. Smallest first; the same position is ordered by key."
+          }
+        },
+        "example": {
+          "workflowId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "title": "Example title",
+          "description": "Example description",
+          "position": 42
+        }
+      },
+      "WorkflowPresetRemoval": {
+        "type": "object",
+        "required": [
+          "removed"
+        ],
+        "properties": {
+          "removed": {
+            "type": "boolean",
+            "description": "False when nothing was offered under that key."
           }
         },
         "example": {
@@ -20354,7 +21278,8 @@
           "entry.created",
           "workflow.created",
           "workflow.published",
-          "workflow.state_changed"
+          "workflow.state_changed",
+          "workflow.deleted"
         ]
       },
       "PartnerNotification": {
@@ -20398,7 +21323,7 @@
           "data": {
             "type": "object",
             "additionalProperties": true,
-            "description": "The facts of the event, named in camelCase. An invoice event carries `invoiceNumber`, `subtotal`, `taxAmount`, `total`, `currency`, `dueDate`, `hostedInvoiceUrl` (the page where it is paid) and `purpose` (`contract`, or `extra_credits` for credits you bought on top of the contract: an unpaid invoice for extra credits never stops the account, the credits are just not added until it is paid); a payment adds `paidAt`, a failed payment `reason`, a reminder `daysUntilDue` or `daysOverdue`. A credits event carries `band` (`low` or `empty`), `balance` and `threshold`. `credits.managed_user_cap_reached` (one of your managed users used its monthly credits and a request was refused) goes to your webhook only when subscribed, once per managed user each month, and carries `managedUserId`, `externalId`, `monthlyCredits`, `creditsUsed`, `resetsAt` and `reachedAt`. A standing event carries `status`, `previousStatus` and `reason`; `partner.paused` with `status: payment_arrears` means that an overdue invoice stopped the account (nobody paused it, and `reason` names the invoice), and `partner.resumed` with `previousStatus: payment_arrears` means that its payment ended that. A storage event carries `reason` and `checkedAt`. Content events (`composition.created`, `composition.updated`, `widget.published`, `upload.created`, `entry.created`, `workflow.created`, `workflow.published`, `workflow.state_changed`) go to your webhook only when subscribed; they do not appear in the dashboard list. `composition.created` carries `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId` and `createdAt`; `composition.updated` carries `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId`, `contentVersion` and `savedAt`, and is sent for the first save of a composition in each five minutes (read the composition for its current state); `widget.published` carries `widgetId`, `name`, `managedUserId`, `externalId`, `version` and `publishedAt`; `upload.created` carries `uploadId`, `name`, `mimeType`, `sizeBytes`, `address`, `managedUserId`, `externalId`, `purpose` and `createdAt`; `entry.created` carries `compositionId`, `table`, `entryId`, `createdAt` and `context` (the host attribution of the embedding page, or null), and none of the values the visitor entered: read those with the entries routes. The three workflow events are about the workflows your managed users make (only a workflow made for a managed user is told; one your own people made is not). `workflow.created` carries `workflowId`, `name`, `managedUserId`, `externalId` and `createdAt`, and is sent for a copy of a workflow too; `workflow.published` carries `workflowId`, `name`, `managedUserId`, `externalId`, `versionId`, `versionNumber` (1 for the first publication) and `publishedAt`; `workflow.state_changed` carries `workflowId`, `name`, `managedUserId`, `externalId`, `action` (`pause`, `resume`, `archive` or `unarchive`), `previousStatus` and `status` (each `draft`, `live`, `paused` or `archived`) and `changedAt`. Read the workflow for what it holds now. Ignore an event type you do not know: more may be added. `sendPartnerNotificationTestEvent` sends a sample of every one of them."
+            "description": "The facts of the event, named in camelCase. An invoice event carries `invoiceNumber`, `subtotal`, `taxAmount`, `total`, `currency`, `dueDate`, `hostedInvoiceUrl` (the page where it is paid) and `purpose` (`contract`, or `extra_credits` for credits you bought on top of the contract: an unpaid invoice for extra credits never stops the account, the credits are just not added until it is paid); a payment adds `paidAt`, a failed payment `reason`, a reminder `daysUntilDue` or `daysOverdue`. A credits event carries `band` (`low` or `empty`), `balance` and `threshold`. `credits.managed_user_cap_reached` (one of your managed users used its monthly credits and a request was refused) goes to your webhook only when subscribed, once per managed user each month, and carries `managedUserId`, `externalId`, `monthlyCredits`, `creditsUsed`, `resetsAt` and `reachedAt`. A standing event carries `status`, `previousStatus` and `reason`; `partner.paused` with `status: payment_arrears` means that an overdue invoice stopped the account (nobody paused it, and `reason` names the invoice), and `partner.resumed` with `previousStatus: payment_arrears` means that its payment ended that. A storage event carries `reason` and `checkedAt`. Content events (`composition.created`, `composition.updated`, `widget.published`, `upload.created`, `entry.created`, `workflow.created`, `workflow.published`, `workflow.state_changed`, `workflow.deleted`) go to your webhook only when subscribed; they do not appear in the dashboard list. `composition.created` carries `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId` and `createdAt`; `composition.updated` carries `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId`, `contentVersion` and `savedAt`, and is sent for the first save of a composition in each five minutes (read the composition for its current state); `widget.published` carries `widgetId`, `name`, `managedUserId`, `externalId`, `version` and `publishedAt`; `upload.created` carries `uploadId`, `name`, `mimeType`, `sizeBytes`, `address`, `managedUserId`, `externalId`, `purpose` and `createdAt`; `entry.created` carries `compositionId`, `table`, `entryId`, `createdAt` and `context` (the host attribution of the embedding page, or null), and none of the values the visitor entered: read those with the entries routes. The four workflow events are about the workflows your managed users make (only a workflow made for a managed user is told; one your own people made is not). `workflow.created` carries `workflowId`, `name`, `managedUserId`, `externalId`, `createdAt` and `presetKey` (the key you gave the starting point the workflow was started from with `setPartnerWorkflowPreset`, or null when it was drawn new or copied), and is sent for a copy of a workflow and for a start from a starting point too; `workflow.published` carries `workflowId`, `name`, `managedUserId`, `externalId`, `versionId`, `versionNumber` (1 for the first publication) and `publishedAt`; `workflow.state_changed` carries `workflowId`, `name`, `managedUserId`, `externalId`, `action` (`pause`, `resume`, `archive` or `unarchive`), `previousStatus` and `status` (each `draft`, `live`, `paused` or `archived`) and `changedAt`; `workflow.deleted` carries `workflowId`, `name`, `managedUserId`, `externalId`, `previousStatus` (the state it was in when it was deleted: `draft`, `live`, `paused` or `archived`) and `deletedAt`, and means that the workflow with its versions and counts is gone (the compositions it chained are not touched). Read the workflow for what it holds now (a deleted one is not found). Ignore an event type you do not know: more may be added. `sendPartnerNotificationTestEvent` sends a sample of every one of them."
           },
           "createdAt": {
             "type": "string",
@@ -21356,7 +22281,7 @@
                 "workflows"
               ]
             },
-            "description": "The pieces of Widgetic's editor the session may drive. `files` is the media library (the File Browser: upload a file, list the files uploaded for this user); what a user uploads is kept in your own storage destination. Partner storage is not optional: a session of any surface can be made only once you have set a destination up (`setPartnerStorageDestination`), and is refused with `409 PARTNER_STORAGE_REQUIRED` until then. `editor` is editing one of this user's compositions: read it, change its name, content, design and embed settings, read its schemas, and ask where to show it (`getCompositionPreview`: the widget's published page). `creator` is Widgetic's widget creator, with its drawing canvas and its AI: this user's canvases, the widgets on them and the conversation of each widget, the generation, build and publish calls that make a widget, and the compositions of those widgets (list, make). The surfaces do not imply one another: the whole creator also saves a composition (`editor`) and attaches pictures to its chat (`files`), so ask for `[\"creator\", \"editor\", \"files\"]`. `workflows` is the Workflows editor: this user's own workflows (list, make, draw, publish, pause, resume, archive, delete, the version history and the counts) under `/workspaces/personal/workflows`, and the compositions made for this user, which are the only ones a workflow of theirs can chain. A workflow is filed under the user it was made for (`managedUserId`), and the session reaches nothing of another user's, nor of yours.\n",
+            "description": "The pieces of Widgetic's editor the session may drive. `files` is the media library (the File Browser: upload a file, list the files uploaded for this user); what a user uploads is kept in your own storage destination. Partner storage is not optional: a session of any surface can be made only once you have set a destination up (`setPartnerStorageDestination`), and is refused with `409 PARTNER_STORAGE_REQUIRED` until then. `editor` is editing one of this user's compositions: read it, change its name, content, design and embed settings, read its schemas, and ask where to show it (`getCompositionPreview`: the widget's published page). `creator` is Widgetic's widget creator, with its drawing canvas and its AI: this user's canvases, the widgets on them and the conversation of each widget, the generation, build and publish calls that make a widget, and the compositions of those widgets (list, make). The surfaces do not imply one another: the whole creator also saves a composition (`editor`) and attaches pictures to its chat (`files`), so ask for `[\"creator\", \"editor\", \"files\"]`. `workflows` is the Workflows editor: this user's own workflows (list, make, make from one of your starting points, draw, publish, pause, resume, archive, delete, the version history and the counts) under `/workspaces/personal/workflows`, and the compositions made for this user, which are the only ones a workflow of theirs can chain. A workflow is filed under the user it was made for (`managedUserId`), and the session reaches nothing of another user's, nor of yours.\n",
             "example": [
               "files",
               "editor"
