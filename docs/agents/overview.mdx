@@ -26,6 +26,9 @@ That address is the whole setup: every supported assistant uses the same one.
   <Card title="Find, reuse and manage" icon="images">
     "Show my drafts." "Save these logos to my media library and use the first one." "Go back to the previous version." "Copy this widget for the pricing page." The assistant can also rename or delete a widget (deleting asks you to confirm its title) and tell you how many credits you have left.
   </Card>
+  <Card title="Plan a page or a workflow" icon="layer-group">
+    "I want a landing page for my basketball team. Which widgets would work?" The assistant suggests the widgets that fit (a scoreboard, a schedule, a gallery, cards for the players), asks a few questions if it needs them, and starts the ones you choose together, each in its own canvas.
+  </Card>
 </CardGroup>
 
 ## How it works
@@ -45,14 +48,16 @@ That address is the whole setup: every supported assistant uses the same one.
   </Step>
 </Steps>
 
+For a page or a workflow made of several widgets, ask which widgets the assistant would suggest. It answers with a list, you choose, and it starts the chosen ones together (up to 25 at a time), after telling you how many credits that is. See [Several widgets at once](/docs/agents/tools#several-widgets-at-once).
+
 With published widgets you can also ask for a **workflow**: widgets chained on one embed, so that a visitor who sends a form sees the thank-you card next, in the same place. The assistant writes it for you, tries it with made-up visitors, and publishes it only after you have seen it tried. See [Workflows](/docs/agents/tools#workflows).
 
 The full list of tools is in the [tools reference](/docs/agents/tools).
 
 ## What it costs
 
-- **Creating and revising** a widget uses **1 credit per call**, charged when the build starts.
-- Everything else (previews, listing, versions, copies, renaming, deleting, customization, embed code, workflows, the media library, checking your usage) uses no credits. Saved files count against your storage allowance.
+- **Creating and revising** a widget uses **1 credit per call**, charged when the build starts. Starting several at once uses **1 credit per widget**, charged as each build starts, and the assistant tells you the total before it starts them.
+- Everything else (suggesting which widgets to build, previews, listing, versions, copies, renaming, deleting, customization, embed code, workflows, the media library, checking your usage) uses no credits. Saved files count against your storage allowance.
 - **Publishing** needs a plan that includes it and a connection approved with the publish permission. If either is missing, builds stay drafts and the assistant tells you.
 
 ## What you need
@@ -68,7 +73,7 @@ The full list of tools is in the [tools reference](/docs/agents/tools).
     When your request needs it (a vote, a rating, a comment, an RSVP or a sign-up), the assistant can build a widget that keeps what its visitors send. Widgetic stores those entries in the widget's own database in your account, and the widget can show the results (a poll's tally, an average rating). You can ask the assistant for them whenever you like: counts per option by default, and the entries themselves only when you ask. A visitor can send more than once, and entries are not emailed or forwarded anywhere. Orders, payments and logins are not built. A widget made from a pasted widget link keeps nothing, and neither does one you did not ask to keep entries (a quiz, a countdown, a gallery, a chart or a calculator only displays information).
   </Accordion>
   <Accordion title="Retrying a build">
-    Each `create_widget` call starts a separate widget and charges credits. A repeat of the same title within two minutes returns the widget already started and charges nothing, so a retry after a lost answer does not build twice. If a call times out, ask the assistant to check your widget list before it tries again.
+    Each `create_widget` call starts a separate widget and charges credits. A repeat of the same title within two minutes returns the widget already started and charges nothing, so a retry after a lost answer does not build twice; the same goes for each widget of a batch started with `create_widget_batch`. If a call times out, ask the assistant to check your widget list before it tries again.
   </Accordion>
   <Accordion title="Deleting a widget">
     `delete_widget` removes a widget for good, with all its versions and published copies; embeds already placed on websites stop working, and it cannot be undone. The assistant has to pass the exact title you confirmed, and a widget that is still being built cannot be deleted. Going back to an earlier version never deletes anything: `list_widget_versions` and `publish_widget` do that.
@@ -80,7 +85,7 @@ The full list of tools is in the [tools reference](/docs/agents/tools).
     Besides a description, a build can start from up to 5 attached files (images, videos, PDFs, CSV files, and Markdown or text files) and up to 3 Figma links. Figma links are read with your own connected Figma account, which you connect once from the [Design page](https://widgetic.com/design). See [what a build can start from](/docs/agents/tools#what-a-build-can-start-from).
   </Accordion>
   <Accordion title="Your prompts are screened">
-    Requests to create or revise a widget are checked with a content moderation service before they are acted on. See the [privacy policy](https://widgetic.com/privacy) for what is sent and why.
+    Requests to create or revise a widget are checked with a content moderation service before they are acted on, and so are the words you use to ask which widgets to build. Those words are also sent to a language model, which writes the suggestions. See the [privacy policy](https://widgetic.com/privacy) for what is sent and why.
   </Accordion>
 </AccordionGroup>
 

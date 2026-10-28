@@ -41,6 +41,8 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `test_workflow` | Plays made-up visitor events through a workflow and says where each one ends up; nothing is saved | `widgetic.read` | 0 |
 | `publish_workflow` | Makes the saved draft what visitors get on the embed, and returns the embed code | `widgetic.publish` | 0 |
 | `set_workflow_state` | Pauses, resumes, archives or brings back a workflow | `widgetic.write` | 0 |
+| `suggest_widgets` | Suggests which widgets would fit what you want to make (a page, a workflow), asking a few questions first when it needs to; builds nothing | `widgetic.read` | 0 |
+| `create_widget_batch` | Starts several of the suggested widgets at once, up to 25, each as its own widget; 1 credit for each widget | `widgetic.write` | 1 |
 
 Permissions are the scopes you approve when you sign in; see [Authentication](/docs/agents/authentication#permissions).
 
@@ -81,6 +83,19 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
   </Accordion>
   <Accordion title="Figma links" icon="link">
     Paste up to 3 links to a frame or a selection in Figma ("Copy link to selection"), and the widget is built to match that design. Widgetic reads each design with your own connected Figma account: connect Figma once from the [Design page](https://widgetic.com/design). If you have not connected it yet, the assistant tells you to open that page, choose Connect Figma and send the link again; nothing is charged until the design can be read. A link to a file your account cannot open, or to a FigJam board or a Slides or Make file, is refused with the reason. Links written inside your description are read as well, and a design named twice is read once.
+  </Accordion>
+</AccordionGroup>
+
+## Several widgets at once
+
+A landing page, a course or an event is rarely one widget. Say what you want to make and the assistant can suggest the widgets that would fit (a scoreboard, a schedule, a gallery, cards for the team, a countdown), ask a few questions if it needs them, and, once you have chosen, start all of them in one go, each in its own canvas. The same works for a workflow: describe it, and the assistant offers to build the widgets its steps need before it chains them (see [Workflows](#workflows)).
+
+<AccordionGroup>
+  <Accordion title="suggest_widgets" icon="lightbulb">
+    Tells you which widgets would fit what you want to make, before anything is built. You say the goal in your own words. If it is too open, the assistant puts up to three questions to you first, once, and asks again with your answers. The answer lists the widgets worth building, the main ones first, each with what visitors would see and a description ready to be built; for a workflow it also says how the widgets follow one another, and it says plainly what a widget cannot do for your goal (orders, payments, logins, data that updates by itself). The suggestions come from a language model that reasons from your words, not from a fixed list, and your words are checked with a content moderation service and sent to that model. It builds nothing and uses no credits: the assistant shows you the suggestions and builds only the ones you choose. If the model cannot answer at that moment, the assistant proposes the widgets itself.
+  </Accordion>
+  <Accordion title="create_widget_batch" icon="layer-group">
+    Starts the widgets you chose, up to 25 in one call, each as its own widget with its own canvas, the way `create_widget` starts one: 1 credit for each widget, charged when its build starts, and published when it finishes unless you asked for drafts (a workflow needs published widgets). The assistant tells you how many widgets and credits that is and waits for your yes first, and it passes the total you agreed to, so nothing is started if the widgets would cost more. The call returns at once with one entry per widget; the builds usually finish within a few minutes, and the assistant follows each one until it is ready. A title that repeats a widget started in the last two minutes is returned as it is and charged nothing, so a retry after a lost answer starts only what is missing. If one widget cannot be started, the ones before it keep building and stay charged, and the rest are not started and not charged. A batch can be started once a minute. Each widget can use up to 5 images from your media library; for attached files or Figma links, the assistant starts that widget with `create_widget` instead.
   </Accordion>
 </AccordionGroup>
 
@@ -137,7 +152,7 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
 A workflow chains published widgets on one embed: a visitor sees the first, and when something happens on it (an entry they send, a goal the widget reports, an event your page sends, or a wait) the embed shows the next one in place. You describe it in words and the assistant writes it as a script: a start, the steps (each a published widget) and the moves between them, with rules that choose the next step. A workflow made this way opens in the workflow editor on widgetic.com, and the other way round.
 
 <Note>
-  The workflow tools work in the workspace you are signed in to on widgetic.com, your own or a team's, and every answer says which. The assistant cannot pick another one: switch workspace on widgetic.com first. Workflows belong to the plans that include them; on another plan the tools say so in plain words. None of them uses credits and none builds a widget: the widgets must already be published (see [Finding and publishing](#finding-and-publishing)).
+  The workflow tools work in the workspace you are signed in to on widgetic.com, your own or a team's, and every answer says which. The assistant cannot pick another one: switch workspace on widgetic.com first. Workflows belong to the plans that include them; on another plan the tools say so in plain words. None of them uses credits and none builds a widget: the widgets must already be published (see [Finding and publishing](#finding-and-publishing)); to make several first, see [Several widgets at once](#several-widgets-at-once).
 </Note>
 
 <AccordionGroup>
@@ -192,8 +207,9 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 
 | Tool | Reads only | Can change or replace | Interacts with the outside world |
 |---|---|---|---|
-| `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library` | yes | no | no |
+| `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library`, `suggest_widgets` | yes | no | no |
 | `create_widget`, `replicate_widget` | no | no (they add a widget, and a first publish replaces nothing) | yes (the finished widget is published and can be reached on the public internet; `create_widget` also takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
+| `create_widget_batch` | no | no (it adds widgets, and a first publish replaces nothing) | yes (the finished widgets are published and can be reached on the public internet; it uses images already in your media library and fetches nothing) |
 | `revise_widget` | no | yes (the finished revision is published again and replaces what embeds show; every earlier version is kept) | yes (it publishes, takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
 | `duplicate_composition` | no | no (it adds a copy) | no |
 | `cancel_widget_creation`, `update_widget_customization` | no | yes | no |
