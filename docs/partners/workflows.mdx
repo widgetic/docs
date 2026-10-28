@@ -252,6 +252,8 @@ curl -sS -X POST "https://api.widgetic.com/v1/workspaces/personal/workflows/from
   -d '{ "key": "welcome-then-offer", "name": "Our welcome journey" }'
 ```
 
+Send the customer's header on both calls. Without it they are your own account's, and the list holds what Widgetic offers to everyone with a Widgetic account, not your starting points.
+
 The list holds only what can be started now, in your order, and shows nothing about who made it and no id of its own:
 
 ```json
@@ -340,7 +342,7 @@ Your key reaches no more through the header than the screen does through a sessi
 - **A customer you switched off** keeps its workflows, and you can still read and change them, but you cannot make, copy or start one for it: `409` with `MANAGED_USER_INACTIVE`.
 - **The limits are the same.** Up to 50 workflows for each customer, archived ones included, and no credits (see [Limits and cost](#limits-and-cost)).
 
-Without the header, the call is your own account's, as it always was: it sees every customer's workflows next to yours.
+Without the header, the call is your own account's, as it always was: it sees every customer's workflows next to yours. The two calls for starting points are the one place where that does not mean "everything": without the header they show what Widgetic offers to everyone, not your starting points (see [Start one](#start-one)).
 
 Keep your key on your server. A page in a browser uses an [editor session](#make-a-session) instead.
 
