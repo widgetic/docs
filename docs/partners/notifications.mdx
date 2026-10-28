@@ -29,8 +29,11 @@ Widgetic tells you what happens to your partner account: an invoice, a payment, 
 | `widget.published` | A widget of one of your managed users was published | Never |
 | `upload.created` | A file upload for one of your managed users finished | Never |
 | `entry.created` | A visitor saved an entry in a composition of one of your managed users | Never |
+| `workflow.created` | A workflow was created for one of your managed users, new or copied from another of theirs | Never |
+| `workflow.published` | A workflow of one of your managed users was published as a new version (a paused workflow stays paused) | Never |
+| `workflow.state_changed` | A workflow of one of your managed users was paused, resumed, archived or unarchived | Never |
 
-Money and the standing of your account are never silent: the events marked **Always** are emailed whatever you choose, and you can narrow only what your own system receives. The six events about your managed users are for your webhook only. They are not emailed and not in the dashboard list, so a busy account is not flooded.
+Money and the standing of your account are never silent: the events marked **Always** are emailed whatever you choose, and you can narrow only what your own system receives. The nine events about your managed users are for your webhook only. They are not emailed and not in the dashboard list, so a busy account is not flooded.
 
 Each event is told once. An invoice that Stripe reports twice, or a reminder that is checked again, does not reach you twice.
 
@@ -38,6 +41,8 @@ Two events about your managed users are told sparingly, so that one busy custome
 
 - `composition.updated` is told for the **first save** of a composition in each five minutes, so one composition is told at most 12 times an hour, whatever the number of saves. It does not carry the content: read the composition for its current state. Changing only the status of a composition is not a save.
 - `credits.managed_user_cap_reached` is told **once for each customer each month**. It is told again in the same month only if you change the customer's cap and the customer reaches the new one. The request that was refused is still refused, with the same `402`, whether or not you have a webhook. If you set your address after a customer reached its cap, you may not be told about that customer until next month.
+
+The three workflow events are about the workflows your customers make, with the [Workflows screen](/docs/partners/workflows) in an editor session or with your key and their header. A workflow you make yourself, in your own account, is not told, and neither is a save, a delete or a read. Each one is told when it happens and carries no graph: read the workflow for what it holds now.
 
 Widgetic adds events from time to time. **Ignore an event type your code does not know**: answer `2xx` and drop it.
 
@@ -61,6 +66,9 @@ Every notification has a `title` (one line), a `body` (a few sentences that say 
 | `widget.published` | `widgetId`, `name`, `managedUserId`, `externalId`, `version`, `publishedAt` |
 | `upload.created` | `uploadId`, `name`, `mimeType`, `sizeBytes`, `address`, `managedUserId`, `externalId`, `purpose`, `createdAt` |
 | `entry.created` | `compositionId`, `table` (the table the entry was saved in), `entryId`, `createdAt` and `context` (what the embedding page attached to the entry, as text and numbers, or `null`; use it as a label, never to decide what someone may do). It carries none of the values the visitor entered: read those with the entries routes |
+| `workflow.created` | `workflowId`, `name`, `managedUserId`, `externalId`, `createdAt`. It is told for a copy of a workflow too |
+| `workflow.published` | `workflowId`, `name`, `managedUserId`, `externalId`, `versionId`, `versionNumber` (1 for the first time the workflow is published) and `publishedAt` |
+| `workflow.state_changed` | `workflowId`, `name`, `managedUserId`, `externalId`, `action` (`pause`, `resume`, `archive` or `unarchive`), `previousStatus` and `status` (each `draft`, `live`, `paused` or `archived`) and `changedAt`. An archived workflow that was published comes back `paused`, and one that never was comes back `draft` |
 
 ## Read Your Notifications
 

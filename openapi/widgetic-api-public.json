@@ -1391,6 +1391,2226 @@
         }
       }
     },
+    "/workspaces/{workspaceId}/workflows/composition-options": {
+      "get": {
+        "operationId": "listWorkspaceWorkflowCompositionOptions",
+        "summary": "List the compositions a workflow can show, and what each can do",
+        "description": "The workspace's compositions as the workflow editor offers them, newest first. For each one: whether it can be\nshown (its widget has a published version), the websites it may be embedded on, and which triggers it supports.\n\n- **Input added** (`inputs`) is enabled only for a composition that declares at least one table a visitor's\n  entries can be written to. Its `tables` are all of them; its `fields` are the columns a rule may read (not\n  `id` and `created_at`, not a column that is not text, a number or yes/no, and not one whose name says it holds\n  a person's private details, such as an email or a phone number).\n- **Action in the widget** (`actions`) is enabled only when the published widget version declares at least one\n  goal. Its `items` are the goals a trigger can wait for.\n\nWhen one of them is not enabled, `reason` says why (`widget_keeps_no_data`, `widget_reports_no_actions` or\n`widget_not_published`), so the editor can show the trigger disabled with an explanation. Publishing checks every\nreference again against what the composition can do at that moment.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read it.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Text the composition's name must contain",
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            }
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "required": false,
+            "description": "Only these compositions (comma-separated ids, at most 50), those of them you may see. Ask for the\ncompositions a workflow shows with this, so each is found whatever page it would be on. An id you may not\nsee is left out, as one that does not exist is.\n",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size (1-100, 50 when not given)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "How many to skip (0 when not given)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The compositions the editor can offer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowCompositionOptions"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id, or ids is not a list of at most 50 composition ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows": {
+      "get": {
+        "operationId": "listWorkspaceWorkflows",
+        "summary": "List the Workflows of a Workspace",
+        "description": "Lists the workspace's workflows, newest first unless `sort` says otherwise. Archived workflows are left out\nunless `status` asks for them (`archived`, or `all`).\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read the list.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Text the workflow's name must contain",
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "One state to list (`draft`, `live`, `paused`, `archived`), or `all` for every state. Without it, the ones in use (draft, live and paused).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "live",
+                "paused",
+                "archived",
+                "all"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "description": "`<field>:<asc|desc>` where field is createdAt, lastPublishedAt, runsCount or name (or just asc / desc for createdAt). Newest first when not given.",
+            "schema": {
+              "type": "string",
+              "example": "runsCount:desc"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size (1-100, 50 when not given)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "How many to skip (0 when not given)",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the workspace's workflows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowList"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id, or a query value is not one this list accepts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createWorkspaceWorkflow",
+        "summary": "Create a Workflow",
+        "description": "Makes a draft workflow. Give it a composition and the workflow is born with one block, which starts it; without\none it starts empty. A workspace holds up to 500 workflows.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can create one.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyRequired"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "example": "Welcome journey"
+                  },
+                  "compositionId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true,
+                    "description": "A composition of this workspace to start with."
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "An IANA time zone name; UTC when not given.",
+                    "example": "Europe/Bucharest"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The workflow was created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowDetail"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace, the name, the time zone or the composition is not acceptable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The workspace already holds as many workflows as it may",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}": {
+      "get": {
+        "operationId": "getWorkspaceWorkflow",
+        "summary": "Get a Workflow",
+        "description": "Reads a workflow with its draft graph and the version that is live.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read it.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The workflow",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowDetail"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "saveWorkspaceWorkflow",
+        "summary": "Save the Draft of a Workflow",
+        "description": "Saves the name, the time zone and/or the graph of the draft. Send at least one. The save names the `revision` the\neditor started from and is refused with 409 (`BUSINESS_STATE_CONFLICT`) when the draft has moved on, so two\npeople editing do not overwrite each other without knowing; read the workflow again and apply the change to it.\nA save is never refused for what is wrong with the graph (a block with no connection yet is normal in a draft):\nonly the shape is judged here, and what stops a workflow going live is told when it is published. A graph larger\nthan 200,000 bytes, or with more than 100 blocks or 300 connections, is refused.\nAn archived workflow cannot be saved. Saving a live workflow changes the draft only: visitors keep getting the\npublished version until the changes are published.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can save.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "revision"
+                ],
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "The revision the editor read."
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "example": "Europe/Bucharest"
+                  },
+                  "graph": {
+                    "$ref": "#/components/schemas/WorkflowGraph"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The draft was saved; the answer is the workflow without its graph (its new `revision` is in it)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Workflow"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nothing to save, or the name, the time zone or the shape of the graph is not acceptable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The draft changed since `revision` (BUSINESS_STATE_CONFLICT), or the workflow is archived",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteWorkspaceWorkflow",
+        "summary": "Delete a Workflow",
+        "description": "Deletes a workflow that was never published. One that was ever published cannot be deleted (visitors may be\npartway through it, and its counts are kept): archive it instead.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can delete.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The workflow was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowRemoved"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The workflow was published at some point, so it can only be archived",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/duplicate": {
+      "post": {
+        "operationId": "duplicateWorkspaceWorkflow",
+        "summary": "Duplicate a Workflow",
+        "description": "Makes a draft copy of a workflow (its draft graph, not its versions or counts), named \"<name> (copy)\".\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can duplicate.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyRequired"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The copy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowDetail"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The workspace already holds as many workflows as it may",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/publish": {
+      "post": {
+        "operationId": "publishWorkspaceWorkflow",
+        "summary": "Publish the Draft of a Workflow",
+        "description": "Checks the draft and, when nothing stops it, makes it the next version and the one new visitors get. Versions never\nchange once published. A visitor already partway through keeps the version they started on (for up to 30 days).\nThe check reads what each composition can do right now (a table the visitor adds to, a goal the widget reports,\nthe websites it may be embedded on), so a workflow never goes live pointing at something that has gone.\nIt is refused with 422 (`BUSINESS_OPERATION_INVALID`) when the draft has errors; the `issues` in the error's\n`details` name the blocks to fix: an unconnected trigger, a condition without rules, a composition that is not\npublished, a field or action that is gone, a composition whose allowed websites exclude the site the workflow\nstarts on. Nothing is published when the draft has no changes since the live version.\nThe `revision` is the one the editor read, and a publish of a draft that has moved on is refused with 409.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can publish.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyRequired"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "revision"
+                ],
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Published; the answer holds the workflow, the new version and any advice",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowPublishResult"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id, or the revision is missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The draft changed since `revision`, it is archived, or there is nothing new to publish (BUSINESS_STATE_CONFLICT; `details.reason` says which)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The draft cannot be published as it is; `details.issues` lists what to fix (WorkflowIssue), and nothing has changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/discard": {
+      "post": {
+        "operationId": "discardWorkspaceWorkflowChanges",
+        "summary": "Discard the Unpublished Changes of a Workflow",
+        "description": "Puts the draft back to the live version (its graph and its time zone). Only for a workflow that has been\npublished; one that never was has no live version to go back to. Names the `revision` the editor read.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can discard.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "revision"
+                ],
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The draft is the live version again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowDetail"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id, or the revision is missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The draft changed since `revision`, the workflow is archived, or it was never published (BUSINESS_STATE_CONFLICT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/versions": {
+      "get": {
+        "operationId": "listWorkspaceWorkflowVersions",
+        "summary": "List the Published Versions of a Workflow",
+        "description": "Every version the workflow has had, newest first, with who published it and when. The one visitors get is marked\n`isLive`.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The versions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowVersionList"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/versions/{versionId}": {
+      "get": {
+        "operationId": "getWorkspaceWorkflowVersion",
+        "summary": "Get a Published Version of a Workflow",
+        "description": "One published version with its graph, for the read-only preview and for the Runs view.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowVersionId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowVersionDetail"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow or version in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/versions/{versionId}/restore": {
+      "post": {
+        "operationId": "restoreWorkspaceWorkflowVersion",
+        "summary": "Restore a Version of a Workflow into the Draft",
+        "description": "Copies a published version into the draft, so it can be changed and published again. Nothing is published and\nnothing visitors see changes: the version stays in the history as it was. Names the `revision` the editor read.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can restore.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowVersionId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "revision"
+                ],
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The draft now holds the version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowDetail"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id, or the revision is missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow or version in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The draft changed since `revision`, or the workflow is archived (BUSINESS_STATE_CONFLICT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/pause": {
+      "post": {
+        "operationId": "pauseWorkspaceWorkflow",
+        "summary": "Pause a Workflow",
+        "description": "While a workflow is paused, its embeds show only their first composition (the `composition-id` of the embed) and no\nvisitor moves on. The live version is kept, and visitors partway through carry on from where they were when it is\nresumed. Only a live workflow can be paused.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can pause.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The workflow is paused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Workflow"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The workflow is not live (BUSINESS_STATE_CONFLICT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/resume": {
+      "post": {
+        "operationId": "resumeWorkspaceWorkflow",
+        "summary": "Resume a Paused Workflow",
+        "description": "Makes a paused workflow live again, on the version that was live when it was paused.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can resume.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The workflow is live",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Workflow"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The workflow is not paused (BUSINESS_STATE_CONFLICT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/archive": {
+      "post": {
+        "operationId": "archiveWorkspaceWorkflow",
+        "summary": "Archive a Workflow",
+        "description": "Takes a workflow out of the default list and stops it serving: its embeds show only their first composition,\nas when paused. It is kept, with its versions and counts. A workflow that was ever published can be archived\nbut never deleted.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can archive.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The workflow is archived",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Workflow"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The workflow is already archived (BUSINESS_STATE_CONFLICT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/unarchive": {
+      "post": {
+        "operationId": "unarchiveWorkspaceWorkflow",
+        "summary": "Unarchive a Workflow",
+        "description": "Brings an archived workflow back into the list: as paused when it was ever published (resume it to serve visitors\nagain), as a draft when it never was.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can unarchive.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The workflow is back in the list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Workflow"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The workspace is neither \"personal\" nor an organization id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The workflow is not archived (BUSINESS_STATE_CONFLICT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workspaces/{workspaceId}/workflows/{workflowId}/stats": {
+      "get": {
+        "operationId": "getWorkspaceWorkflowStats",
+        "summary": "Get what Visitors Did in a Workflow",
+        "description": "Counts per block and per connection over a range of UTC days (the last 30 days when not given, up to 366), for one\nversion or for all of them. Only counts: how many visitors reached a block, took a connection, or could not be\nmoved on. No visitor and no value a visitor typed is ever stored.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read.\n",
+        "tags": [
+          "Partner",
+          "Workflows",
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkflowWorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/WorkflowId"
+          },
+          {
+            "name": "versionId",
+            "in": "query",
+            "required": false,
+            "description": "Count one version only",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "First UTC day (YYYY-MM-DD)",
+            "schema": {
+              "type": "string",
+              "example": "2026-10-01"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Last UTC day (YYYY-MM-DD)",
+            "schema": {
+              "type": "string",
+              "example": "2026-10-27"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WorkflowStats"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A day is not YYYY-MM-DD, the range is backwards or longer than 366 days, or the version is not this workflow's",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such workflow in this workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be used on this server right now",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/widgets": {
       "get": {
         "operationId": "getWidgets",
@@ -10158,7 +12378,7 @@
       "get": {
         "operationId": "getCompositionById",
         "summary": "Get Composition",
-        "description": "Retrieves a specific composition by its ID.\n\nThe answer carries `direct`, which says whether the widget the composition is made from is drawn straight\ninto your page (`true`) or inside a frame (`false`), or `null` while the widget has no published version.\nRead it before you go live: a widget drawn without a frame writes its entries from your own page, so the\npublic entry route looks at the website that page is on. While you have not restricted the allowed websites\n(the list is empty), every website may write; once you list websites, only those may, besides Widgetic's own\nsites, the visitor's own machine and your own platform. A widget in a frame writes from Widgetic's own frame\nand is accepted whatever the list says. The public JSON of the composition stays open to every website.\n",
+        "description": "Retrieves a specific composition by its ID.\n\nThe answer carries `direct`, which says whether the widget the composition is made from is drawn straight\ninto your page (`true`) or inside a frame (`false`), or `null` while the widget has no published version.\nRead it before you go live: a widget drawn without a frame writes its entries from your own page, so the\npublic entry route looks at the website that page is on. While the composition's allowed list is empty (you\nhave not restricted the allowed websites), every website may write; once you list websites, only those may,\nbesides Widgetic's own sites, the visitor's own machine and your own platform. A widget in a frame writes from\nWidgetic's own frame and is accepted whatever the list says. The public JSON of the composition stays open to\nevery website.\n",
         "tags": [
           "Partner",
           "Compositions"
@@ -15289,6 +17509,16 @@
           "data": {}
         }
       },
+      "WorkflowStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "live",
+          "paused",
+          "archived"
+        ],
+        "description": "`draft`: never published. `live`: visitors get the live version. `paused`: embeds show only their first\ncomposition (the live version is kept). `archived`: out of the default list, kept; a workflow that was ever\npublished can be archived but never deleted.\n"
+      },
       "WorkflowNodePosition": {
         "type": "object",
         "description": "Where a block sits on the editor's canvas. Embeds never read it.",
@@ -15652,6 +17882,674 @@
           "edges": [
             "Example WorkflowEdge"
           ]
+        }
+      },
+      "WorkflowIssue": {
+        "type": "object",
+        "description": "Something the check found in a workflow. An `error` stops it being published; a `warning` does not. The block\n(`nodeId`), connection (`edgeId`) or rule (`caseId`) it belongs to is named so the editor can highlight it.\n",
+        "required": [
+          "code",
+          "severity"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "trigger_no_target"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warning"
+            ]
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "edgeId": {
+            "type": "string"
+          },
+          "caseId": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string",
+            "description": "A short machine-readable detail such as a column or a table name. Never a sentence."
+          }
+        },
+        "example": {
+          "code": "trigger_no_target",
+          "severity": "Example severity",
+          "nodeId": "Example nodeId",
+          "edgeId": "Example edgeId",
+          "caseId": "Example caseId",
+          "detail": "Example detail"
+        }
+      },
+      "WorkflowVersion": {
+        "type": "object",
+        "description": "One published version of a workflow. Versions never change once published.",
+        "required": [
+          "id",
+          "versionNumber",
+          "publishedAt",
+          "timezone",
+          "isLive"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versionNumber": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishedBy": {
+            "type": "object",
+            "nullable": true,
+            "description": "Who published it; null once that account is gone, and always null for an editor session (it works for one customer of a partner, who is not told the name of the partner's person).",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "timezone": {
+            "type": "string",
+            "example": "Europe/Bucharest"
+          },
+          "isLive": {
+            "type": "boolean",
+            "description": "Whether this is the version visitors who are new to the workflow get."
+          }
+        },
+        "example": {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "versionNumber": 42,
+          "publishedAt": "2026-01-15T09:30:00.000Z",
+          "publishedBy": {},
+          "timezone": "Europe/Bucharest",
+          "isLive": true
+        }
+      },
+      "WorkflowVersionDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WorkflowVersion"
+          },
+          {
+            "type": "object",
+            "required": [
+              "startNodeId",
+              "graph"
+            ],
+            "properties": {
+              "startNodeId": {
+                "type": "string"
+              },
+              "graph": {
+                "$ref": "#/components/schemas/WorkflowGraph"
+              }
+            }
+          }
+        ]
+      },
+      "Workflow": {
+        "type": "object",
+        "description": "A workflow as the list shows it (without its graph).",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "revision",
+          "unpublishedChanges",
+          "compositionIds",
+          "blockCount",
+          "timezone",
+          "runsCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "managedUserId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The customer of a partner (a managed user) this workflow was made for, or null when it is its workspace's own.\nA customer's editor session lists and opens only the workflows filed under that customer; the partner's own\naccount sees every customer's and tells them apart by this. It is set when the workflow is made and never\nchanges.\n"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkflowStatus"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Rises by one with every save. A save, a publish, a discard and a restore each name the revision they started from."
+          },
+          "unpublishedChanges": {
+            "type": "boolean",
+            "description": "Whether the draft differs from the live version."
+          },
+          "compositionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "blockCount": {
+            "type": "integer"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "The zone date and time triggers are read in (stored as UTC)."
+          },
+          "runsCount": {
+            "type": "integer",
+            "description": "Visitors who started the workflow, over its whole life."
+          },
+          "liveVersionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "firstPublishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastPublishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "pausedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "archivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "example": {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "name": "Example name",
+          "managedUserId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "status": null,
+          "revision": 42,
+          "unpublishedChanges": true,
+          "compositionIds": [],
+          "blockCount": 42,
+          "timezone": "Example timezone",
+          "runsCount": 42,
+          "liveVersionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "createdAt": "2026-01-15T09:30:00.000Z",
+          "updatedAt": "2026-01-15T09:30:00.000Z",
+          "firstPublishedAt": "2026-01-15T09:30:00.000Z",
+          "lastPublishedAt": "2026-01-15T09:30:00.000Z",
+          "pausedAt": "2026-01-15T09:30:00.000Z",
+          "archivedAt": "2026-01-15T09:30:00.000Z"
+        }
+      },
+      "WorkflowDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Workflow"
+          },
+          {
+            "type": "object",
+            "required": [
+              "graph",
+              "everPublished"
+            ],
+            "properties": {
+              "graph": {
+                "$ref": "#/components/schemas/WorkflowGraph"
+              },
+              "liveVersion": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/WorkflowVersion"
+                  }
+                ],
+                "nullable": true,
+                "description": "The version visitors get, without its graph; null before the first publish."
+              },
+              "everPublished": {
+                "type": "boolean",
+                "description": "Whether it was ever published (it can then be archived but not deleted)."
+              }
+            }
+          }
+        ]
+      },
+      "WorkflowList": {
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Workflow"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "example": {
+          "items": [
+            "Example Workflow"
+          ],
+          "total": 42,
+          "limit": 42,
+          "offset": 42
+        }
+      },
+      "WorkflowVersionList": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "Newest first.",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowVersion"
+            }
+          }
+        },
+        "example": {
+          "items": [
+            "Example WorkflowVersion"
+          ]
+        }
+      },
+      "WorkflowPublishResult": {
+        "type": "object",
+        "required": [
+          "workflow",
+          "version",
+          "warnings"
+        ],
+        "properties": {
+          "workflow": {
+            "$ref": "#/components/schemas/WorkflowDetail"
+          },
+          "version": {
+            "$ref": "#/components/schemas/WorkflowVersion"
+          },
+          "warnings": {
+            "type": "array",
+            "description": "Advice that does not stop publishing, such as a block nothing leads to.",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowIssue"
+            }
+          }
+        },
+        "example": {
+          "workflow": null,
+          "version": null,
+          "warnings": [
+            "Example WorkflowIssue"
+          ]
+        }
+      },
+      "WorkflowCounter": {
+        "type": "object",
+        "required": [
+          "id",
+          "total"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The block or connection counted."
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "example": {
+          "id": "Example id",
+          "total": 42
+        }
+      },
+      "WorkflowStats": {
+        "type": "object",
+        "description": "What visitors did in a range of days. Only counts: how many reached a block, took a connection, or failed to be\nmoved on. No visitor and no value a visitor typed is ever stored.\n",
+        "required": [
+          "workflowId",
+          "from",
+          "to",
+          "nodes",
+          "edges",
+          "failed"
+        ],
+        "properties": {
+          "workflowId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "versionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The version counted, or null when all versions are."
+          },
+          "from": {
+            "type": "string",
+            "description": "First UTC day counted (YYYY-MM-DD)."
+          },
+          "to": {
+            "type": "string",
+            "description": "Last UTC day counted (YYYY-MM-DD)."
+          },
+          "started": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Visitors who started the workflow in the range; null when all versions are counted."
+          },
+          "nodes": {
+            "type": "array",
+            "description": "Visitors who reached each block.",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowCounter"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "description": "Visitors who took each connection.",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowCounter"
+            }
+          },
+          "failed": {
+            "type": "array",
+            "description": "Times moving on to a block failed (it did not load in time) and the visitor stayed.",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowCounter"
+            }
+          }
+        },
+        "example": {
+          "workflowId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "versionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "from": "Example from",
+          "to": "Example to",
+          "started": 42,
+          "nodes": [
+            "Example WorkflowCounter"
+          ],
+          "edges": [
+            "Example WorkflowCounter"
+          ],
+          "failed": [
+            "Example WorkflowCounter"
+          ]
+        }
+      },
+      "WorkflowCompositionField": {
+        "type": "object",
+        "required": [
+          "table",
+          "column",
+          "label",
+          "type"
+        ],
+        "properties": {
+          "table": {
+            "type": "string"
+          },
+          "column": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "boolean"
+            ]
+          }
+        },
+        "example": {
+          "table": "Example table",
+          "column": "Example column",
+          "label": "Example label",
+          "type": "Example type"
+        }
+      },
+      "WorkflowCompositionAction": {
+        "type": "object",
+        "required": [
+          "id",
+          "metric",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "What the trigger stores to say which action it waits for. It is the goal, and the element when the goal\nnames one (clicks, or clicks@.buy-now).\n"
+          },
+          "metric": {
+            "type": "string",
+            "description": "The goal's metric (clicks, submissions or plays)."
+          },
+          "label": {
+            "type": "string"
+          },
+          "selector": {
+            "type": "string",
+            "nullable": true,
+            "description": "The element the goal is about, when it names one."
+          }
+        },
+        "example": {
+          "id": "Example id",
+          "metric": "Example metric",
+          "label": "Example label",
+          "selector": "Example selector"
+        }
+      },
+      "WorkflowCompositionOption": {
+        "type": "object",
+        "description": "One composition a workflow can show, and what it can feed into a workflow. `inputs` is enabled only when the\ncomposition declares at least one table a visitor's entries can be written to; `actions` only when its\npublished widget version declares at least one goal. When one is not enabled, `reason` says why.\n",
+        "required": [
+          "id",
+          "name",
+          "published",
+          "allowedWebsites",
+          "inputs",
+          "actions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Whether the composition can be shown at all (its widget has a published version)."
+          },
+          "allowedWebsites": {
+            "type": "array",
+            "description": "The websites the composition may be embedded on; empty means anywhere.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inputs": {
+            "type": "object",
+            "required": [
+              "enabled",
+              "tables",
+              "fields"
+            ],
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string",
+                "nullable": true,
+                "description": "Why Input added is not available. widget_keeps_no_data means the composition declares no table a\nvisitor's entries are written to; widget_not_published means the widget has no published version.\n",
+                "enum": [
+                  "widget_keeps_no_data",
+                  "widget_not_published"
+                ]
+              },
+              "tables": {
+                "type": "array",
+                "description": "Every table a visitor's entries are written to, including one with no field a rule may read.",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "fields": {
+                "type": "array",
+                "description": "The columns of those tables a rule may read. Not offered are id and created_at, columns that are not\ntext, a number or yes/no, and columns whose name says they hold a person's private details (an email,\na phone number), because a value a rule reads is handed to the visitor's page.\n",
+                "items": {
+                  "$ref": "#/components/schemas/WorkflowCompositionField"
+                }
+              }
+            }
+          },
+          "actions": {
+            "type": "object",
+            "required": [
+              "enabled",
+              "items"
+            ],
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string",
+                "nullable": true,
+                "description": "Why Action in the widget is not available. widget_reports_no_actions means the published widget\ndeclares no goals; widget_not_published means the widget has no published version.\n",
+                "enum": [
+                  "widget_reports_no_actions",
+                  "widget_not_published"
+                ]
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/WorkflowCompositionAction"
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "name": "Example name",
+          "thumbnailUrl": "Example thumbnailUrl",
+          "published": true,
+          "allowedWebsites": [],
+          "inputs": {},
+          "actions": {}
+        }
+      },
+      "WorkflowCompositionOptions": {
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowCompositionOption"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "example": {
+          "items": [
+            "Example WorkflowCompositionOption"
+          ],
+          "total": 42,
+          "limit": 42,
+          "offset": 42
+        }
+      },
+      "WorkflowRemoved": {
+        "type": "object",
+        "required": [
+          "removed"
+        ],
+        "properties": {
+          "removed": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "example": {
+          "removed": true
         }
       },
       "PersonalWorkspaceDomain": {
@@ -17453,7 +20351,10 @@
           "composition.updated",
           "widget.published",
           "upload.created",
-          "entry.created"
+          "entry.created",
+          "workflow.created",
+          "workflow.published",
+          "workflow.state_changed"
         ]
       },
       "PartnerNotification": {
@@ -17497,7 +20398,7 @@
           "data": {
             "type": "object",
             "additionalProperties": true,
-            "description": "The facts of the event, named in camelCase. An invoice event carries `invoiceNumber`, `subtotal`, `taxAmount`, `total`, `currency`, `dueDate`, `hostedInvoiceUrl` (the page where it is paid) and `purpose` (`contract`, or `extra_credits` for credits you bought on top of the contract: an unpaid invoice for extra credits never stops the account, the credits are just not added until it is paid); a payment adds `paidAt`, a failed payment `reason`, a reminder `daysUntilDue` or `daysOverdue`. A credits event carries `band` (`low` or `empty`), `balance` and `threshold`. `credits.managed_user_cap_reached` (one of your managed users used its monthly credits and a request was refused) goes to your webhook only when subscribed, once per managed user each month, and carries `managedUserId`, `externalId`, `monthlyCredits`, `creditsUsed`, `resetsAt` and `reachedAt`. A standing event carries `status`, `previousStatus` and `reason`; `partner.paused` with `status: payment_arrears` means that an overdue invoice stopped the account (nobody paused it, and `reason` names the invoice), and `partner.resumed` with `previousStatus: payment_arrears` means that its payment ended that. A storage event carries `reason` and `checkedAt`. Content events (`composition.created`, `composition.updated`, `widget.published`, `upload.created`, `entry.created`) go to your webhook only when subscribed; they do not appear in the dashboard list. `composition.created` carries `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId` and `createdAt`; `composition.updated` carries `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId`, `contentVersion` and `savedAt`, and is sent for the first save of a composition in each five minutes (read the composition for its current state); `widget.published` carries `widgetId`, `name`, `managedUserId`, `externalId`, `version` and `publishedAt`; `upload.created` carries `uploadId`, `name`, `mimeType`, `sizeBytes`, `address`, `managedUserId`, `externalId`, `purpose` and `createdAt`; `entry.created` carries `compositionId`, `table`, `entryId`, `createdAt` and `context` (the host attribution of the embedding page, or null), and none of the values the visitor entered: read those with the entries routes. Ignore an event type you do not know: more may be added. `sendPartnerNotificationTestEvent` sends a sample of every one of them."
+            "description": "The facts of the event, named in camelCase. An invoice event carries `invoiceNumber`, `subtotal`, `taxAmount`, `total`, `currency`, `dueDate`, `hostedInvoiceUrl` (the page where it is paid) and `purpose` (`contract`, or `extra_credits` for credits you bought on top of the contract: an unpaid invoice for extra credits never stops the account, the credits are just not added until it is paid); a payment adds `paidAt`, a failed payment `reason`, a reminder `daysUntilDue` or `daysOverdue`. A credits event carries `band` (`low` or `empty`), `balance` and `threshold`. `credits.managed_user_cap_reached` (one of your managed users used its monthly credits and a request was refused) goes to your webhook only when subscribed, once per managed user each month, and carries `managedUserId`, `externalId`, `monthlyCredits`, `creditsUsed`, `resetsAt` and `reachedAt`. A standing event carries `status`, `previousStatus` and `reason`; `partner.paused` with `status: payment_arrears` means that an overdue invoice stopped the account (nobody paused it, and `reason` names the invoice), and `partner.resumed` with `previousStatus: payment_arrears` means that its payment ended that. A storage event carries `reason` and `checkedAt`. Content events (`composition.created`, `composition.updated`, `widget.published`, `upload.created`, `entry.created`, `workflow.created`, `workflow.published`, `workflow.state_changed`) go to your webhook only when subscribed; they do not appear in the dashboard list. `composition.created` carries `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId` and `createdAt`; `composition.updated` carries `compositionId`, `widgetId`, `name`, `managedUserId`, `externalId`, `contentVersion` and `savedAt`, and is sent for the first save of a composition in each five minutes (read the composition for its current state); `widget.published` carries `widgetId`, `name`, `managedUserId`, `externalId`, `version` and `publishedAt`; `upload.created` carries `uploadId`, `name`, `mimeType`, `sizeBytes`, `address`, `managedUserId`, `externalId`, `purpose` and `createdAt`; `entry.created` carries `compositionId`, `table`, `entryId`, `createdAt` and `context` (the host attribution of the embedding page, or null), and none of the values the visitor entered: read those with the entries routes. The three workflow events are about the workflows your managed users make (only a workflow made for a managed user is told; one your own people made is not). `workflow.created` carries `workflowId`, `name`, `managedUserId`, `externalId` and `createdAt`, and is sent for a copy of a workflow too; `workflow.published` carries `workflowId`, `name`, `managedUserId`, `externalId`, `versionId`, `versionNumber` (1 for the first publication) and `publishedAt`; `workflow.state_changed` carries `workflowId`, `name`, `managedUserId`, `externalId`, `action` (`pause`, `resume`, `archive` or `unarchive`), `previousStatus` and `status` (each `draft`, `live`, `paused` or `archived`) and `changedAt`. Read the workflow for what it holds now. Ignore an event type you do not know: more may be added. `sendPartnerNotificationTestEvent` sends a sample of every one of them."
           },
           "createdAt": {
             "type": "string",
@@ -19365,7 +22266,7 @@
           },
           "databaseSchema": {
             "type": "object",
-            "description": "The tables this composition keeps what visitors send it in (votes, ratings, answers). They are made when\nthe composition is created, in a schema of their own that no other composition can reach: in Widgetic's\ndatabase, or in your own Neon database when you have set one with `setPartnerDataDatabase`. They are\ndeleted with the composition.\n\nThe shape is `{ \"tables\": [ ... ] }`. A table has a `name`, a list of `columns` and, optionally, a list of\n`indexes`, and optionally `countable`. A column has a `name` and a `type`, and optionally `primaryKey`,\n`notNull`, `unique`, `default` and `readable`. An index has a `name` and the `columns` it covers (1 to 8),\nand optionally `unique`. Any other key is refused.\n\n`countable` and `readable` are the read policy of the composition's own page: nothing the visitors sent\ncan be read back by the page until you say so. `countable: true` on a table lets the widget show how many\nrows it has; `readable: true` on a column lets it show or total that column's values (a tally of votes,\nan average rating). Mark only what is safe to show to anyone who opens the page. A column whose name\nholds `email`, `phone`, `address`, `token`, `password`, `secret`, `ip` or the like, and a `json`, `jsonb`\nor `uuid` column, cannot be `readable`.\n\n- Names (tables, columns, indexes) use lower-case letters, digits and underscores, start with a letter and\n  are at most 63 characters long. A name that starts with `_` or `pg_` is reserved.\n- `type` is one of `text`, `smallint`, `integer` (or `int`), `bigint`, `numeric`, `real`,\n  `double precision`, `boolean` (or `bool`), `date`, `timestamp`, `timestamptz` (or\n  `timestamp with time zone`), `uuid`, `json`, `jsonb`, `serial`, `bigserial`.\n- `default` is a number, `true` or `false`, a text of at most 500 characters (no backslash), a JSON value\n  for a `json` or `jsonb` column, or one of `now()`, `current_timestamp` and `current_date` (date and\n  timestamp columns) and `gen_random_uuid()` (a `uuid` column). A `serial` column numbers itself and has\n  no default.\n- A composition declares at most 20 tables, with at most 64 columns and 10 indexes each.\n\nA declaration that cannot be used is refused with `400` and `INVALID_DATABASE_SCHEMA`;\n`error.details.problems` lists what to change. Tables that already exist are never changed or dropped:\nsending more tables later, when you update the composition, adds the ones that are missing. When the\ncomposition is saved but its tables cannot be made just now, the answer says so in `meta.warnings`: send\nthe same `databaseSchema` again to retry.\n\nLeave it out and the composition gets the tables its widget declares in its own source\n(`src/lib/meta/database.json`), if any. Send `{ \"tables\": [] }` to give the composition no tables and\nkeep it from getting its widget's.\n",
+            "description": "The tables this composition keeps what visitors send it in (votes, ratings, answers). They are made when\nthe composition is created, in a schema of their own that no other composition can reach: in Widgetic's\ndatabase, or in your own Neon database when you have set one with `setPartnerDataDatabase`. They are\ndeleted with the composition.\n\nThe shape is `{ \"tables\": [ ... ] }`. A table has a `name`, a list of `columns` and, optionally, a list of\n`indexes`, and optionally `countable`. A column has a `name` and a `type`, and optionally `primaryKey`,\n`notNull`, `unique`, `default` and `readable`. An index has a `name` and the `columns` it covers (1 to 8),\nand optionally `unique`. Any other key is refused, except `source` (see below).\n\n`countable` and `readable` are the read policy of the composition's own page: nothing the visitors sent\ncan be read back by the page until you say so. `countable: true` on a table lets the widget show how many\nrows it has; `readable: true` on a column lets it show or total that column's values (a tally of votes,\nan average rating). Mark only what is safe to show to anyone who opens the page. A column whose name\nholds `email`, `phone`, `address`, `token`, `password`, `secret`, `ip` or the like, and a `json`, `jsonb`\nor `uuid` column, cannot be `readable`.\n\n- Names (tables, columns, indexes) use lower-case letters, digits and underscores, start with a letter and\n  are at most 63 characters long. A name that starts with `_` or `pg_` is reserved.\n- `type` is one of `text`, `smallint`, `integer` (or `int`), `bigint`, `numeric`, `real`,\n  `double precision`, `boolean` (or `bool`), `date`, `timestamp`, `timestamptz` (or\n  `timestamp with time zone`), `uuid`, `json`, `jsonb`, `serial`, `bigserial`.\n- `default` is a number, `true` or `false`, a text of at most 500 characters (no backslash), a JSON value\n  for a `json` or `jsonb` column, or one of `now()`, `current_timestamp` and `current_date` (date and\n  timestamp columns) and `gen_random_uuid()` (a `uuid` column). A `serial` column numbers itself and has\n  no default.\n- A composition declares at most 20 tables, with at most 64 columns and 10 indexes each.\n\nA declaration that cannot be used is refused with `400` and `INVALID_DATABASE_SCHEMA`;\n`error.details.problems` lists what to change. Tables that already exist are never changed or dropped:\nsending more tables later, when you update the composition, adds the ones that are missing. When the\ncomposition is saved but its tables cannot be made just now, the answer says so in `meta.warnings`: send\nthe same `databaseSchema` again to retry.\n\nLeave it out and the composition gets the tables its widget declares in its own source\n(`src/lib/meta/database.json`), if any. Send `{ \"tables\": [] }` to give the composition no tables and\nkeep it from getting its widget's.\n\nA composition whose tables were made from its widget's own file reads back with `\"source\": \"widget\"` next\nto `tables`. When the widget is published again, a table, a field or an index its file gained is added to\nthem; nothing that exists is changed or dropped, and what a page may read does not change. Send `source`\nback as it was and it stays. Leave it out and the tables are yours: no widget's file adds anything to\nthem. It is the only value `source` can have.\n",
             "example": {
               "tables": [
                 {
@@ -19523,7 +22424,7 @@
           },
           "databaseSchema": {
             "type": "object",
-            "description": "Tables to make for the composition, in the shape `createComposition` takes\n(`{ \"tables\": [ ... ] }`, with the same names, types, defaults and limits). Only the tables that are\nmissing are made. A table that already exists is never changed or dropped: it keeps its columns, so a\ncolumn added to the declaration is not added to it. A declaration that cannot be used is refused with\n`400` and `INVALID_DATABASE_SCHEMA`. When the composition is saved but its tables cannot be made just\nnow, `meta.warnings` says so: send the same `databaseSchema` again to retry.\n"
+            "description": "Tables to make for the composition, in the shape `createComposition` takes\n(`{ \"tables\": [ ... ] }`, with the same names, types, defaults and limits). Only the tables that are\nmissing are made. A table that already exists is never changed or dropped: it keeps its columns, so a\ncolumn added to the declaration is not added to it. (Tables made from the widget's own file are the one\nexception, brought up to date when the widget is published; see `source` on `createComposition`.) A\ndeclaration that cannot be used is refused with\n`400` and `INVALID_DATABASE_SCHEMA`. When the composition is saved but its tables cannot be made just\nnow, `meta.warnings` says so: send the same `databaseSchema` again to retry.\n"
           },
           "projectId": {
             "type": "string",
@@ -22798,6 +25699,36 @@
       }
     },
     "parameters": {
+      "WorkflowWorkspaceId": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "description": "The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your\nmanaged users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call\nthat names an organization is refused with 403.\n",
+        "schema": {
+          "type": "string"
+        },
+        "example": "personal"
+      },
+      "WorkflowId": {
+        "name": "workflowId",
+        "in": "path",
+        "required": true,
+        "description": "The workflow's id",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "WorkflowVersionId": {
+        "name": "versionId",
+        "in": "path",
+        "required": true,
+        "description": "The id of a published version of the workflow",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
       "CompositionEntryLimit": {
         "in": "query",
         "name": "limit",
@@ -22902,7 +25833,7 @@
         "in": "header",
         "name": "X-Managed-User-Id",
         "required": false,
-        "description": "The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. Send this header, or the other one, never both. Left out, the call works on your whole account, as it always has. With it, the call reaches only that user's compositions: a list shows only theirs, a composition the call makes is filed under them, and a composition of another user, or one that does not exist, answers `404` (the same answer, so the call cannot be used to find out what another customer has). A managed user that is not yours answers `404` with `MANAGED_USER_NOT_FOUND`. An empty, repeated or malformed header is `400` with `MANAGED_USER_SCOPE_INVALID`; an empty header is never read as no header. A call that is about the whole account, such as the list of your managed users, is refused with `403` and `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`: send it without the header. Only your API key can send it. The header is a limit the call asks for: whoever holds the key can leave it out, so for a credential that a customer's browser holds, use an editor session. An `Idempotency-Key` is kept apart for each managed user.",
+        "description": "The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. Send this header, or the other one, never both. Left out, the call works on your whole account, as it always has. With it, the call reaches only that user's compositions and workflows: a list shows only theirs, a composition or a workflow the call makes is filed under them, and one of another user, or one that does not exist, answers `404` (the same answer, so the call cannot be used to find out what another customer has). A managed user that is not yours answers `404` with `MANAGED_USER_NOT_FOUND`. An empty, repeated or malformed header is `400` with `MANAGED_USER_SCOPE_INVALID`; an empty header is never read as no header. A call that is about the whole account, such as the list of your managed users, is refused with `403` and `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`: send it without the header. Only your API key can send it. The header is a limit the call asks for: whoever holds the key can leave it out, so for a credential that a customer's browser holds, use an editor session. An `Idempotency-Key` is kept apart for each managed user.",
         "schema": {
           "type": "string",
           "format": "uuid",
@@ -22913,7 +25844,7 @@
         "in": "header",
         "name": "X-Managed-User-External-Id",
         "required": false,
-        "description": "Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. Send this header, or the other one, never both. Left out, the call works on your whole account, as it always has. With it, the call reaches only that user's compositions: a list shows only theirs, a composition the call makes is filed under them, and a composition of another user, or one that does not exist, answers `404` (the same answer, so the call cannot be used to find out what another customer has). A managed user that is not yours answers `404` with `MANAGED_USER_NOT_FOUND`. An empty, repeated or malformed header is `400` with `MANAGED_USER_SCOPE_INVALID`; an empty header is never read as no header. A call that is about the whole account, such as the list of your managed users, is refused with `403` and `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`: send it without the header. Only your API key can send it. The header is a limit the call asks for: whoever holds the key can leave it out, so for a credential that a customer's browser holds, use an editor session. An `Idempotency-Key` is kept apart for each managed user.",
+        "description": "Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. Send this header, or the other one, never both. Left out, the call works on your whole account, as it always has. With it, the call reaches only that user's compositions and workflows: a list shows only theirs, a composition or a workflow the call makes is filed under them, and one of another user, or one that does not exist, answers `404` (the same answer, so the call cannot be used to find out what another customer has). A managed user that is not yours answers `404` with `MANAGED_USER_NOT_FOUND`. An empty, repeated or malformed header is `400` with `MANAGED_USER_SCOPE_INVALID`; an empty header is never read as no header. A call that is about the whole account, such as the list of your managed users, is refused with `403` and `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`: send it without the header. Only your API key can send it. The header is a limit the call asks for: whoever holds the key can leave it out, so for a credential that a customer's browser holds, use an editor session. An `Idempotency-Key` is kept apart for each managed user.",
         "schema": {
           "type": "string",
           "minLength": 1,
