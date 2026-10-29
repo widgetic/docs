@@ -199,7 +199,7 @@
       "get": {
         "operationId": "getPublicWorkflow",
         "summary": "Read the published Workflow of an embed",
-        "description": "Public read of a workflow for the embed that carries `workflow-id`. No API key. The answer is the live version (its graph, the composition a new visitor starts on, the time zone, and the token that lets the browser report counts), or `status: paused` with nothing else, in which case the embed shows only its first composition. A workflow that is a draft, archived or unknown answers 404, and the embed then behaves as a plain embed of its `composition-id`. So does a workflow whose owner is not being served (a plan that lapsed, a partner whose agreement is not in force): the answer is the one the compositions of that owner give.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\nThe answer may be reused for a few seconds (`Cache-Control: public, max-age=15`), so a publish or a pause reaches visitors within moments. The graph is readable by anyone who has the workflow's id: its rules run in the visitor's browser, so a rule must never hold a secret.",
+        "description": "Public read of a workflow for the embed that carries `workflow-id`. No API key. The answer is the live version (its graph, the composition a new visitor starts on, the time zone, the languages its compositions can be shown in, and the token that lets the browser report counts), or `status: paused` with nothing else, in which case the embed shows only its first composition. A workflow that is a draft, archived or unknown answers 404, and the embed then behaves as a plain embed of its `composition-id`. So does a workflow whose owner is not being served (a plan that lapsed, a partner whose agreement is not in force): the answer is the one the compositions of that owner give.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\nThe answer may be reused for a few seconds (`Cache-Control: public, max-age=15`), so a publish or a pause reaches visitors within moments. The graph is readable by anyone who has the workflow's id: its rules run in the visitor's browser, so a rule must never hold a secret.",
         "tags": [
           "Partner",
           "Public Embed"
@@ -296,7 +296,7 @@
       "get": {
         "operationId": "getPublicWorkflowVersion",
         "summary": "Read one published version of a Workflow",
-        "description": "Public read of one version of a workflow, for a visitor who started on it before a newer one was published: they finish on the version they started on (for up to 30 days; after that they get the latest). Versions never change once published. Like the read of the live version, it answers `status: paused` with nothing else while the workflow is paused, and 404 when the workflow is a draft or archived, or has no such version.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/versions/{versionId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
+        "description": "Public read of one version of a workflow, for a visitor who started on it before a newer one was published: they finish on the version they started on (for up to 30 days; after that they get the latest). The graph of a version never changes once published; the languages its compositions can be shown in (`translations`) are read each time, as for the live version. Like the read of the live version, it answers `status: paused` with nothing else while the workflow is paused, and 404 when the workflow is a draft or archived, or has no such version.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/versions/{versionId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
         "tags": [
           "Partner",
           "Public Embed"
@@ -402,7 +402,7 @@
       "post": {
         "operationId": "reportPublicWorkflowEvents",
         "summary": "Report what visitors did in a Workflow, as counts",
-        "description": "Public report of counts for a workflow, sent by the embed. No API key. Each event is one id and a number: a visitor reached a block (`n`), took a connection (`e`), or could not be moved on (`f`). Nothing else is kept: no visitor, no value a visitor typed, no address. A batch carries at most 100 events and 16 KB.\nA report is accepted only with the `token` the workflow's own read handed out for that `versionId`, so a page that never read the workflow cannot raise its numbers. An expired token (`EVENT_TOKEN_EXPIRED`) is refused with 401: read the workflow again for a new one. Counts for ids that are not in that version, or for a workflow that is not live, are not recorded and the answer says so (`recorded: false`) with 200: the visitor's page has nothing to fix.\nThe body is JSON, sent as `application/json` or as `text/plain` (a \"simple\" cross-origin request, which is what lets a report leave a page that is being closed).\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/events`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
+        "description": "Public report of counts for a workflow, sent by the embed. No API key. Each event is one id and a number: a visitor reached a block (`n`), took a connection (`e`), or could not be moved on (`f`). Nothing else is kept: no visitor, no value a visitor typed, no address. A batch carries at most 100 events and 16 KB. The same report may carry `heights`: how tall a step settled at in the browser, which the embed code of the workflow uses to start its box at a real height (a composition, a whole number of pixels, nothing about the visitor).\nA report is accepted only with the `token` the workflow's own read handed out for that `versionId`, so a page that never read the workflow cannot raise its numbers. An expired token (`EVENT_TOKEN_EXPIRED`) is refused with 401: read the workflow again for a new one. Counts for ids that are not in that version, or for a workflow that is not live, are not recorded and the answer says so (`recorded: false`) with 200: the visitor's page has nothing to fix.\nThe body is JSON, sent as `application/json` or as `text/plain` (a \"simple\" cross-origin request, which is what lets a report leave a page that is being closed).\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/events`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
         "tags": [
           "Partner",
           "Public Embed"
@@ -438,7 +438,7 @@
         },
         "responses": {
           "200": {
-            "description": "Nothing was counted (`recorded` is false, with the reason)",
+            "description": "Nothing was counted or kept (`recorded` is false, with the reason)",
             "content": {
               "application/json": {
                 "schema": {
@@ -553,6 +553,88 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PublicEmbedFailure"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/embed/workflows/{workflowId}/frame": {
+      "servers": [
+        {
+          "url": "https://api.widgetic.com",
+          "description": "The public embed routes are served at the root of the API host, not under /v1."
+        }
+      ],
+      "get": {
+        "operationId": "getPublicWorkflowFrame",
+        "summary": "Show a published Workflow in a page of its own",
+        "description": "A page that runs a published workflow, for a place that can only be given an address or an iframe: a chat messenger, a link page, a site builder, a blog that follows oEmbed. No API key, no SDK to add. The page holds the Embed SDK and the same tag a website carries (`<widgetic workflow-id composition-id>`), so a visitor moves from one composition to the next in place, by the same rules, exactly as on a website. A paused workflow shows its first composition alone, as its embeds do.\n**What the frame can count.** Only what happens inside it: entries, a widget's goals and actions, and waits. The page events a website can send to a workflow (`widgetic:workflow-event`) are events of the page around the embed, and they do not cross an iframe, so a connection that waits for one never fires from a frame.\nA workflow that is a draft, is archived, or does not exist, and one whose owner is not being served, answers 404 with a short page that gives no reason. If the owner of the workflow's first composition listed the websites it may appear on, the page is sent with `Content-Security-Policy: frame-ancestors` naming those websites (and Widgetic's own), so a browser refuses to show it inside any other website. Opening the address directly still works. An owner who listed nothing is not restricted.\nThe page links its oEmbed card, so a site that follows oEmbed turns the address of the frame into an embed.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/frame`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
+        "tags": [
+          "Partner",
+          "Public Embed"
+        ],
+        "x-visibility": "public",
+        "x-access-level": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflowId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The page that runs the workflow",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid workflow UUID (standard validation response)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The workflow is not available (a short page that gives no reason): not published, unknown, or its owner is not being served",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited (`RATE_LIMITED`), always with `Retry-After`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Workflows cannot be read right now (a short page)",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -1137,7 +1219,7 @@
       "put": {
         "operationId": "uploadPublicCompositionAdapterFile",
         "summary": "Send the file a visitor chose through the upload adapter of a published widget",
-        "description": "The second of the two calls the `upload` adapter's module makes from the visitor's browser (the first, the `begin-upload` operation of `callPublicCompositionAdapter`, answers with the ticket this route takes). The module sends the file itself, as the body, with its media type as the `Content-Type`. It is not meant to be called by hand, and it takes no API key.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}/adapters/upload/files/{ticket}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n**The ticket.** Single-use and valid for ten minutes, given for one file: its name, its media type and its exact size are what the visitor said when the ticket was asked for, after the widget's owner's settings (the kinds of file they take, the largest size) were applied. The `Content-Type` and the `Content-Length` of this request must be those, and the body must be exactly that many bytes (400 `UPLOAD_FILE_CHANGED` otherwise). The gateway never believes the type it was told: the first bytes of the file must be a file of that type and one the owner accepts (422 otherwise). A ticket whose file was stored and is sent again is answered with the same file, so a visitor whose connection dropped after the file landed does not store it twice; a ticket whose attempt failed is spent, and the module asks for a new one.\n**What it stores.** The file goes to the widget owner's storage: Widgetic's, or the partner's own bucket for a widget of a customer a partner manages. It counts against the owner's storage allowance and is filed in the folder the owner chose, as a file sent by a visitor, which the owner's own file list leaves out. A full allowance, a partner's storage that cannot be used and a stopped feature are all the same 503 `UPLOAD_UNAVAILABLE` to a visitor, and the owner is told through a notice.\n**Who may call.** The same rule as the entry route: a permitted `Origin` header, which is the artifact origin the widget runs from or any website when the owner has not restricted the allowed websites (when the owner has, one of the websites the owner listed, Widgetic's own sites, the visitor's own machine or the owner's own platform). A request without a permitted `Origin` is 403 `ORIGIN_NOT_ALLOWED`. A composition that is not served (unpublished, or its owner's plan does not serve it) is 404, with the codes of the other public embed routes.\n**Limits.** 30 requests a minute for each visitor address and composition and 240 a minute for a composition (429 `RATE_LIMITED`, with a `Retry-After` header); at most 10 MB for a file, and only so many files held in memory at once on each gateway process (503 `UPLOAD_BUSY`, with a `Retry-After`). A file that does not arrive within two minutes is 408 `UPLOAD_TIMEOUT`. Every answer but a success closes the connection, so a client that is refused before it has sent the file reads the answer and stops.",
+        "description": "The second of the two calls the `upload` adapter's module makes from the visitor's browser (the first, the `begin-upload` operation of `callPublicCompositionAdapter`, answers with the ticket this route takes). The module sends the file itself, as the body, with its media type as the `Content-Type`. It is not meant to be called by hand, and it takes no API key.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}/adapters/upload/files/{ticket}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n**The ticket.** Single-use and valid for ten minutes, given for one file: its name, its media type and its exact size are what the visitor said when the ticket was asked for, after the widget's owner's settings (the kinds of file they take, the largest size) were applied. The `Content-Type` and the `Content-Length` of this request must be those, and the body must be exactly that many bytes (400 `UPLOAD_FILE_CHANGED` otherwise). The gateway never believes the type it was told: the first bytes of the file must be a file of that type and one the owner accepts (422 otherwise). A ticket whose file was stored and is sent again is answered with the same file, so a visitor whose connection dropped after the file landed does not store it twice; a ticket whose attempt failed is spent, and the module asks for a new one.\n**The virus check.** Before anything is stored, the file is checked for viruses, wherever it would be kept (Widgetic's storage or a partner's own bucket). A file that fails the check is refused with 422 `UPLOAD_FILE_UNSAFE` and nothing is stored. When the check cannot be done, nothing is stored either, and the answer is the same neutral 503 `UPLOAD_UNAVAILABLE` as for any other cause the visitor is not told. The ticket of a refused file is spent.\n**What it stores.** The file goes to the widget owner's storage: Widgetic's, or the partner's own bucket for a widget of a customer a partner manages. It counts against the owner's storage allowance and is filed in the folder the owner chose, as a file sent by a visitor, which the owner's own file list leaves out. A full allowance, a partner's storage that cannot be used and a stopped feature are all the same 503 `UPLOAD_UNAVAILABLE` to a visitor, and the owner is told through a notice.\n**Who may call.** The same rule as the entry route: a permitted `Origin` header, which is the artifact origin the widget runs from or any website when the owner has not restricted the allowed websites (when the owner has, one of the websites the owner listed, Widgetic's own sites, the visitor's own machine or the owner's own platform). A request without a permitted `Origin` is 403 `ORIGIN_NOT_ALLOWED`. A composition that is not served (unpublished, or its owner's plan does not serve it) is 404, with the codes of the other public embed routes.\n**Limits.** 30 requests a minute for each visitor address and composition and 240 a minute for a composition (429 `RATE_LIMITED`, with a `Retry-After` header); at most 10 MB for a file, and only so many files held in memory at once on each gateway process (503 `UPLOAD_BUSY`, with a `Retry-After`). A file that does not arrive within two minutes is 408 `UPLOAD_TIMEOUT`. Every answer but a success closes the connection, so a client that is refused before it has sent the file reads the answer and stops.",
         "tags": [
           "Partner",
           "Public Embed"
@@ -1349,7 +1431,7 @@
             }
           },
           "422": {
-            "description": "The bytes are not a file of the kind they say (`UPLOAD_FILE_UNRECOGNIZED`, `UPLOAD_FILE_MISMATCH`), or not a kind this widget's owner accepts (`UPLOAD_TYPE_NOT_ACCEPTED`).",
+            "description": "The bytes are not a file of the kind they say (`UPLOAD_FILE_UNRECOGNIZED`, `UPLOAD_FILE_MISMATCH`), not a kind this widget's owner accepts (`UPLOAD_TYPE_NOT_ACCEPTED`), or a file the virus check refused (`UPLOAD_FILE_UNSAFE`).",
             "content": {
               "application/json": {
                 "schema": {
@@ -2308,7 +2390,7 @@
             }
           },
           "409": {
-            "description": "The draft changed since `revision` (BUSINESS_STATE_CONFLICT), or the workflow is archived",
+            "description": "The draft changed since `revision` (BUSINESS_STATE_CONFLICT; `details.reason` is `revision_changed`), or the\nworkflow is archived. Nothing is overwritten. `details.currentRevision` is the revision to start again from,\nand for a workflow of an organization workspace `details.lastEditedBy` (`{ id, name }`, or `null`) and\n`details.lastEditedAt` say who saved first and when.\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -2684,7 +2766,7 @@
             }
           },
           "409": {
-            "description": "The draft changed since `revision`, it is archived, or there is nothing new to publish (BUSINESS_STATE_CONFLICT; `details.reason` says which)",
+            "description": "The draft changed since `revision`, it is archived, or there is nothing new to publish (BUSINESS_STATE_CONFLICT; `details.reason` says which). When the draft changed, `details.currentRevision` is the revision to start again from and, for a workflow of an organization workspace, `details.lastEditedBy` and `details.lastEditedAt` say who saved first and when.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2834,7 +2916,7 @@
             }
           },
           "409": {
-            "description": "The draft changed since `revision`, the workflow is archived, or it was never published (BUSINESS_STATE_CONFLICT)",
+            "description": "The draft changed since `revision`, the workflow is archived, or it was never published (BUSINESS_STATE_CONFLICT). When the draft changed, `details.currentRevision`, `details.lastEditedBy` and `details.lastEditedAt` are as for a save.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3202,7 +3284,7 @@
             }
           },
           "409": {
-            "description": "The draft changed since `revision`, or the workflow is archived (BUSINESS_STATE_CONFLICT)",
+            "description": "The draft changed since `revision`, or the workflow is archived (BUSINESS_STATE_CONFLICT). When the draft changed, `details.currentRevision`, `details.lastEditedBy` and `details.lastEditedAt` are as for a save.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10464,7 +10546,7 @@
       "post": {
         "operationId": "createManagedUserEditorSession",
         "summary": "Create an editor session for a managed user",
-        "description": "Makes a short-lived credential that lets the browser of ONE of your managed users use Widgetic's editor\npieces, such as the File Browser and the composition editor, without your API key ever reaching that\nbrowser. Call this from your server when the page that hosts the editor opens, and hand the `token` in\nthe answer to that page.\n\nThe token is shown once. It starts with `wgt_ses_` and the browser sends it as\n`Authorization: Bearer <token>`. It can do only what the `surfaces` you name allow, and only for this\nmanaged user:\n\n- `files`: upload a file (`uploadsPost`) and list the files uploaded for this user (`uploadsGet`). Every\n  file is filed for this user and stored in your own storage destination, never in Widgetic's: a file a\n  customer uploads is yours to keep, and takes none of your storage allowance. Partner storage is not\n  optional, so no session, whatever its surfaces, can be made until you have set a destination\n  (`setPartnerStorageDestination`); until then it is refused with 409 and `PARTNER_STORAGE_REQUIRED`, and\n  when the destination cannot be used with 503 and `STORAGE_DESTINATION_UNAVAILABLE`. A destination you\n  remove after the session was made stops its uploads too (the same 409; the browser is only told that\n  the feature is not available right now). To keep a customer from uploading, leave `files` out of the\n  session and hand the editors your own media library instead (`mediaLibrary`).\n- `editor`: edit one of this user's compositions: read it (`getCompositionById`, its content, design,\n  embed settings and schemas), check a content change (`validateCompositionContent`), and change its\n  name, content, design and embed settings (`updateComposition`, `setDynamicContent`). It can reach\n  only compositions you created for this managed user (tag them with `managedUserId` when you create\n  them); any other composition, including another of your users', answers 404.\n- `creator`: use Widgetic's widget creator for this user, including its AI. Draw on canvases and save\n  them (`getAllCanvases`, `getCanvas`, `createCanvas`, `updateCanvas`, `previewDeleteCanvas`,\n  `deleteCanvas`); make, change, copy and delete the widgets on them (`createWidget`, `getWidgets`,\n  `getWidgetsBatch`, `updateWidget`, `uploadWidgetThumbnail`, `duplicateWidget`, `deleteWidget`);\n  list and make the compositions of a widget it built (`getAllCompositions`, `createComposition`), which\n  is how it shows the widget with sample values; keep the\n  conversation of each widget (`getConversationsByWidgetId`, `createConversationForWidget`,\n  `updateConversation`, `getMessages`, `createMessage`, `updateMessage`, `restoreCheckpoint`); and read a\n  widget's schemas and give it its repository (`getWidgetContentSchema`, `getWidgetDesignSchema`,\n  `updateWidgetRepository`). The AI that builds a widget is part of it: list the models\n  (`agentModelsGet`), open the widget's repository (`agentRepositoriesPost`,\n  `agentRepositoriesRepoIdGet`), start a generation and follow or cancel it (`agentCodeGeneratePost`,\n  `operationsStreamGet`, `operationsIdGet`, `operationsIdCancelPost`), build and preview the result\n  (`agentWidgetBuilderRepoHeadWidgetIdGet`, `buildWidgetFromRepo`, `previewWidgetVersion`), publish a\n  version of the widget and move between its versions (`agentWidgetBuilderPublishWidgetIdPost`,\n  `getWidgetPublishHistory`, `setWidgetPublishHistoryLive`, `renameWidgetPublishHistoryTitle`), and\n  turn a stroke or a sentence into a decision (`agentShapeRecognizePost`, `agentDesignResolvePost`). It can\n  also offer the customer your presets as starting points: read them and ask for a copy for this customer\n  (`listMyPresets`, `copyMyPreset`; you choose the presets with `setPartnerPreset`).\n  What the session makes is filed for this managed user, and the lists it reads hold only this user's\n  canvases, widgets and compositions. It can reach only canvases, widgets, compositions, repositories,\n  uploaded files and operations made for this managed user (tag the canvases and widgets you create\n  with `managedUserId`); any other canvas, widget, composition, conversation, message, repository, file\n  or operation, including another of your users', answers 404. The creator also saves the composition\n  it is editing (`updateComposition`, from the `editor` surface) and attaches pictures to its chat\n  (`uploadsPost`, from the `files` surface), and the surfaces do not imply one another: to open the\n  whole creator for a user, ask for `creator`, `editor` and `files` together. A generation or a build\n  one user starts can be followed and cancelled by that user and by you, never by another of your\n  users. The AI is paid for by your account, as your own calls are: its credits and allowances are\n  yours. A session cannot make a widget public (publishing a version does not), file one under a\n  project or an organization, or set anything the creator does not set: a body with another field is\n  refused with 403 and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n- `workflows`: use Widgetic's Workflows editor for this user. List their workflows and the compositions\n  a workflow of theirs can chain (`listWorkspaceWorkflows`, `listWorkspaceWorkflowCompositionOptions`);\n  list the starting points you offer them and make a workflow from one, which gives the user their own copy\n  of every widget it chains, a composition of their own on each copy, and a draft\n  (`listWorkspaceWorkflowPresets`, `createWorkspaceWorkflowFromPreset`; you offer them with\n  `setPartnerWorkflowPreset`);\n  make, open, change and delete one (`createWorkspaceWorkflow`, `getWorkspaceWorkflow`,\n  `saveWorkspaceWorkflow`, `deleteWorkspaceWorkflow`) and copy it (`duplicateWorkspaceWorkflow`); publish\n  it or discard the changes of its draft (`publishWorkspaceWorkflow`,\n  `discardWorkspaceWorkflowChanges`); read and restore its versions (`listWorkspaceWorkflowVersions`,\n  `getWorkspaceWorkflowVersion`, `restoreWorkspaceWorkflowVersion`); pause, resume, archive and unarchive it\n  (`pauseWorkspaceWorkflow`, `resumeWorkspaceWorkflow`, `archiveWorkspaceWorkflow`,\n  `unarchiveWorkspaceWorkflow`); and read its counts (`getWorkspaceWorkflowStats`). The workspace in each\n  path is `personal`: a session has no other, and a path that names an organization is refused. What the\n  session makes is filed for this managed user (`managedUserId`), the lists hold only this user's workflows,\n  and it can reach only workflows made for this managed user; any other workflow, including one of yours\n  or of another of your users, answers 404. A workflow can chain only the compositions you made for this\n  managed user (tag them with `managedUserId`): one that belongs to anybody else is not available, and\n  publishing a workflow that uses it is refused. A customer can have at most 50 workflows, and what a\n  customer's session reads never says who published a version. A session cannot set who a workflow belongs\n  to or which workspace it is in: a body with another field is refused with 403 and\n  `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n\nEverything else is refused with 403 and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`: a session cannot read your\naccount, make more sessions, change your presets or delete a composition, and a session without the `creator` surface cannot\ncreate or list compositions. Create the composition yourself with your API key, then open the editor on it.\n\nA session ends at `expiresAt` (at most four hours), when you end it (`revokeManagedUserEditorSession`),\nor when the managed user is switched off or deleted. A managed user can have at most 100 live sessions at\nonce (`429 EDITOR_SESSION_LIMIT_REACHED`). A session that is bound to a web page (`allowedOrigin`) is\nrefused from any other origin.\n\nThe AI the session runs is paid for with your credits. Set `maxCredits` to hold the session to a number\nof them: once its generations have taken that many (a generation that fails is refunded and does not\ncount), the next one is refused with 402 and `EDITOR_SESSION_CREDIT_LIMIT_REACHED`, and the browser is told\nonly that the feature is not available right now. Without it, the limit Widgetic has set for your account\napplies when it has set one (the same limit for every session you make, and `maxCredits: null` asks for\nnone), and otherwise the credits of your account are the only ceiling. What each of your users' sessions\nhas spent is in `getManagedUserUsage`.\n\nEach call makes a new session. It does not take an `Idempotency-Key`: the answer holds the token, and\nthe token is never stored where a retry could read it back. The answer is sent with\n`Cache-Control: no-store`.\n",
+        "description": "Makes a short-lived credential that lets the browser of ONE of your managed users use Widgetic's editor\npieces, such as the File Browser and the composition editor, without your API key ever reaching that\nbrowser. Call this from your server when the page that hosts the editor opens, and hand the `token` in\nthe answer to that page.\n\nThe token is shown once. It starts with `wgt_ses_` and the browser sends it as\n`Authorization: Bearer <token>`. It can do only what the `surfaces` you name allow, and only for this\nmanaged user:\n\n- `files`: upload a file (`uploadsPost`) and list the files uploaded for this user (`uploadsGet`). Every\n  file is filed for this user and stored in your own storage destination, never in Widgetic's: a file a\n  customer uploads is yours to keep, and takes none of your storage allowance. Partner storage is not\n  optional, so no session, whatever its surfaces, can be made until you have set a destination\n  (`setPartnerStorageDestination`); until then it is refused with 409 and `PARTNER_STORAGE_REQUIRED`, and\n  when the destination cannot be used with 503 and `STORAGE_DESTINATION_UNAVAILABLE`. A destination you\n  remove after the session was made stops its uploads too (the same 409; the browser is only told that\n  the feature is not available right now). To keep a customer from uploading, leave `files` out of the\n  session and hand the editors your own media library instead (`mediaLibrary`).\n- `editor`: edit one of this user's compositions: read it (`getCompositionById`, its content, design,\n  embed settings and schemas), check a content change (`validateCompositionContent`), and change its\n  name, content, design and embed settings (`updateComposition`, `setDynamicContent`). For a widget that\n  answers visitors' questions from documents (the `ai-answers` adapter), it also lists those documents,\n  adds one as text or as a file (a text file or a picture; a PDF once PDFs are read), and removes one\n  (`getAiAnswersKnowledge`, `addAiAnswersKnowledgeDocument`, `addAiAnswersKnowledgeFile`,\n  `removeAiAnswersKnowledgeDocument`); adding costs no credits, and is limited for each of your users\n  separately. It can reach\n  only compositions you created for this managed user (tag them with `managedUserId` when you create\n  them); any other composition, including another of your users', answers 404.\n- `creator`: use Widgetic's widget creator for this user, including its AI. Draw on canvases and save\n  them (`getAllCanvases`, `getCanvas`, `createCanvas`, `updateCanvas`, `previewDeleteCanvas`,\n  `deleteCanvas`); make, change, copy and delete the widgets on them (`createWidget`, `getWidgets`,\n  `getWidgetsBatch`, `updateWidget`, `uploadWidgetThumbnail`, `duplicateWidget`, `deleteWidget`);\n  list and make the compositions of a widget it built (`getAllCompositions`, `createComposition`), which\n  is how it shows the widget with sample values; keep the\n  conversation of each widget (`getConversationsByWidgetId`, `createConversationForWidget`,\n  `updateConversation`, `getMessages`, `createMessage`, `updateMessage`, `restoreCheckpoint`); and read a\n  widget's schemas and give it its repository (`getWidgetContentSchema`, `getWidgetDesignSchema`,\n  `updateWidgetRepository`). The AI that builds a widget is part of it: list the models\n  (`agentModelsGet`), open the widget's repository (`agentRepositoriesPost`,\n  `agentRepositoriesRepoIdGet`), start a generation and follow or cancel it (`agentCodeGeneratePost`,\n  `operationsStreamGet`, `operationsIdGet`, `operationsIdCancelPost`), build and preview the result\n  (`agentWidgetBuilderRepoHeadWidgetIdGet`, `buildWidgetFromRepo`, `previewWidgetVersion`), publish a\n  version of the widget and move between its versions (`agentWidgetBuilderPublishWidgetIdPost`,\n  `getWidgetPublishHistory`, `setWidgetPublishHistoryLive`, `renameWidgetPublishHistoryTitle`), and\n  turn a stroke or a sentence into a decision (`agentShapeRecognizePost`, `agentDesignResolvePost`). It can\n  also offer the customer your presets as starting points: read them and ask for a copy for this customer\n  (`listMyPresets`, `copyMyPreset`; you choose the presets with `setPartnerPreset`).\n  What the session makes is filed for this managed user, and the lists it reads hold only this user's\n  canvases, widgets and compositions. It can reach only canvases, widgets, compositions, repositories,\n  uploaded files and operations made for this managed user (tag the canvases and widgets you create\n  with `managedUserId`); any other canvas, widget, composition, conversation, message, repository, file\n  or operation, including another of your users', answers 404. The creator also saves the composition\n  it is editing (`updateComposition`, from the `editor` surface) and attaches pictures to its chat\n  (`uploadsPost`, from the `files` surface), and the surfaces do not imply one another: to open the\n  whole creator for a user, ask for `creator`, `editor` and `files` together. A generation or a build\n  one user starts can be followed and cancelled by that user and by you, never by another of your\n  users. The AI is paid for by your account, as your own calls are: its credits and allowances are\n  yours. A session cannot make a widget public (publishing a version does not), file one under a\n  project or an organization, or set anything the creator does not set: a body with another field is\n  refused with 403 and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n- `workflows`: use Widgetic's Workflows editor for this user. List their workflows and the compositions\n  a workflow of theirs can chain (`listWorkspaceWorkflows`, `listWorkspaceWorkflowCompositionOptions`);\n  list the starting points you offer them and make a workflow from one, which gives the user their own copy\n  of every widget it chains, a composition of their own on each copy, and a draft\n  (`listWorkspaceWorkflowPresets`, `createWorkspaceWorkflowFromPreset`; you offer them with\n  `setPartnerWorkflowPreset`);\n  make, open, change and delete one (`createWorkspaceWorkflow`, `getWorkspaceWorkflow`,\n  `saveWorkspaceWorkflow`, `deleteWorkspaceWorkflow`) and copy it (`duplicateWorkspaceWorkflow`); publish\n  it or discard the changes of its draft (`publishWorkspaceWorkflow`,\n  `discardWorkspaceWorkflowChanges`); read and restore its versions (`listWorkspaceWorkflowVersions`,\n  `getWorkspaceWorkflowVersion`, `restoreWorkspaceWorkflowVersion`); pause, resume, archive and unarchive it\n  (`pauseWorkspaceWorkflow`, `resumeWorkspaceWorkflow`, `archiveWorkspaceWorkflow`,\n  `unarchiveWorkspaceWorkflow`); and read its counts (`getWorkspaceWorkflowStats`). The workspace in each\n  path is `personal`: a session has no other, and a path that names an organization is refused. What the\n  session makes is filed for this managed user (`managedUserId`), the lists hold only this user's workflows,\n  and it can reach only workflows made for this managed user; any other workflow, including one of yours\n  or of another of your users, answers 404. A workflow can chain only the compositions you made for this\n  managed user (tag them with `managedUserId`): one that belongs to anybody else is not available, and\n  publishing a workflow that uses it is refused. A customer can have at most 50 workflows, and what a\n  customer's session reads never says who published a version. A session cannot set who a workflow belongs\n  to or which workspace it is in: a body with another field is refused with 403 and\n  `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n\nEverything else is refused with 403 and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`: a session cannot read your\naccount, make more sessions, change your presets or delete a composition, and a session without the `creator` surface cannot\ncreate or list compositions. Create the composition yourself with your API key, then open the editor on it.\n\nA session ends at `expiresAt` (at most four hours), when you end it (`revokeManagedUserEditorSession`),\nor when the managed user is switched off or deleted. A managed user can have at most 100 live sessions at\nonce (`429 EDITOR_SESSION_LIMIT_REACHED`). A session that is bound to a web page (`allowedOrigin`) is\nrefused from any other origin.\n\nThe AI the session runs is paid for with your credits. Set `maxCredits` to hold the session to a number\nof them: once its generations have taken that many (a generation that fails is refunded and does not\ncount), the next one is refused with 402 and `EDITOR_SESSION_CREDIT_LIMIT_REACHED`, and the browser is told\nonly that the feature is not available right now. Without it, the limit Widgetic has set for your account\napplies when it has set one (the same limit for every session you make, and `maxCredits: null` asks for\nnone), and otherwise the credits of your account are the only ceiling. What each of your users' sessions\nhas spent is in `getManagedUserUsage`.\n\nEach call makes a new session. It does not take an `Idempotency-Key`: the answer holds the token, and\nthe token is never stored where a retry could read it back. The answer is sent with\n`Cache-Control: no-store`.\n",
         "tags": [
           "Partner",
           "Managed Users"
@@ -13011,7 +13093,7 @@
       "get": {
         "operationId": "getCompositionById",
         "summary": "Get Composition",
-        "description": "Retrieves a specific composition by its ID.\n\nThe answer carries `direct`, which says whether the widget the composition is made from is drawn straight\ninto your page (`true`) or inside a frame (`false`), or `null` while the widget has no published version.\nRead it before you go live: a widget drawn without a frame writes its entries from your own page, so the\npublic entry route looks at the website that page is on. While the composition's allowed list is empty (you\nhave not restricted the allowed websites), every website may write; once you list websites, only those may,\nbesides Widgetic's own sites, the visitor's own machine and your own platform. A widget in a frame writes from\nWidgetic's own frame and is accepted whatever the list says. The public JSON of the composition stays open to\nevery website.\n",
+        "description": "Retrieves a specific composition by its ID.\n\nThe answer carries `direct`, which says whether the widget the composition is made from is drawn straight\ninto your page (`true`) or inside a frame (`false`), or `null` while the widget has no published version.\nRead it before you go live: a widget drawn without a frame writes its entries from your own page, so the\npublic entry route looks at the website that page is on. While the composition's allowed list is empty (you\nhave not restricted the allowed websites), every website may write; once you list websites, only those may,\nbesides Widgetic's own sites, the visitor's own machine and your own platform. A widget in a frame writes from\nWidgetic's own frame and is accepted whatever the list says. The public JSON of the composition stays open to\nevery website.\n\nFor a composition a team shares (one filed under a project of an organization, or made in a Shopify store's\nworkspace) the answer also carries `lastEditedBy` and `lastEditedAt`: who made the latest change and when, so\nthat a teammate who opens it can be told \"Anna changed this at 14:32\". A composition in a personal project\nleaves both out, and so does an answer given to an editor session or to a call made for one managed user: only\na person is told who a teammate is.\n",
         "tags": [
           "Partner",
           "Compositions"
@@ -13099,7 +13181,7 @@
       "put": {
         "operationId": "updateComposition",
         "summary": "Update Composition",
-        "description": "Updates a specific composition.\n\nThe `Idempotency-Key` header is required (`400` without it). Send the same key when you retry.\n\nAn editor session (see `createManagedUserEditorSession`) can send only `name`, `content`, `design` and\n`embedSettings`, and only for a composition made for its managed user. A body that names any other field\nis refused with `403` and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n\nSend `databaseSchema` to add tables to the composition: the tables that are missing are made, and\nthe ones that exist are left as they are. A `databaseSchema` that cannot be used is refused before anything\nis saved, with `400` and `INVALID_DATABASE_SCHEMA`. If the composition is saved but its tables cannot be made\njust now, the answer is still `200` and `meta.warnings` says so.\n",
+        "description": "Updates a specific composition.\n\nThe `Idempotency-Key` header is required (`400` without it). Send the same key when you retry.\n\nAn editor session (see `createManagedUserEditorSession`) can send only `name`, `content`, `design` and\n`embedSettings`, and only for a composition made for its managed user. A body that names any other field\nis refused with `403` and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n\nSend `databaseSchema` to add tables to the composition: the tables that are missing are made, and\nthe ones that exist are left as they are. A `databaseSchema` that cannot be used is refused before anything\nis saved, with `400` and `INVALID_DATABASE_SCHEMA`. If the composition is saved but its tables cannot be made\njust now, the answer is still `200` and `meta.warnings` says so.\n\n**When several people edit the same composition.** A save that carries `content` can name the content version\nit started from in the `If-Match` header (the `contentVersion` of the composition you read, or the `ETag` of an\nearlier answer). If somebody saved the content since, nothing is overwritten: the save is refused with `412` and\n`CONTENT_VERSION_MISMATCH`, and `error.details.currentVersion` is the version to start again from. For a\ncomposition a team shares, `error.details` also says who got there first: `lastEditedBy`\n(`{ id, name }`, or `null` when nobody can be named) and `lastEditedAt`. An editor session, or a call made for\none managed user, is told the version only. A save without `If-Match` still goes through, and the other\nperson's change is replaced, as it always was.\n",
         "tags": [
           "Partner",
           "Compositions"
@@ -13121,6 +13203,14 @@
               "format": "uuid"
             },
             "description": "Composition ID"
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional content version from `contentVersion` or an `ETag` (`\"3\"`, `3`, or `*`). Read only when the body has `content`."
           },
           {
             "$ref": "#/components/parameters/IdempotencyKeyRequired"
@@ -13145,6 +13235,14 @@
         "responses": {
           "200": {
             "description": "Composition updated successfully",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Quoted content version for the next If-Match"
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -13169,7 +13267,7 @@
             }
           },
           "400": {
-            "description": "Invalid input (including a `databaseSchema` that cannot be used, `INVALID_DATABASE_SCHEMA`)",
+            "description": "Invalid input (including a `databaseSchema` that cannot be used, `INVALID_DATABASE_SCHEMA`, and an invalid If-Match)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13200,6 +13298,26 @@
           },
           "404": {
             "description": "Composition not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "The content changed since the version named in `If-Match` (`CONTENT_VERSION_MISMATCH`). The `ETag` header\nis the current version. `error.details.currentVersion` is the version to start again from; for a\ncomposition a team shares `error.details.lastEditedBy` and `error.details.lastEditedAt`\nsay who saved first and when (to a person only).\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The content version cannot be read just now (`CONTENT_VERSION_UNAVAILABLE`). Try again.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13595,7 +13713,7 @@
             }
           },
           "409": {
-            "description": "Content write conflict without If-Match (`CONTENT_WRITE_CONFLICT`)",
+            "description": "Content write conflict without If-Match (`CONTENT_WRITE_CONFLICT`): another save of the same composition got in\nbetween. For a composition a team shares `error.details` says who made the latest change\n(`lastEditedBy`, `lastEditedAt`), to a person only.\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -13605,7 +13723,7 @@
             }
           },
           "412": {
-            "description": "Content version mismatch (`CONTENT_VERSION_MISMATCH`) with currentVersion in error details",
+            "description": "Content version mismatch (`CONTENT_VERSION_MISMATCH`). `error.details.currentVersion` is the version to start\nagain from. For a composition a team shares `error.details.lastEditedBy` (`{ id, name }`, or\n`null` when nobody can be named) and `error.details.lastEditedAt` say who saved first and when. An editor\nsession, or a call made for one managed user, is told the version only.\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -14650,7 +14768,7 @@
             }
           },
           "409": {
-            "description": "Write conflict without If-Match",
+            "description": "Write conflict without If-Match. For a composition a team shares `error.details` says who made the latest change (`lastEditedBy`, `lastEditedAt`), to a person only.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14660,7 +14778,7 @@
             }
           },
           "412": {
-            "description": "Content version mismatch",
+            "description": "Content version mismatch. `error.details.currentVersion` is the version to start again from; for a composition a team shares `error.details.lastEditedBy` and `error.details.lastEditedAt` say who saved first and when, to a person only.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14789,7 +14907,7 @@
             }
           },
           "412": {
-            "description": "Content version mismatch",
+            "description": "Content version mismatch. `error.details.currentVersion` is the version to start again from; for a composition a team shares `error.details.lastEditedBy` and `error.details.lastEditedAt` say who saved first and when, to a person only.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14865,6 +14983,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeleteCompositionContentItemResponse"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Content version mismatch. `error.details.currentVersion` is the version to start again from; for a composition a team shares `error.details.lastEditedBy` and `error.details.lastEditedAt` say who saved first and when, to a person only.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -17408,7 +17536,7 @@
       "post": {
         "operationId": "addAiAnswersKnowledgeDocument",
         "summary": "Add a document for a widget's AI to answer from",
-        "description": "Gives the widget's AI a document to answer visitors' questions from. Send the title and the plain text. The call\nreturns once the document is ready to be used, which takes a few seconds, longer for a long text.\n\n**How it is used.** The text is cleaned, cut into short passages and each passage is turned into numbers (an\nembedding) so the widget can find the passages nearest to a question. When a visitor asks, the nearest passages and\nthe question are shown to an AI model, which writes the answer from them and from nothing else; if the documents\nsay nothing about the question the visitor is told so, and the owner is not charged for that question. The titles of\nthe documents an answer used are shown to the visitor as its sources.\n\n**What leaves Widgetic.** The text of a document is sent to OpenAI to be embedded when it is added, and the\npassages used for a question are sent to the AI model that writes the answer. Say so in your privacy policy.\n\n**Treat every document as public.** An answer can quote or paraphrase anything a document says, to any visitor of\nthe widget. Do not add passwords, keys, personal data or anything that must stay private.\n\n**Limits.** A widget holds up to 20 documents, each up to 100000 characters, and up to 400000 characters in all\n(`getAiAnswersKnowledge` reports the current numbers). Text only: convert PDF or Word files to text first. Adding a\ndocument costs no credits. The same text cannot be added twice to one widget (409).\n\nThe caller must be allowed to change the widget. An API key needs the `content:write` scope. Adds are limited to ten\nin ten minutes per person.\n",
+        "description": "Gives the widget's AI a document to answer visitors' questions from. Send the title and the plain text. The call\nreturns once the document is ready to be used, which takes a few seconds, longer for a long text.\n\n**How it is used.** The text is cleaned, cut into short passages and each passage is turned into numbers (an\nembedding) so the widget can find the passages nearest to a question. When a visitor asks, the nearest passages and\nthe question are shown to an AI model, which writes the answer from them and from nothing else; if the documents\nsay nothing about the question the visitor is told so, and the owner is not charged for that question. The titles of\nthe documents an answer used are shown to the visitor as its sources.\n\n**What leaves Widgetic.** The text of a document is sent to OpenAI to be embedded when it is added, and the\npassages used for a question are sent to the AI model that writes the answer. Say so in your privacy policy.\n\n**Treat every document as public.** An answer can quote or paraphrase anything a document says, to any visitor of\nthe widget. Do not add passwords, keys, personal data or anything that must stay private.\n\n**Limits.** A widget holds up to 20 documents, each up to 100000 characters, and up to 400000 characters in all\n(`getAiAnswersKnowledge` reports the current numbers). This call takes text. To add a text file or a picture of a\ndocument (a PDF too, once PDFs are read) without turning it into text yourself, use `addAiAnswersKnowledgeFile`. Adding a document costs no\ncredits. The same text cannot be added twice to one widget (409).\n\nThe caller must be allowed to change the widget. An API key needs the `content:write` scope. Adds are limited to ten\nin ten minutes per person. A partner's customer in an editor session is one person of its own: its adds are not\ncounted with the partner's other customers'.\n",
         "tags": [
           "Partner",
           "Compositions"
@@ -17570,6 +17698,213 @@
             "lang": "TypeScript",
             "label": "TypeScript SDK",
             "source": "import { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst compositionsApi = new CompositionsApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst document = await compositionsApi.addAiAnswersKnowledgeDocument({\n  id: compositionId,\n  addAiAnswersKnowledgeDocumentRequest: {\n    title: 'Shipping and returns',\n    text: 'Orders ship within 2 business days. Returns are accepted for 30 days after delivery.',\n  },\n});\nconsole.log(document.id, document.status);\n"
+          }
+        ]
+      }
+    },
+    "/compositions/{id}/adapters/ai-answers/knowledge/documents/file": {
+      "post": {
+        "operationId": "addAiAnswersKnowledgeFile",
+        "summary": "Add a text file or a picture of a document (a PDF once PDFs are read) for a widget's AI to answer from",
+        "description": "Gives the widget's AI a document made from a file. Send a `multipart/form-data` request with the file in the field\nnamed `file` and, if you like, a `title`. The file is turned into text and then added exactly as\n`addAiAnswersKnowledgeDocument` adds text: the same cleaning, the same limits, the same refusal of a copy of a\ndocument the widget already has. The call returns once the document is ready to be used, which takes a few seconds\n(a PDF is read first, so it takes longer).\n\n**PDFs are not read yet.** For now a PDF is refused with 415, in a sentence that says what to do instead: paste the\ntext, upload it as a text file, or upload its pages as pictures. What this description says about a PDF is what will\nhold from the day PDFs are read.\n\n**Which files.**\n- A **PDF** (not read yet, see above), up to 10 MB and 300 pages. Its text is read and its paragraphs are put back\n  together. A PDF that is only pictures of pages (a scan) has no text to read: upload the pages as pictures instead.\n  A PDF locked with a password is refused.\n- A **text file**: `.txt`, `.text`, `.md`, `.markdown` or `.csv`, in UTF-8, UTF-16 or Windows-1252.\n- A **picture of a document**: PNG, JPEG or WebP, up to 4 MB. The text in it is read with the same text recognition\n  as the `ocr` adapter.\n- Word and other office files are not read yet: save the file as a PDF and upload that.\n\nWhat a file is comes from what is in it, not from its name or the type it is sent as. A file that is none of these is\nrefused with 415.\n\n**The title.** Left out, the name of the file (without its extension) is the title. Visitors see the title as the\nsource of an answer, so send one that means something to them.\n\n**The file is not kept.** Only its text, cut into passages, is kept, and `getAiAnswersKnowledge` never returns it.\n\n**What leaves Widgetic.** As for text, the words of the document are sent to OpenAI to be embedded when it is added,\nand the passages used for a question are sent to the AI model that writes the answer. A picture is also sent to the\ntext recognition service. A PDF is read on Widgetic's own servers and is not sent anywhere to be read. Say so in your\nprivacy policy.\n\n**Treat every document as public.** An answer can quote or paraphrase anything a document says, to any visitor of\nthe widget. Do not add passwords, keys, personal data or anything that must stay private.\n\n**Limits.** The widget's limits are those of `addAiAnswersKnowledgeDocument` (up to 20 documents, each up to 100000\ncharacters of text, and up to 400000 characters in all; `getAiAnswersKnowledge` reports the current numbers), and\nthe file is at most 10 MB. Adding a document costs no credits. The same text cannot be added twice to one widget\n(409).\n\nThe caller must be allowed to change the widget. An API key needs the `content:write` scope. Adds, from text or from\na file, share one limit of ten in ten minutes per person. A partner's customer in an editor session is one person\nof its own: its adds are not counted with the partner's other customers'.\n",
+        "tags": [
+          "Partner",
+          "Compositions"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The widget (composition) to add the document to"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeId"
+          },
+          {
+            "$ref": "#/components/parameters/ManagedUserScopeExternalId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The file, which is a text file or a picture of a document (a PDF is not read yet). One file only"
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "description": "What the document is called, on one line. Visitors see it as the source of an answer. Left out, the name of the file stands in for it",
+                    "example": "Shipping and returns"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The document was added and is ready to be used",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AiAnswersKnowledgeDocument"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The widget id is not valid, no file was sent, more than one was, it was not in the field named `file`, the form could not be read, the form has a field other than `file` and `title`, or the title is too long (KNOWLEDGE_FILE_REQUIRED, KNOWLEDGE_TITLE_REQUIRED, KNOWLEDGE_TITLE_TOO_LONG, KNOWLEDGE_TEXT_REQUIRED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The widget belongs to another account, or the API key lacks the `content:write` scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such widget",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The same text is already in this widget, or the widget already holds the most documents it can (KNOWLEDGE_DUPLICATE_DOCUMENT, KNOWLEDGE_LIMIT_DOCUMENTS)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The file is larger than 10 MB, a PDF has more than 300 pages, a picture is larger than 4 MB, or the text of the file is longer than a document may be or would take the widget past the most text it can hold in all (KNOWLEDGE_FILE_TOO_LARGE, KNOWLEDGE_TEXT_TOO_LONG, KNOWLEDGE_LIMIT_TOTAL_TEXT). Nothing was saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The file is not a text file or a PNG, JPEG or WebP picture, or it is a PDF or a Word or other office file, which are not read yet (KNOWLEDGE_FILE_TYPE_UNSUPPORTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The file is of a kind that is read but this one cannot be: a PDF that is damaged, locked with a password or too slow to read, or a PDF or a picture with no text in it (KNOWLEDGE_FILE_UNREADABLE, KNOWLEDGE_FILE_NO_TEXT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many documents added in a short time. Try again after the Retry-After seconds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The document could not be processed or saved (KNOWLEDGE_NOT_COMPLETED). Nothing was saved: try again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The knowledge base is not available right now, or the service is busy (KNOWLEDGE_UNAVAILABLE, KNOWLEDGE_BUSY). Nothing was saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-code-samples": [
+          {
+            "lang": "TypeScript",
+            "label": "TypeScript SDK",
+            "source": "import { openAsBlob } from 'node:fs';\nimport { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst compositionsApi = new CompositionsApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst document = await compositionsApi.addAiAnswersKnowledgeFile({\n  id: compositionId,\n  file: await openAsBlob('shipping-and-returns.pdf'),\n  title: 'Shipping and returns',\n});\nconsole.log(document.id, document.status);\n"
           }
         ]
       }
@@ -17835,7 +18170,7 @@
       "put": {
         "operationId": "setUserAdapterConnection",
         "summary": "Connect an adapter key to an account",
-        "description": "Gives an adapter the key it needs to act through a service you have an account with, for the widgets you made.\nTake the `adapterId` and `credentialKey` from `getUserAdapterConnections`. Saving a key that is already\nconnected replaces it.\n\n**What Widgetic does with it.** The key is stored encrypted, bound to this account, this adapter and this\ncredential, so that a stored value cannot be moved to another. It is never returned, never logged and never\nshown to a visitor of a widget. A server of Widgetic opens it for the one call a widget makes through the\nadapter, uses it to call the provider on your behalf, and discards it. To cut that off, remove the key here, or\nrevoke it with the provider.\n\n**What is checked.** That the adapter exists and takes this credential, that an owner may keep it (some are\nfor a partner only) and that the text is one line of at most 2048 characters. Whether the provider accepts\nthe key is not checked here: it shows the first time a widget uses it, and the widget tells its owner.\n\nA widget whose adapter has no key connected is not charged and does not run that adapter: its visitors are told\nthe feature is unavailable, and the owner is told once a day what to connect.\n\nThis needs an API key with full access. The caller must be the account itself or a Widgetic administrator. A\nretry is harmless: saving the same key twice only refreshes when it was set.\n",
+        "description": "Gives an adapter the key it needs to act through a service you have an account with, for the widgets you made.\nTake the `adapterId` and `credentialKey` from `getUserAdapterConnections`. Saving a key that is already\nconnected replaces it.\n\n**What Widgetic does with it.** The key is stored encrypted, bound to this account, this adapter and this\ncredential, so that a stored value cannot be moved to another. It is never returned, never logged and never\nshown to a visitor of a widget. A server of Widgetic opens it for the one call a widget makes through the\nadapter, uses it to call the provider on your behalf, and discards it. To cut that off, remove the key here, or\nrevoke it with the provider.\n\n**What is checked.** That the adapter exists and takes this credential, that an owner may keep it (some are\nfor a partner only) and that the text is one line of at most 2048 characters. Whether the provider accepts\nthe key is not checked here: it shows the first time a widget uses it, and the widget tells its owner.\n\n**An address that has to be confirmed.** Some credentials are not a key but the email address Widgetic sends a\nwidget's messages to (`confirmation: email_code` in `getUserAdapterConnections`). Saving one checks that it is one\nemail address and emails a six-digit code to it; the answer says `awaitingConfirmation: true`, and nothing is sent\nto the address until the code is given back with `confirmUserAdapterConnection`. Saving the same address again\nbefore it is confirmed emails a new code (not sooner than a minute after the last); saving the address that is\nalready confirmed changes nothing. If the code cannot be emailed, nothing is saved.\n\nA widget whose adapter has no key connected, or whose address is not confirmed yet, is not charged and does not\nrun that adapter: its visitors are told the feature is unavailable, and the owner is told once a day what to do.\n\nThis needs an API key with full access. The caller must be the account itself or a Widgetic administrator. A\nretry is harmless: saving the same key twice only refreshes when it was set.\n",
         "tags": [
           "Partner",
           "Users"
@@ -17956,7 +18291,7 @@
             }
           },
           "422": {
-            "description": "The credential is not one line of text of at most 2048 characters (CREDENTIAL_VALUE_INVALID). Nothing was saved",
+            "description": "The credential is not one line of text of at most 2048 characters (CREDENTIAL_VALUE_INVALID), is not one email address where one is needed (CREDENTIAL_ADDRESS_INVALID), or the email provider refused the address a code was to be emailed to (CONFIRMATION_ADDRESS_REFUSED). Nothing was saved",
             "content": {
               "application/json": {
                 "schema": {
@@ -17966,7 +18301,7 @@
             }
           },
           "429": {
-            "description": "Too many changes in a short time. Try again after the Retry-After seconds.",
+            "description": "Too many changes in a short time (try again after the Retry-After seconds), or too many codes were emailed to that address or for that account (CONFIRMATION_TOO_SOON, CONFIRMATION_LIMIT_REACHED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17976,7 +18311,7 @@
             }
           },
           "503": {
-            "description": "Adapter keys cannot be saved on this server right now (ADAPTER_CONNECTIONS_UNAVAILABLE). Nothing was changed",
+            "description": "Adapter keys cannot be saved on this server right now (ADAPTER_CONNECTIONS_UNAVAILABLE), or the code could not be emailed (CONFIRMATION_NOT_SENT). Nothing was changed",
             "content": {
               "application/json": {
                 "schema": {
@@ -17990,7 +18325,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst connection = await usersApi.setUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n  setAdapterConnectionRequest: { credential: 'YOUR_PROVIDER_KEY' },\n});\nconsole.log(connection.connected, connection.updatedAt);\n"
+            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst connection = await usersApi.setUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n  setAdapterConnectionRequest: { credential: 'YOUR_PROVIDER_KEY' },\n});\nconsole.log(connection.connected, connection.updatedAt);\n\n// An address a widget's messages are emailed to: a code is emailed to it, and it is used once the code is given back.\nconst address = await usersApi.setUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  setAdapterConnectionRequest: { credential: 'owner@example.com' },\n});\nconsole.log(address.awaitingConfirmation);\n"
           }
         ]
       },
@@ -18127,6 +18462,180 @@
         ]
       }
     },
+    "/users/{userId}/adapter-connections/{adapterId}/{credentialKey}/confirm": {
+      "post": {
+        "operationId": "confirmUserAdapterConnection",
+        "summary": "Confirm an adapter address with the code that was emailed to it",
+        "description": "Some credentials are an email address Widgetic sends a widget's messages to (`confirmation: email_code` in\n`getUserAdapterConnections`). Saving one with `setUserAdapterConnection` emails a six-digit code to it; this gives\nthe code back. Only then is the address used: until it is confirmed, the widgets that need it are not charged and\ntheir visitors are told the feature is unavailable.\n\nThe code works for 30 minutes and for five wrong tries. After that, save the address again and a new code is\nemailed (not sooner than a minute after the last one). A code that is not made of digits is refused without\ncounting as a try.\n\nConfirming an address that is already confirmed answers 200 with the same state, so a retry of a request that\nwent through is harmless. Saving a different address, or the same one before it was confirmed, starts again.\n\nThis needs an API key with full access. The caller must be the account itself or a Widgetic administrator.\n",
+        "tags": [
+          "Partner",
+          "Users"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The account that keeps the address. For your own, your own user id"
+          },
+          {
+            "in": "path",
+            "name": "adapterId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "description": "The adapter the address is for"
+          },
+          {
+            "in": "path",
+            "name": "credentialKey",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "description": "The credential's name within the adapter"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmAdapterConnectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The address is confirmed (or was already)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AdapterConnection"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A path value or the body is malformed. The body takes exactly one field, `code`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The address belongs to another account, or the API key has not full access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such adapter or credential, an owner may not keep it, the credential needs no confirmation, or nothing is connected under that name (ADAPTER_NOT_FOUND, CREDENTIAL_NOT_FOUND, CREDENTIAL_NOT_FOR_THIS_ACCOUNT, CONFIRMATION_NOT_NEEDED, CREDENTIAL_NOT_CONNECTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No code is waiting for the address (CONFIRMATION_NO_CODE_WAITING), or another attempt is being checked, or the address was saved again while this one was checked (CONFIRMATION_BUSY). Save the address again, or retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The code is not made of digits (CONFIRMATION_CODE_INVALID), is not the one emailed (CONFIRMATION_CODE_WRONG; it counts as a try) or is too old (CONFIRMATION_CODE_EXPIRED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many changes in a short time (try again after the Retry-After seconds), or five wrong codes were given and the code is dead (CONFIRMATION_TOO_MANY_ATTEMPTS): save the address again for a new one",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Adapter keys cannot be changed on this server right now (ADAPTER_CONNECTIONS_UNAVAILABLE). Nothing was changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-code-samples": [
+          {
+            "lang": "TypeScript",
+            "label": "TypeScript SDK",
+            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// After setUserAdapterConnection emailed a code to the address:\nconst connection = await usersApi.confirmUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  confirmAdapterConnectionRequest: { code: '123456' },\n});\nconsole.log(connection.awaitingConfirmation, connection.confirmedAt);\n"
+          }
+        ]
+      }
+    },
     "/partners/{partnerId}/adapter-connections": {
       "get": {
         "operationId": "getPartnerAdapterConnections",
@@ -18248,7 +18757,7 @@
       "put": {
         "operationId": "setPartnerAdapterConnection",
         "summary": "Connect an adapter key to a partner",
-        "description": "Gives an adapter the key it needs to act through a service the partner has an account with, for the widgets of\nthe customers the partner manages. Take the `adapterId` and `credentialKey` from\n`getPartnerAdapterConnections`. Saving a key that is already connected replaces it.\n\n**What Widgetic does with it.** The key is stored encrypted, bound to this partner, this adapter and this\ncredential, so that a stored value cannot be moved to another. It is never returned, never logged and never\nshown to a visitor of a widget or to your customers. A server of Widgetic opens it for the one call a widget\nmakes through the adapter, uses it to call the provider on the partner's behalf, and discards it. To cut that\noff, remove the key here, or revoke it with the provider.\n\n**What is checked.** That the adapter exists and takes this credential, that a partner may keep it (some are\nfor an owner only) and that the text is one line of at most 2048 characters. Whether the provider accepts the\nkey is not checked here: it shows the first time a widget uses it.\n\nA widget whose adapter has no key connected is not charged and does not run that adapter: its visitors are told\nthe feature is unavailable, and the partner is told once a day what to connect.\n\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator. A retry is harmless: saving the same key twice only refreshes when it was set.\n",
+        "description": "Gives an adapter the key it needs to act through a service the partner has an account with, for the widgets of\nthe customers the partner manages. Take the `adapterId` and `credentialKey` from\n`getPartnerAdapterConnections`. Saving a key that is already connected replaces it.\n\n**What Widgetic does with it.** The key is stored encrypted, bound to this partner, this adapter and this\ncredential, so that a stored value cannot be moved to another. It is never returned, never logged and never\nshown to a visitor of a widget or to your customers. A server of Widgetic opens it for the one call a widget\nmakes through the adapter, uses it to call the provider on the partner's behalf, and discards it. To cut that\noff, remove the key here, or revoke it with the provider.\n\n**What is checked.** That the adapter exists and takes this credential, that a partner may keep it (some are\nfor an owner only) and that the text is one line of at most 2048 characters. Whether the provider accepts the\nkey is not checked here: it shows the first time a widget uses it.\n\n**An address that has to be confirmed.** Some credentials are not a key but the email address Widgetic sends a\nwidget's messages to (`confirmation: email_code` in `getPartnerAdapterConnections`). Saving one checks that it is\none email address and emails a six-digit code to it; the answer says `awaitingConfirmation: true`, and nothing is\nsent to the address until the code is given back with `confirmPartnerAdapterConnection`. Saving the same address\nagain before it is confirmed emails a new code (not sooner than a minute after the last); saving the address that\nis already confirmed changes nothing. If the code cannot be emailed, nothing is saved.\n\nA widget whose adapter has no key connected, or whose address is not confirmed yet, is not charged and does not\nrun that adapter: its visitors are told the feature is unavailable, and the partner is told once a day what to do.\n\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator. A retry is harmless: saving the same key twice only refreshes when it was set.\n",
         "tags": [
           "Partner",
           "Partners"
@@ -18369,7 +18878,7 @@
             }
           },
           "422": {
-            "description": "The credential is not one line of text of at most 2048 characters (CREDENTIAL_VALUE_INVALID). Nothing was saved",
+            "description": "The credential is not one line of text of at most 2048 characters (CREDENTIAL_VALUE_INVALID), is not one email address where one is needed (CREDENTIAL_ADDRESS_INVALID), or the email provider refused the address a code was to be emailed to (CONFIRMATION_ADDRESS_REFUSED). Nothing was saved",
             "content": {
               "application/json": {
                 "schema": {
@@ -18379,7 +18888,7 @@
             }
           },
           "429": {
-            "description": "Too many changes in a short time. Try again after the Retry-After seconds.",
+            "description": "Too many changes in a short time (try again after the Retry-After seconds), or too many codes were emailed to that address or for that account (CONFIRMATION_TOO_SOON, CONFIRMATION_LIMIT_REACHED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18389,7 +18898,7 @@
             }
           },
           "503": {
-            "description": "Adapter keys cannot be saved on this server right now (ADAPTER_CONNECTIONS_UNAVAILABLE). Nothing was changed",
+            "description": "Adapter keys cannot be saved on this server right now (ADAPTER_CONNECTIONS_UNAVAILABLE), or the code could not be emailed (CONFIRMATION_NOT_SENT). Nothing was changed",
             "content": {
               "application/json": {
                 "schema": {
@@ -18403,7 +18912,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst connection = await partnersApi.setPartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n  setAdapterConnectionRequest: { credential: 'YOUR_PROVIDER_KEY' },\n});\nconsole.log(connection.connected, connection.updatedAt);\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst connection = await partnersApi.setPartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n  setAdapterConnectionRequest: { credential: 'YOUR_PROVIDER_KEY' },\n});\nconsole.log(connection.connected, connection.updatedAt);\n\n// An address a widget's messages are emailed to: a code is emailed to it, and it is used once the code is given back.\nconst address = await partnersApi.setPartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  setAdapterConnectionRequest: { credential: 'owner@example.com' },\n});\nconsole.log(address.awaitingConfirmation);\n"
           }
         ]
       },
@@ -18539,6 +19048,180 @@
           }
         ]
       }
+    },
+    "/partners/{partnerId}/adapter-connections/{adapterId}/{credentialKey}/confirm": {
+      "post": {
+        "operationId": "confirmPartnerAdapterConnection",
+        "summary": "Confirm a partner's adapter address with the code that was emailed to it",
+        "description": "Some credentials are an email address Widgetic sends a widget's messages to (`confirmation: email_code` in\n`getPartnerAdapterConnections`). Saving one with `setPartnerAdapterConnection` emails a six-digit code to it; this\ngives the code back. Only then is the address used: until it is confirmed, the widgets of the partner's customers\nthat need it are not charged and their visitors are told the feature is unavailable.\n\nThe code works for 30 minutes and for five wrong tries. After that, save the address again and a new code is\nemailed (not sooner than a minute after the last one). A code that is not made of digits is refused without\ncounting as a try.\n\nConfirming an address that is already confirmed answers 200 with the same state, so a retry of a request that\nwent through is harmless. Saving a different address, or the same one before it was confirmed, starts again.\n\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator.\n",
+        "tags": [
+          "Partner",
+          "Partners"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "partner",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "partnerId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The partner that keeps the address"
+          },
+          {
+            "in": "path",
+            "name": "adapterId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "description": "The adapter the address is for"
+          },
+          {
+            "in": "path",
+            "name": "credentialKey",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "description": "The credential's name within the adapter"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmAdapterConnectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The address is confirmed (or was already)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AdapterConnection"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A path value or the body is malformed. The body takes exactly one field, `code`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The API key is missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The caller does not administer this partner, or the API key has not full access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such adapter or credential, a partner may not keep it, the credential needs no confirmation, or nothing is connected under that name (ADAPTER_NOT_FOUND, CREDENTIAL_NOT_FOUND, CREDENTIAL_NOT_FOR_THIS_ACCOUNT, CONFIRMATION_NOT_NEEDED, CREDENTIAL_NOT_CONNECTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No code is waiting for the address (CONFIRMATION_NO_CODE_WAITING), or another attempt is being checked, or the address was saved again while this one was checked (CONFIRMATION_BUSY). Save the address again, or retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The code is not made of digits (CONFIRMATION_CODE_INVALID), is not the one emailed (CONFIRMATION_CODE_WRONG; it counts as a try) or is too old (CONFIRMATION_CODE_EXPIRED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many changes in a short time (try again after the Retry-After seconds), or five wrong codes were given and the code is dead (CONFIRMATION_TOO_MANY_ATTEMPTS): save the address again for a new one",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Adapter keys cannot be changed on this server right now (ADAPTER_CONNECTIONS_UNAVAILABLE). Nothing was changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-code-samples": [
+          {
+            "lang": "TypeScript",
+            "label": "TypeScript SDK",
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// After setPartnerAdapterConnection emailed a code to the address:\nconst connection = await partnersApi.confirmPartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  confirmAdapterConnectionRequest: { code: '123456' },\n});\nconsole.log(connection.awaitingConfirmation, connection.confirmedAt);\n"
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -18586,6 +19269,13 @@
           "graph": {
             "$ref": "#/components/schemas/WorkflowGraph"
           },
+          "translations": {
+            "type": "object",
+            "description": "The languages the compositions of the graph can be shown in, by composition id: only the compositions that\nhave an active translation with a language besides their own, so the field is absent when none has. The\nbrowser shows the copy in the visitor's language in place of the composition, at the first step and at every\nmove, with the rules `<widgetic-translations>` follows (the visitor's language, then its language family, then\nthe language the composition was written in). It is read when the answer is made, not when the version was\npublished, so a language added to a translation reaches visitors without a new publish. Ids, counts and the\nvisitor's place keep naming the composition of the graph, never its copy.\n",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PublicWorkflowTranslation"
+            }
+          },
           "eventToken": {
             "type": "string",
             "description": "What lets the browser report counts for this version, valid for 24 hours. Absent when this server cannot\nsign one, and the browser then reports nothing.\n"
@@ -18600,15 +19290,50 @@
           "startCompositionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "timezone": "Example timezone",
           "graph": null,
+          "translations": {},
           "eventToken": "Example eventToken"
+        }
+      },
+      "PublicWorkflowTranslation": {
+        "type": "object",
+        "description": "One composition of a published workflow and the copies of it in other languages.",
+        "required": [
+          "rootLanguage",
+          "compositions"
+        ],
+        "properties": {
+          "rootLanguage": {
+            "type": "string",
+            "example": "en",
+            "description": "The language the composition was written in. A visitor whose language matches nothing else is shown the composition itself."
+          },
+          "compositions": {
+            "type": "object",
+            "description": "Language code (lower case) to the composition that shows it. The root language is listed too, and is the composition itself.",
+            "additionalProperties": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "example": {
+              "en": "7b1d5c3e-6f0a-4c52-9d3a-0a1b2c3d4e5f",
+              "fr": "2f6c8a90-1b3d-4e7f-8a9b-c0d1e2f3a4b5"
+            }
+          }
+        },
+        "example": {
+          "rootLanguage": "en",
+          "compositions": {
+            "en": "7b1d5c3e-6f0a-4c52-9d3a-0a1b2c3d4e5f",
+            "fr": "2f6c8a90-1b3d-4e7f-8a9b-c0d1e2f3a4b5"
+          }
         }
       },
       "PublicWorkflowEventsRequest": {
         "type": "object",
+        "description": "One report from a visitor's browser: counts (`events`), the heights steps settled at (`heights`), or both. A report\nwith neither is refused.\n",
         "required": [
           "versionId",
-          "token",
-          "events"
+          "token"
         ],
         "properties": {
           "versionId": {
@@ -18621,8 +19346,8 @@
           },
           "events": {
             "type": "array",
-            "minItems": 1,
             "maxItems": 100,
+            "description": "The counts of what visitors did. At least one of `events` and `heights` is needed.",
             "items": {
               "type": "object",
               "required": [
@@ -18652,12 +19377,38 @@
                 }
               }
             }
+          },
+          "heights": {
+            "type": "array",
+            "maxItems": 10,
+            "description": "How tall steps of this version settled in the visitor's browser, so that the embed code of the workflow can\nstart its box at the height visitors saw instead of a guess. The Embed SDK sends one for a visitor who has no\nremembered height for the step. The gateway keeps the latest few for each composition (the median is what the\ncode gets); a composition that this version does not show is left out. At least one of `events` and `heights`\nis needed.\n",
+            "items": {
+              "type": "object",
+              "required": [
+                "compositionId",
+                "height"
+              ],
+              "properties": {
+                "compositionId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "The composition the step shows."
+                },
+                "height": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100000,
+                  "description": "The height the step settled at, in pixels. One under 100 is not kept, one over 2000 is kept as 2000."
+                }
+              }
+            }
           }
         },
         "example": {
           "versionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "token": "Example token",
-          "events": []
+          "events": [],
+          "heights": []
         }
       },
       "PublicWorkflowEventsAccepted": {
@@ -18668,15 +19419,15 @@
         "properties": {
           "recorded": {
             "type": "boolean",
-            "description": "False when nothing was counted (the workflow is not live any more, or the ids are not in that version)."
+            "description": "False when nothing was counted or kept (the workflow is not live any more, or the ids are not in that version)."
           },
           "counters": {
             "type": "integer",
-            "description": "How many counters were raised."
+            "description": "How many counters were raised (0 for a report of heights alone)."
           },
           "reason": {
             "type": "string",
-            "description": "Why nothing was counted, when `recorded` is false."
+            "description": "Why nothing was counted or kept, when `recorded` is false."
           }
         },
         "example": {
@@ -19589,6 +20340,30 @@
               "everPublished": {
                 "type": "boolean",
                 "description": "Whether it was ever published (it then has versions and counts, and visitors may have run it)."
+              },
+              "lastEditedBy": {
+                "type": "object",
+                "nullable": true,
+                "description": "Who made the latest change to a workflow of an organization workspace (a team), so that a teammate who\nopens it can be told \"Anna changed this at 14:32\". `null` when nobody can be named (a change made before\nthis was recorded). Left out for a workflow of a personal workspace, and whenever it cannot be read just\nnow. A save that someone else got ahead of says it in `details` of its 409.\n",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The account that made the latest change"
+                  },
+                  "name": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 120,
+                    "description": "The name on that account, or `null` when it has none or it could not be read just then. Never an email address."
+                  }
+                }
+              },
+              "lastEditedAt": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true,
+                "description": "When that latest change was made. Present whenever `lastEditedBy` is."
               }
             }
           }
@@ -23908,6 +24683,33 @@
             "nullable": true,
             "description": "Whether the widget the composition is made from is drawn straight into the page, without a frame\n(`true`), or inside a frame (`false`). `null` when the widget has no published version yet. It is a\nfact about the widget's published version, so every composition of one widget answers the same, and it\nchanges when you publish another version. It cannot be set. Only `getCompositionById` returns it:\nthe other calls that return a composition leave it out, and so does that one on the rare occasion the\nanswer could not be worked out just then (ask again).\n",
             "example": true
+          },
+          "lastEditedBy": {
+            "type": "object",
+            "nullable": true,
+            "description": "Who made the latest change to a composition a team shares (one filed under a project of an organization,\nor one made in a Shopify store's workspace), so that a teammate who opens it can be told \"Anna changed\nthis at 14:32\" and a save that someone else got ahead of can say who. It is `null` when nobody can be\nnamed: a change made by a Widgetic service, through an editor session, by a partner's call made for one\nmanaged user, or one made before this was recorded.\n\nOnly `getCompositionById` returns it, and only for a composition a team shares, and only to a person (a\nsigned-in member or a key of one): a composition in a personal project leaves it out, and so does every\nanswer given to an editor session or to a call made for one managed user. It is also left out on the rare\noccasion the team could not be worked out just then (ask again). The other calls that return a\ncomposition leave it out.\n\nIt is not the same as `creatorId`, who made the composition, and the account behind a change is never\npart of the composition itself: this is the only place it is told.\n",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The account that made the latest change",
+                "example": "123e4567-e89b-12d3-a456-426614174001"
+              },
+              "name": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 120,
+                "description": "The name on that account, or `null` when it has none or it could not be read just then. Never an email address.",
+                "example": "Anna"
+              }
+            }
+          },
+          "lastEditedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When that latest change was made. Present whenever `lastEditedBy` is.",
+            "example": "2026-10-28T14:32:00Z"
           }
         },
         "required": [
@@ -23945,7 +24747,9 @@
           "databaseId": "123e4567-e89b-12d3-a456-426614174003",
           "projectId": "123e4567-e89b-12d3-a456-426614174004",
           "managedUserId": "b7c8d9e0-1f2a-4b3c-8d4e-5f6a7b8c9d0e",
-          "direct": true
+          "direct": true,
+          "lastEditedBy": {},
+          "lastEditedAt": "2026-10-28T14:32:00Z"
         }
       },
       "NewComposition": {
@@ -25555,7 +26359,10 @@
           "label",
           "scope",
           "connected",
-          "updatedAt"
+          "updatedAt",
+          "confirmation",
+          "awaitingConfirmation",
+          "confirmedAt"
         ],
         "properties": {
           "adapterId": {
@@ -25596,6 +26403,22 @@
             "format": "date-time",
             "nullable": true,
             "description": "When the key was last set. Null when it is not connected"
+          },
+          "confirmation": {
+            "type": "string",
+            "nullable": true,
+            "description": "How this credential is proved before it is used. `email_code` means it is an email address: saving it emails a code to it, and it is used only after the code is given back (`confirmUserAdapterConnection`, `confirmPartnerAdapterConnection`). Null for a credential that is used as soon as it is saved",
+            "example": "email_code"
+          },
+          "awaitingConfirmation": {
+            "type": "boolean",
+            "description": "True when the credential is connected but has not been confirmed yet, so no adapter uses it. Always false when `confirmation` is null or the credential is not connected"
+          },
+          "confirmedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "When the credential was confirmed. Null when it is not connected, is awaiting its code, or needs no confirmation"
           }
         },
         "example": {
@@ -25605,7 +26428,10 @@
           "label": "Resend API key",
           "scope": "Example scope",
           "connected": true,
-          "updatedAt": "2026-01-15T09:30:00.000Z"
+          "updatedAt": "2026-01-15T09:30:00.000Z",
+          "confirmation": "email_code",
+          "awaitingConfirmation": true,
+          "confirmedAt": "2026-01-15T09:30:00.000Z"
         }
       },
       "SetAdapterConnectionRequest": {
@@ -25620,12 +26446,30 @@
             "format": "password",
             "writeOnly": true,
             "maxLength": 2048,
-            "description": "The key exactly as its provider gave it: one line of text, at most 2048 characters. It is stored encrypted and is never returned or logged.",
+            "description": "The key exactly as its provider gave it: one line of text, at most 2048 characters. It is stored encrypted and is never returned or logged. For a credential that is an email address (`confirmation: email_code`), write that one address, with nothing else",
             "example": "YOUR_PROVIDER_KEY"
           }
         },
         "example": {
           "credential": "YOUR_PROVIDER_KEY"
+        }
+      },
+      "ConfirmAdapterConnectionRequest": {
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 32,
+            "description": "The digits of the code Widgetic emailed to the address, with nothing else. It works for 30 minutes and for five wrong tries; after that, save the address again and a new code is emailed",
+            "example": "123456"
+          }
+        },
+        "example": {
+          "code": "123456"
         }
       },
       "AdapterConnectionRemoval": {
