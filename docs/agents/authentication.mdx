@@ -57,7 +57,7 @@ Create a key under **Settings** > **API Keys** in your [Widgetic dashboard](http
 Authorization: Bearer wgt_usr_your_api_key_here
 ```
 
-Personal keys (`wgt_usr_`) and organization keys (`wdg_org_`) work. A key carries all three permissions, and there is no way to narrow it, so prefer signing in with Widgetic wherever the client supports it. Keep keys out of shared files and public repositories; see [Authentication](/docs/authentication) for key handling in general.
+Personal keys (`wgt_usr_`) and organization keys (`wdg_org_`) work, as long as the key was made with full access. You can [limit a key](/docs/authentication#limit-what-a-key-can-do) to some of what your account may do (Read only, Content or Custom), and the Widgetic MCP server refuses a key limited that way, because it hands an assistant every tool your account has. A key that works carries all four permissions, and there is no way to narrow it, so prefer signing in with Widgetic wherever the client supports it. Keep keys out of shared files and public repositories; see [Authentication](/docs/authentication) for key handling in general.
 
 ## Revoking access
 
@@ -87,7 +87,7 @@ If your plan ends, connections are not removed but every request is refused unti
 | Status | Meaning | What to do |
 |---|---|---|
 | `401 Unauthorized` | No credentials, or they are invalid or expired. The response names where the sign-in details are published (`WWW-Authenticate` with `resource_metadata`) | Sign in again, or check the API key |
-| `403 forbidden` | Your plan does not include API access (the message says so), or the credential may not use the Widgetic MCP endpoint | Change plan, or ask your team owner |
+| `403 forbidden` | Your plan does not include API access (the message says so), the key was made with a limit (the message says the endpoint needs a key made with full access), or the credential may not use the Widgetic MCP endpoint | Change plan, ask your team owner, or make a key with full access |
 | A tool result that says `Widgetic needs your permission for this` | The connection was approved without a permission this one tool needs. The request itself succeeds (it is not an HTTP error): the result is marked as an error and carries a `WWW-Authenticate` challenge in its `_meta`, with `error="insufficient_scope"` and the missing permission in `scope`. That is how ChatGPT knows to show its connect screen again | Connect again and approve every permission |
 | `403 access_denied` | Widgetic is not available in this assistant right now | Use another client, or try again later |
 | `405 Method Not Allowed` | The server answers `POST` only | Send requests with `POST` |

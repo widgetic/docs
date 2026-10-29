@@ -77,6 +77,7 @@ When a preset is not enough, name the scopes you want:
 - **Scopes only narrow.** A limited key still needs what its owner needs: the role, the plan and, for a [partner](/docs/partners/account-status), an account in force.
 - **The limit is fixed when the key is made.** To widen it, make a new key and delete the old one.
 - **A limited key cannot make itself a bigger one.** Making, changing and deleting keys, exchanging tokens, signing in and the administration routes need full access.
+- **The MCP server needs full access.** `https://mcp.widgetic.com` hands an assistant every tool your account has, so only a key made with full access opens it, and a limited key is refused with `403`. See [Authentication for AI assistants](/docs/agents/authentication#api-keys).
 - **A partner's backend needs three scopes to start an editor session** for a managed user: `partner:write`, `content:write` and `generate` together. See [Editor Sessions](/docs/partners/editor-sessions#make-a-session).
 
 A request outside the scopes of the key is refused with `403` and the code `API_KEY_SCOPE_MISSING`. `error.details.missingScopes` lists what a new key needs, and `error.details.fullAccessRequired` is `true` when no list of scopes would have been enough:
