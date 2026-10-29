@@ -7,8 +7,8 @@ description: 'Every command of the widgetic CLI: the REST API and the MCP tools,
 
 The `widgetic` command line has one binary and two namespaces. Every command is generated from the contracts the gateway publishes, so this reference lists exactly what the CLI can do.
 
-- `widgetic api <group> <command>`: 151 operations of the public REST API, in 13 groups.
-- `widgetic mcp <command>`: 32 tools of the MCP server (tool contract 1.12.0), the AI build tools.
+- `widgetic api <group> <command>`: 159 operations of the public REST API, in 14 groups.
+- `widgetic mcp <command>`: 34 tools of the MCP server (tool contract 1.14.0), the AI build tools.
 - `widgetic auth`, `widgetic doctor`, `widgetic update`, `widgetic schema`, `widgetic completion`: log in, check the install and the servers, look for a newer version of the CLI and install it, print the schema of one command, and complete commands with the Tab key.
 - `widgetic api call <operationId>` and `widgetic mcp call <tool>` run a command by the name the contract gives it.
 
@@ -39,6 +39,7 @@ The `widgetic` command line has one binary and two namespaces. Every command is 
 
 | Group | Commands | |
 | --- | --- | --- |
+| `brand-kit` | 8 | [widgetic api brand-kit](/docs/cli/commands/api-brand-kit) |
 | `canvases` | 5 | [widgetic api canvases](/docs/cli/commands/api-canvases) |
 | `compositions` | 39 | [widgetic api compositions](/docs/cli/commands/api-compositions) |
 | `credits` | 2 | [widgetic api credits](/docs/cli/commands/api-credits) |
@@ -57,4 +58,4 @@ The `widgetic` command line has one binary and two namespaces. Every command is 
 
 ## MCP tools
 
-[widgetic mcp](/docs/cli/commands/mcp): 32 commands.
+[widgetic mcp](/docs/cli/commands/mcp): 34 commands.

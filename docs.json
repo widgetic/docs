@@ -96,6 +96,7 @@
             "group": "CLI",
             "pages": [
               "docs/cli/commands/index",
+              "docs/cli/commands/api-brand-kit",
               "docs/cli/commands/api-canvases",
               "docs/cli/commands/api-compositions",
               "docs/cli/commands/api-credits",
