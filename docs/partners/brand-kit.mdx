@@ -1,0 +1,263 @@
+---
+title: Brand Kit
+description: Give every widget your account makes your own colors, fonts, icons and corner radius, in place of Widgetic's default look
+---
+
+A **Brand Kit** is the look the AI gives every widget it builds: a palette, a font for each kind of text, a corner radius, a few style notes of your own, and the icons and font files you upload. Until you save one, widgets are built with Widgetic's default kit. Save yours once and everything your account makes from then on follows it.
+
+- **It belongs to your account**, the one your API key was made for, and it is the default for every widget the AI builds there. A customer's [editor session](/docs/partners/editor-sessions) acts as your account, so what a customer builds in the widget creator you embed is built with your kit, and your customers need no kit of their own.
+- **There is one kit for your whole account, not one per customer.** A [managed user](/docs/partners/managed-users) is a label on what you make, not an account. A call made for one managed user (with the `X-Managed-User-Id` header) is not accepted on these routes: it is refused with `403` and `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`.
+- **It is never part of a widget's content.** A kit decides how a widget looks, not what is in it: it never adds a title, a button or a photo to a widget.
+
+The examples on this page are for your server. Keep the key in an environment variable, such as `WIDGETIC_PARTNER_KEY`.
+
+## What a Kit Holds
+
+| Part | What it is |
+|------|------------|
+| `colors` | Up to 24 named colors, each a `#rrggbb` value. A color may have one **role**: `primary`, `secondary`, `accent`, `background`, `surface`, `text`, `title`, `sub`, `border` or `error`. A role is used once, and so is a color value |
+| `fonts` | A font for each of `title`, `subtitle`, `body` and `caption`: a family from Google Fonts (`"source": "google"`) or one of your own files (`"source": "upload"`), with a weight. A role you leave out keeps Inter |
+| `cornerRadius` | One number, in pixels, for how round the corners of cards and buttons are. `0` makes every corner square. See [Corner Radius](#corner-radius) |
+| `instructions` | Your own style notes, up to 500 characters. See [Style Notes](#style-notes) |
+| icons | SVG icons you upload and name. A widget that needs an icon uses yours, by name, before any other. See [Your Own Icons](#your-own-icons) |
+
+Widgetic's default kit is a green palette (Forest `#314F2F`, Sage `#7BA668`, Sunny `#F5CE5A`, Coral `#F55A5A`, and white, mist and ink for the background, surfaces and text), Inter for every text, corner radii of 8, 12 and 15 px, and the style note "Widget backgrounds to be white whenever possible."
+
+## What You Need
+
+An API key. Looking at the kit needs the `account:read` scope. **Changing it needs a key with full access**, because a change reshapes every widget your account makes from then on. See [Authentication](/docs/authentication#limit-what-a-key-can-do).
+
+### Whose Kit a Key Works
+
+- A key made for your account works **your account's kit**. This is the case for a partner's key.
+- A key made for a **team** works the team's kit, and no other: naming another team with it is refused (`403`, `not_a_member`). To change the team's kit, the person the key acts as has to be allowed to manage the team's settings (`403`, `not_allowed_to_edit` otherwise).
+- A key of a person's own account may name one of that person's teams with the `organizationId` query parameter (`GET /brand-kit?organizationId=...`), when the person is an active member of it.
+- A managed user has no kit. See above.
+
+## Read Your Kit
+
+```bash
+curl -sS "https://api.widgetic.com/v1/brand-kit" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY"
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "owner": { "type": "user", "organizationId": null },
+    "isDefault": false,
+    "canEdit": true,
+    "version": 3,
+    "tokens": {
+      "colors": [
+        { "name": "Acme Blue", "hex": "#1E3A8A", "role": "primary" },
+        { "name": "Paper", "hex": "#FFFFFF", "role": "background" },
+        { "name": "Ink", "hex": "#0B1220", "role": "text" }
+      ],
+      "fonts": {
+        "title": { "family": "Playfair Display", "source": "google", "weight": 700 },
+        "body": { "family": "Inter", "source": "google", "weight": 400 }
+      },
+      "spacing": { "xs": 4, "s": 8, "m": 16, "l": 24, "xl": 32, "radiusS": 0, "radiusM": 0, "radiusL": 0 },
+      "instructions": "Titles in the primary color."
+    },
+    "assets": [],
+    "figmaSource": null,
+    "updatedAt": "2026-10-29T10:12:44.000Z",
+    "updatedBy": "7d5f3c1a-2b64-4c0e-9a51-6f1e2d3c4b5a",
+    "warnings": []
+  }
+}
+```
+
+The answer is always a whole kit, trimmed here. The fields to know:
+
+| Field | What it says |
+|-------|--------------|
+| `isDefault` | `true` while nothing is saved: `tokens` is then Widgetic's default kit. The first change you save makes it yours |
+| `version` | A number that goes up with every change. Send it back as `expectedVersion` to refuse a change that would overwrite one someone else made in between |
+| `tokens` | What widgets are built with. A part you never saved shows the default value for it, so you always see the whole look |
+| `assets` | The font files and icons you uploaded, each with an `id` |
+| `warnings` | Colors worth a second look: a text color that is hard to read on the background it is paired with. The kit is saved either way |
+| `canEdit` | Whether your key may change this kit |
+
+## Change Parts of It
+
+`PATCH /brand-kit` changes the parts you send and leaves the rest as it was. This is the call to use for almost everything. Send at least one of `colors`, `fonts`, `cornerRadius`, `spacing` or `instructions`:
+
+```bash
+curl -sS -X PATCH "https://api.widgetic.com/v1/brand-kit" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "colors": [
+      { "name": "Acme Blue", "hex": "#1E3A8A", "role": "primary" },
+      { "name": "Acme Orange", "hex": "#F97316", "role": "accent" },
+      { "name": "Paper", "hex": "#FFFFFF", "role": "background" },
+      { "name": "Ink", "hex": "#0B1220", "role": "text" }
+    ],
+    "fonts": {
+      "title": { "family": "Playfair Display", "source": "google", "weight": 700 }
+    },
+    "cornerRadius": 0,
+    "instructions": "Use the dark color as the background always and the light color for titles."
+  }'
+```
+
+The answer is the kit as it is now. What each part does when you send it:
+
+- **`colors` replaces the whole palette.** To add a color, read the kit, add it to the list and send the list. An empty list goes back to Widgetic's default palette.
+- **`fonts` changes the roles you name** and leaves the others. Send the whole font for a role (`family`, `source` and, if you like, `weight`).
+- **`cornerRadius` is one number.** See [Corner Radius](#corner-radius).
+- **`spacing` changes the steps you name**: `xs`, `s`, `m`, `l` and `xl` (0 to 128 px) and the three radii `radiusS`, `radiusM` and `radiusL` (0 to 64 px). A radius step you send in `spacing` wins over the one made from `cornerRadius`.
+- **`instructions`** are your style notes; an empty string removes them.
+- **`expectedVersion`** refuses the change with `409` (`brand_kit_version_conflict`) when the kit was saved again since you read that version.
+
+Two parts of a request are checked together: each color value and each role may appear once in `colors`, and a font you upload has to exist before a role uses it (see below).
+
+`PUT /brand-kit` replaces the colors, fonts, spacing and notes with exactly what you send, in a body of the form `{ "tokens": { "colors": [], "fonts": {}, "spacing": { ... }, "instructions": "..." } }` with every spacing step present. Use it to copy a kit from one environment to another; use `PATCH` to change one thing.
+
+## Your Own Fonts
+
+Upload the file, then name its family in a role. A font file is a `woff2`, `woff`, `ttf` or `otf` file of at most 3 MB, and a kit holds up to 12 of them.
+
+```bash
+curl -sS -X POST "https://api.widgetic.com/v1/brand-kit/fonts" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -F "file=@AcmeSans-Bold.woff2" \
+  -F "family=Acme Sans" \
+  -F "weight=700" \
+  -F "style=normal"
+```
+
+`family` and `weight` (100 to 900, in hundreds) are required, and `style` is `normal` (the default) or `italic`. The answer is the kit, with the file in `assets`, and the call answers `201`. A family, weight and style can be uploaded once (`409`, `font_variant_exists`). Then use it:
+
+```bash
+curl -sS -X PATCH "https://api.widgetic.com/v1/brand-kit" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "fonts": { "title": { "family": "Acme Sans", "source": "upload", "weight": 700 } } }'
+```
+
+A role that names an uploaded family with no file in the kit is refused with `400`: upload first.
+
+## Your Own Icons
+
+An icon is a name and an SVG. The name says what the icon means (`cart`, `menu`, `arrow-right`): a widget that needs that icon takes yours, by name, in place of a general-purpose one.
+
+```bash
+curl -sS -X POST "https://api.widgetic.com/v1/brand-kit/icons" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "cart", "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path d=\"M3 4h2l2 12h11l2-8H6\"/></svg>" }'
+```
+
+The SVG is rewritten before it is kept: scripts, event handlers and links to other files are removed, and a file that is not a well-formed SVG is refused with `422` (`svg_rejected`). It may weigh up to 32 KB, a name is up to 48 letters, digits, spaces, hyphens or underscores and is used once in the kit (`409`, `icon_name_taken`), and a kit holds up to 100 icons. A widget draws the icon inline, so a part of it drawn with `currentColor` takes the color of the text around it: draw an icon that way if it should follow the widget's colors.
+
+## Rename or Remove a Font or an Icon
+
+Every file and icon has an `id` in `assets`:
+
+```bash
+# Rename an icon, or change the family, weight or style of a font file
+curl -sS -X PATCH "https://api.widgetic.com/v1/brand-kit/assets/$ASSET_ID" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "shopping-cart" }'
+
+# Remove it
+curl -sS -X DELETE "https://api.widgetic.com/v1/brand-kit/assets/$ASSET_ID" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY"
+```
+
+**Removing a font or an icon puts Widgetic's own back.** A role that used the font you removed goes back to Inter, and a widget that is built or revised after that uses a default Widgetic icon where yours was. A widget that is already built keeps what it was built with until it is revised.
+
+## Style Notes
+
+`instructions` is a few lines in your own words that the AI reads for every widget, next to the palette and the fonts. They are for how a widget looks, so write them as a design rule:
+
+- `Use the dark color as the background always and the light color for titles.`
+- `Flat design: no shadows, no gradients.`
+- `Backgrounds white whenever possible; the primary color only for buttons.`
+
+Widgetic's own note, which a kit keeps until its owner writes another, is *Widget backgrounds to be white whenever possible.* Send your own to replace it, or an empty string (`""`) to have none.
+
+Notes are only about how a widget looks. They add no element to a widget and never change what a request asks for, and where a request says something different, the request wins. A note that asks for anything but styling, such as another output format or hidden text, is not followed.
+
+## Corner Radius
+
+`cornerRadius` is one number: the radius of a card, in pixels. The small and the large radii of a widget are made from it, so one value is enough to make a whole kit round or square:
+
+| `cornerRadius` | Small | Medium | Large |
+|----------------|-------|--------|-------|
+| `0` | 0 | 0 | 0 (square corners everywhere) |
+| `12` | 8 | 12 | 15 (Widgetic's own look) |
+| `20` | 13 | 20 | 25 |
+| `64` | 43 | 64 | 64 (the most a kit may hold) |
+
+Pass `spacing.radiusS`, `spacing.radiusM` or `spacing.radiusL` as well when you want one of the three to differ from what the number makes.
+
+## How a Widget Uses the Kit
+
+- **A request wins over the kit.** When the person who asks for a widget names a color, a font or a look in their request ("a red button", "use Georgia"), the widget follows the request, and the kit fills in everything the request left open.
+- **At most two palette colors at a time.** Besides the background and the text, a widget shows no more than two colors of the palette together, and text is set in the dark color, so a widget looks like one brand and not like the whole palette.
+- **Text is readable.** The AI pairs colors from a table of their contrast (WCAG), and does not set text on a background that gives less than 4.5:1. A palette that cannot give that, such as light-grey text on white, is saved as you sent it and comes back with a line in `warnings`:
+
+```json
+{
+  "warnings": [
+    "The text color #AAAAAA on the background #FFFFFF has a contrast of 2.32:1; text needs at least 4.5:1 (WCAG AA) to be easy to read."
+  ]
+}
+```
+
+- **A change reaches new work only.** A widget is made with the kit as it is when it is built or revised. Widgets that already exist, and the ones already published, keep their look until someone revises them.
+
+## Go Back to the Default
+
+```bash
+curl -sS -X DELETE "https://api.widgetic.com/v1/brand-kit" \
+  -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY"
+```
+
+This removes your colors, fonts, notes, uploaded font files and icons, and the answer is Widgetic's default kit (`isDefault: true`). Widgets that already exist are not touched.
+
+## Limits
+
+| What | Limit |
+|------|-------|
+| Colors in a palette | 24, with a name of up to 40 characters |
+| A font family name | 80 characters |
+| Uploaded font files in a kit | 12, each up to 3 MB |
+| Icons in a kit | 100, each up to 32 KB, with a name of up to 48 characters |
+| Style notes | 500 characters |
+| Corner radius | 0 to 64 px |
+
+## Errors
+
+The answer is the [usual error body](/api-reference/errors); the `code` tells which:
+
+| Status | `code` | What happened |
+|--------|--------|---------------|
+| `400` | `validation_error` | The request is not valid: a color that is not `#rrggbb`, a color value or role used twice, a corner radius over 64, notes over 500 characters, an empty `PATCH`, or a role that names an uploaded font with no file. `details.issues` lists them |
+| `401` | | No key, or a key that is not valid |
+| `403` | `not_allowed_to_edit` | The key may not change this team's kit. Looking at it is still allowed |
+| `403` | `not_a_member` | The person the key acts as is not an active member of the team named in `organizationId`, or the key was made for another team |
+| `403` | `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE` | The call was made for one managed user. A kit belongs to your account, not to a customer |
+| `404` | `asset_not_found` | No font or icon of that `id` in your kit |
+| `409` | `brand_kit_version_conflict` | The kit changed since the `expectedVersion` you sent. Read it again and retry |
+| `409` | `icon_name_taken`, `font_variant_exists` | The name, or the family with that weight and style, is already in the kit |
+| `413` | `file_too_large` | The font file is over 3 MB |
+| `415` | `unsupported_font_type` | The file is not a `woff2`, `woff`, `ttf` or `otf` font |
+| `422` | `svg_rejected` | The SVG could not be made safe |
+| `429` | `brand_kit_limit_reached` | The kit is at a limit above, or the SVG is too large |
+| `503` | `brand_kit_unavailable` | The kit cannot be read right now. A widget built meanwhile uses the default kit; try the call again |
+
+## Other Ways to Set the Same Kit
+
+A kit is one thing with several doors:
+
+- The account holder can set it on widgetic.com, under **Settings**, **Brand Kit**, where colors, fonts and icons are shown, and where a Figma design link can be read into a draft.
+- A person who connects an AI assistant to Widgetic can ask it to read or change their own kit: see the `get_brand_kit` and `update_brand_kit` [tools](/docs/agents/tools#brand-kit).
+- Each call above is a command of the [Widgetic CLI](/docs/cli/commands/index) and a method of the SDKs, so a script can set the kit from a deploy.

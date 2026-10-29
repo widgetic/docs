@@ -16464,6 +16464,816 @@
         }
       }
     },
+    "/brand-kit": {
+      "get": {
+        "operationId": "getBrandKit",
+        "summary": "The Brand Kit of the current workspace",
+        "description": "The colors, fonts, icons, corner radius and style notes every widget made by this account is generated with. An account that never saved a kit gets Widgetic's default one (`isDefault` is true). A partner account's kit is the default for everything its keys create, and a key reads and changes the kit of the account it belongs to; there is no kit per managed user.",
+        "tags": [
+          "Partner",
+          "Brand Kit"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "organizationId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "An organisation's kit; omit for the caller's current workspace."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The kit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandKitViewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not_a_member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "brand_kit_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putBrandKit",
+        "summary": "Save Brand Kit tokens",
+        "description": "Replaces the colors, fonts, spacing and notes of the kit with the ones sent. To change one thing, use PATCH.",
+        "tags": [
+          "Partner",
+          "Brand Kit"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "organizationId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutBrandKitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved kit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandKitViewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not_a_member or not_allowed_to_edit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "brand_kit_version_conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "brand_kit_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patchBrandKit",
+        "summary": "Change part of the Brand Kit",
+        "description": "Changes only what is sent: the colors, a font role, a spacing step, one corner radius (0 for square corners) or the style notes, and keeps the rest of the saved kit. An account that never saved a kit starts from Widgetic's default one. The response lists what is worth fixing in `warnings`.",
+        "tags": [
+          "Partner",
+          "Brand Kit"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "organizationId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchBrandKitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved kit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandKitViewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not_a_member or not_allowed_to_edit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "brand_kit_version_conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "brand_kit_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteBrandKit",
+        "summary": "Reset the Brand Kit to the default",
+        "tags": [
+          "Partner",
+          "Brand Kit"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "organizationId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The default kit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandKitViewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not_a_member or not_allowed_to_edit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "brand_kit_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brand-kit/fonts": {
+      "post": {
+        "operationId": "postBrandKitFont",
+        "summary": "Upload a font file to the Brand Kit",
+        "tags": [
+          "Partner",
+          "Brand Kit"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "organizationId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "family",
+                  "weight"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "family": {
+                    "type": "string"
+                  },
+                  "weight": {
+                    "type": "integer"
+                  },
+                  "style": {
+                    "type": "string",
+                    "enum": [
+                      "normal",
+                      "italic"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The kit with the new font",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandKitViewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not_a_member or not_allowed_to_edit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "font_variant_exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "file_too_large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "unsupported_font_type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "brand_kit_limit_reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "brand_kit_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brand-kit/icons": {
+      "post": {
+        "operationId": "postBrandKitIcon",
+        "summary": "Add a named SVG icon to the Brand Kit",
+        "tags": [
+          "Partner",
+          "Brand Kit"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "organizationId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostBrandKitIconRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The kit with the new icon",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandKitViewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not_a_member or not_allowed_to_edit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "icon_name_taken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "svg_rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "brand_kit_limit_reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "brand_kit_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brand-kit/assets/{assetId}": {
+      "patch": {
+        "operationId": "patchBrandKitAsset",
+        "summary": "Rename an icon or relabel a font variant",
+        "tags": [
+          "Partner",
+          "Brand Kit"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assetId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "organizationId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchBrandKitAssetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated kit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandKitViewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "validation_error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not_a_member or not_allowed_to_edit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "asset_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "font_variant_exists or icon_name_taken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "brand_kit_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteBrandKitAsset",
+        "summary": "Remove a font or icon from the Brand Kit",
+        "tags": [
+          "Partner",
+          "Brand Kit"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assetId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "organizationId",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The kit without the asset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandKitViewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not_a_member or not_allowed_to_edit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "asset_not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "brand_kit_unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/compositions/{id}/adapters/ai-answers/knowledge": {
       "get": {
         "operationId": "getAiAnswersKnowledge",
@@ -23961,6 +24771,593 @@
           "primaryWidgetId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         }
       },
+      "BrandColor": {
+        "type": "object",
+        "required": [
+          "name",
+          "hex"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "hex": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "secondary",
+              "accent",
+              "background",
+              "surface",
+              "text",
+              "title",
+              "sub",
+              "border",
+              "error"
+            ]
+          }
+        },
+        "example": {
+          "name": "Example name",
+          "hex": "Example hex",
+          "role": "Example role"
+        }
+      },
+      "BrandFont": {
+        "type": "object",
+        "required": [
+          "family",
+          "source"
+        ],
+        "properties": {
+          "family": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "google",
+              "upload"
+            ]
+          },
+          "weight": {
+            "type": "integer",
+            "enum": [
+              100,
+              200,
+              300,
+              400,
+              500,
+              600,
+              700,
+              800,
+              900
+            ]
+          },
+          "sizeMax": {
+            "type": "integer",
+            "minimum": 8,
+            "maximum": 200
+          }
+        },
+        "example": {
+          "family": "Example family",
+          "source": "Example source",
+          "weight": 42,
+          "sizeMax": 42
+        }
+      },
+      "BrandSpacing": {
+        "type": "object",
+        "required": [
+          "xs",
+          "s",
+          "m",
+          "l",
+          "xl",
+          "radiusS",
+          "radiusM",
+          "radiusL"
+        ],
+        "properties": {
+          "xs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 128
+          },
+          "s": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 128
+          },
+          "m": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 128
+          },
+          "l": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 128
+          },
+          "xl": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 128
+          },
+          "radiusS": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 64
+          },
+          "radiusM": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 64
+          },
+          "radiusL": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 64
+          }
+        },
+        "example": {
+          "xs": 42,
+          "s": 42,
+          "m": 42,
+          "l": 42,
+          "xl": 42,
+          "radiusS": 42,
+          "radiusM": 42,
+          "radiusL": 42
+        }
+      },
+      "BrandKitTokens": {
+        "type": "object",
+        "required": [
+          "colors",
+          "fonts",
+          "spacing"
+        ],
+        "description": "Colors, fonts by role, spacing and corner radii of a Brand Kit.",
+        "properties": {
+          "colors": {
+            "type": "array",
+            "maxItems": 24,
+            "items": {
+              "$ref": "#/components/schemas/BrandColor"
+            }
+          },
+          "fonts": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "$ref": "#/components/schemas/BrandFont"
+              },
+              "subtitle": {
+                "$ref": "#/components/schemas/BrandFont"
+              },
+              "body": {
+                "$ref": "#/components/schemas/BrandFont"
+              },
+              "caption": {
+                "$ref": "#/components/schemas/BrandFont"
+              }
+            }
+          },
+          "spacing": {
+            "$ref": "#/components/schemas/BrandSpacing"
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "The kit owner's own style notes, taken into account in every widget made with the kit, for example \"Use the dark color as the background always and the light color for titles\". They are about how a widget looks and never about what it holds, and what a request names itself wins over them. Left out, Widgetic's default note applies (\"Widget backgrounds to be white whenever possible.\"); an empty string means none."
+          }
+        },
+        "example": {
+          "colors": [
+            "Example BrandColor"
+          ],
+          "fonts": {},
+          "spacing": null,
+          "instructions": "Example instructions"
+        }
+      },
+      "BrandKitFigmaSource": {
+        "type": "object",
+        "required": [
+          "url",
+          "fileKey",
+          "nodeId",
+          "fileName",
+          "importedAt"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "fileKey": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "fileName": {
+            "type": "string",
+            "nullable": true
+          },
+          "importedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "example": {
+          "url": "Example url",
+          "fileKey": "Example fileKey",
+          "nodeId": "Example nodeId",
+          "fileName": "Example fileName",
+          "importedAt": "2026-01-15T09:30:00.000Z"
+        }
+      },
+      "BrandKitAssetView": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "font",
+              "icon"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "family": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "integer"
+          },
+          "style": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "italic"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "woff2",
+              "woff",
+              "ttf",
+              "otf"
+            ]
+          },
+          "bytes": {
+            "type": "integer"
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "slug": {
+            "type": "string"
+          },
+          "exportName": {
+            "type": "string"
+          },
+          "svg": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "kind": "Example kind",
+          "name": "Example name",
+          "createdAt": "2026-01-15T09:30:00.000Z",
+          "family": "Example family",
+          "weight": 42,
+          "style": "Example style",
+          "format": "Example format",
+          "bytes": 42,
+          "url": "Example url",
+          "slug": "Example slug",
+          "exportName": "Example exportName",
+          "svg": "Example svg"
+        }
+      },
+      "BrandKitView": {
+        "type": "object",
+        "required": [
+          "owner",
+          "isDefault",
+          "canEdit",
+          "version",
+          "tokens",
+          "assets"
+        ],
+        "properties": {
+          "owner": {
+            "type": "object",
+            "required": [
+              "type",
+              "organizationId"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "user",
+                  "organization"
+                ]
+              },
+              "organizationId": {
+                "type": "string",
+                "format": "uuid",
+                "nullable": true
+              }
+            }
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "tokens": {
+            "$ref": "#/components/schemas/BrandKitTokens"
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BrandKitAssetView"
+            }
+          },
+          "figmaSource": {
+            "$ref": "#/components/schemas/BrandKitFigmaSource",
+            "nullable": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "updatedBy": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "warnings": {
+            "type": "array",
+            "description": "Things worth fixing in the saved colors, such as a text color that is hard to read on the background. The kit is saved either way.",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "example": {
+          "owner": {},
+          "isDefault": true,
+          "canEdit": true,
+          "version": 42,
+          "tokens": null,
+          "assets": [
+            "Example BrandKitAssetView"
+          ],
+          "figmaSource": null,
+          "updatedAt": "2026-01-15T09:30:00.000Z",
+          "updatedBy": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "warnings": []
+        }
+      },
+      "PutBrandKitRequest": {
+        "type": "object",
+        "required": [
+          "tokens"
+        ],
+        "properties": {
+          "tokens": {
+            "$ref": "#/components/schemas/BrandKitTokens"
+          },
+          "figmaSource": {
+            "$ref": "#/components/schemas/BrandKitFigmaSource",
+            "nullable": true
+          },
+          "expectedVersion": {
+            "type": "integer"
+          }
+        },
+        "example": {
+          "tokens": null,
+          "figmaSource": null,
+          "expectedVersion": 42
+        }
+      },
+      "PatchBrandKitRequest": {
+        "type": "object",
+        "minProperties": 1,
+        "description": "Changes part of the kit and leaves the rest as it is. Only the keys that are sent change.",
+        "properties": {
+          "colors": {
+            "type": "array",
+            "maxItems": 24,
+            "description": "The whole list of colors (it replaces the saved list).",
+            "items": {
+              "$ref": "#/components/schemas/BrandColor"
+            }
+          },
+          "fonts": {
+            "type": "object",
+            "description": "The text roles to change; the roles that are left out keep their font.",
+            "properties": {
+              "title": {
+                "$ref": "#/components/schemas/BrandFont"
+              },
+              "subtitle": {
+                "$ref": "#/components/schemas/BrandFont"
+              },
+              "body": {
+                "$ref": "#/components/schemas/BrandFont"
+              },
+              "caption": {
+                "$ref": "#/components/schemas/BrandFont"
+              }
+            }
+          },
+          "spacing": {
+            "type": "object",
+            "description": "The spacing and radius steps to change; the steps that are left out keep their value.",
+            "properties": {
+              "xs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 128
+              },
+              "s": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 128
+              },
+              "m": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 128
+              },
+              "l": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 128
+              },
+              "xl": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 128
+              },
+              "radiusS": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 64
+              },
+              "radiusM": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 64
+              },
+              "radiusL": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 64
+              }
+            }
+          },
+          "cornerRadius": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 64,
+            "description": "One corner radius in pixels for the whole kit; the small, medium and large radii are made from it. 0 gives square corners. A radius step sent in `spacing` wins over the one made from this value."
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "The kit owner's style notes (see `tokens.instructions`). An empty string removes them."
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "description": "Refuse the change with a 409 when the kit was saved again since this version was read."
+          }
+        },
+        "example": {
+          "cornerRadius": 0,
+          "instructions": "Use the dark color as the background always and the light color for titles."
+        }
+      },
+      "PatchBrandKitAssetRequest": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Icon rename"
+          },
+          "family": {
+            "type": "string",
+            "description": "Font family relabel"
+          },
+          "weight": {
+            "type": "integer",
+            "enum": [
+              100,
+              200,
+              300,
+              400,
+              500,
+              600,
+              700,
+              800,
+              900
+            ]
+          },
+          "style": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "italic"
+            ]
+          }
+        },
+        "example": {
+          "name": "Example name",
+          "family": "Example family",
+          "weight": 42,
+          "style": "Example style"
+        }
+      },
+      "PostBrandKitIconRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "svg"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "svg": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "name": "Example name",
+          "svg": "Example svg"
+        }
+      },
       "ErrorResponse": {
         "type": "object",
         "required": [
@@ -26489,6 +27886,26 @@
           },
           "data": {
             "$ref": "#/components/schemas/Canvas"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "BrandKitViewResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Always `true` on a success.",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BrandKitView"
           },
           "meta": {
             "$ref": "#/components/schemas/ResponseMeta"

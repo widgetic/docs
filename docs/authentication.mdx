@@ -70,13 +70,14 @@ When a preset is not enough, name the scopes you want:
 | `partner:write` | Create, change and delete managed users and presets (partners). Includes `partner:read`. |
 | `billing:read` | Read credits, usage, invoices, subscriptions and payment methods. |
 | `billing:write` | Buy credits, pay invoices, change a subscription or a payment method. Includes `billing:read`. |
-| `account:read` | Read the profile, organizations and members, allowed domains, notices and the names of API keys. |
+| `account:read` | Read the profile, organizations and members, allowed domains, notices, the names of API keys and the [Brand Kit](/docs/partners/brand-kit). |
 | `account:write` | Change the profile, organizations and members, allowed domains and integrations. Includes `account:read`. |
 
 - **Writing includes reading.** Naming `content:write` gives `content:read` too, and the same goes for the other `write` scopes. A list that names every scope makes a key with full access.
 - **Scopes only narrow.** A limited key still needs what its owner needs: the role, the plan and, for a [partner](/docs/partners/account-status), an account in force.
 - **The limit is fixed when the key is made.** To widen it, make a new key and delete the old one.
 - **A limited key cannot make itself a bigger one.** Making, changing and deleting keys, exchanging tokens, signing in and the administration routes need full access.
+- **Changing the Brand Kit needs full access**, because a change reshapes every widget the account makes from then on. A key with `account:read` may look at it. See [Brand Kit](/docs/partners/brand-kit).
 - **A partner's backend needs three scopes to start an editor session** for a managed user: `partner:write`, `content:write` and `generate` together. See [Editor Sessions](/docs/partners/editor-sessions#make-a-session).
 
 A request outside the scopes of the key is refused with `403` and the code `API_KEY_SCOPE_MISSING`. `error.details.missingScopes` lists what a new key needs, and `error.details.fullAccessRequired` is `true` when no list of scopes would have been enough:

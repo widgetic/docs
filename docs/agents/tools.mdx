@@ -45,6 +45,8 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `create_widget_batch` | Starts several of the suggested widgets at once, up to 25, each as its own widget, in one project if you like and with a draft workflow that chains them if you ask; 1 credit for each widget | `widgetic.write` | 1 |
 | `cancel_widget_batch` | Cancels the builds of several widgets at once; a build that had not started gets its credit back | `widgetic.write` | 0 |
 | `draft_workflow_from_widgets` | Saves a draft workflow from widgets you built, one step for each, in the order you give; nothing a visitor sees changes | `widgetic.write` | 0 |
+| `get_brand_kit` | Shows the Brand Kit your widgets start from: colors, fonts, corner radius, style notes and the names of your icons | `widgetic.read` | 0 |
+| `update_brand_kit` | Changes parts of your Brand Kit (colors, fonts, corner radius, style notes); widgets already built keep their look | `widgetic.write` | 0 |
 
 Permissions are the scopes you approve when you sign in; see [Authentication](/docs/agents/authentication#permissions).
 
@@ -202,6 +204,19 @@ A workflow chains published widgets on one embed: a visitor sees the first, and 
   </Accordion>
 </AccordionGroup>
 
+## Brand Kit
+
+Your Brand Kit is the look every new widget starts from: a palette, a font for each of title, subtitle, body and caption, a corner radius, and a few style notes of your own. It belongs to your account and is the same wherever you set it (the Brand Kit page on widgetic.com, the API, the CLI or these tools). These tools read and change **your own** Brand Kit, the one widgets built through this connection use; a team's kit is changed on widgetic.com. Font files and icons are added on widgetic.com too.
+
+<AccordionGroup>
+  <Accordion title="get_brand_kit" icon="palette">
+    Shows your Brand Kit: the colors (name, hex and the role each plays), the font of each role, the corner radius, your style notes and the names of the icons you uploaded. When you have saved none it shows Widgetic's default look and says so. It also lists any text color that is hard to read on the background it is paired with. It changes nothing and uses no credits.
+  </Accordion>
+  <Accordion title="update_brand_kit" icon="paintbrush">
+    Changes the parts you ask for and leaves the rest as it is: the colors (the whole palette, so the assistant reads it first and sends every color to keep), the font of any role, the corner radius (0 makes every corner square, 12 is the usual roundness) and your style notes (an empty note removes them). It says which parts are different now and what each was before. Widgets already built or published keep their look until they are revised; the next widget built or revised uses the new look. It uses no credits and does not upload font files or icons.
+  </Accordion>
+</AccordionGroup>
+
 ## Account
 
 <AccordionGroup>
@@ -219,7 +234,7 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 
 | Tool | Reads only | Can change or replace | Interacts with the outside world |
 |---|---|---|---|
-| `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library`, `suggest_widgets` | yes | no | no |
+| `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library`, `suggest_widgets`, `get_brand_kit` | yes | no | no |
 | `create_widget`, `replicate_widget` | no | no (they add a widget, and a first publish replaces nothing) | yes (the finished widget is published and can be reached on the public internet; `create_widget` also takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
 | `create_widget_batch` | no | no (it adds widgets, and a first publish replaces nothing) | yes (the finished widgets are published and can be reached on the public internet; it uses images already in your media library and fetches nothing) |
 | `revise_widget` | no | yes (the finished revision is published again and replaces what embeds show; every earlier version is kept) | yes (it publishes, takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
@@ -230,6 +245,7 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | `publish_widget` | no | yes (it replaces what embeds show) | yes (it makes the widget publicly reachable) |
 | `save_to_media_library` | no | no | yes (it fetches the links you give) |
 | `list_workflows`, `get_workflow_options`, `get_workflow`, `test_workflow` | yes | no | no |
+| `update_brand_kit` | no | no (it changes your saved colors, fonts, corner radius and style notes; what each was is returned, no widget is rebuilt and nothing leaves your account) | no |
 | `draft_workflow_from_widgets` | no | no (it adds a draft workflow and changes nothing that exists; what visitors see is not touched) | no |
 | `save_workflow` | no | yes (it replaces the draft; what visitors see is not touched, and a change made elsewhere since the revision the assistant read is never overwritten) | no |
 | `publish_workflow` | no | yes (it replaces the version visitors get; every earlier version is kept) | yes (it makes the workflow what embeds on the public internet show) |
