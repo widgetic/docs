@@ -92,6 +92,26 @@
             ]
           },
           {
+            "group": "CLI",
+            "pages": [
+              "docs/cli/commands/index",
+              "docs/cli/commands/api-canvases",
+              "docs/cli/commands/api-compositions",
+              "docs/cli/commands/api-credits",
+              "docs/cli/commands/api-entitlements",
+              "docs/cli/commands/api-invoices",
+              "docs/cli/commands/api-managed-users",
+              "docs/cli/commands/api-operations",
+              "docs/cli/commands/api-partners",
+              "docs/cli/commands/api-tokens",
+              "docs/cli/commands/api-uploads",
+              "docs/cli/commands/api-users",
+              "docs/cli/commands/api-widgets",
+              "docs/cli/commands/api-workflows",
+              "docs/cli/commands/mcp"
+            ]
+          },
+          {
             "group": "Reference",
             "pages": [
               "docs/reference/rate-limits",
