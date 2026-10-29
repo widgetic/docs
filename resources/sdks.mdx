@@ -80,6 +80,7 @@ Every method takes one request object, for example `getWidgets({ page: 1, size: 
 | `EntitlementsApi` | Feature access |
 | `UsersApi` | User management |
 | `ManagedUsersApi` | Partner user management and editor sessions |
+| `WorkflowsApi` | Workflows, including a partner's calls for one customer (Preview, see [Workflows](/docs/partners/workflows#from-your-server)) |
 | `PartnersApi` | Partner operations: contract, billing overview, credits, storage, notifications, analytics and presets |
 | `CreditsApi` | Account credit balance and ledger |
 | `InvoicesApi` | Invoices |
@@ -92,6 +93,22 @@ The public embed routes are at `https://api.widgetic.com/embed`. The SDK's defau
 import { Configuration, PublicEmbedApi } from '@widgetic/api-sdk-ts';
 
 const embed = new PublicEmbedApi(new Configuration({ basePath: 'https://api.widgetic.com' }));
+```
+
+### Calls for One Customer
+
+A call that takes the `X-Managed-User-Id` or `X-Managed-User-External-Id` header (see [Scoping a Composition Call to One Customer](/docs/partners/managed-users#scoping-a-composition-call-to-one-customer)) takes it as `xManagedUserId` or `xManagedUserExternalId` in the request object. The workflow calls also take the `workspaceId`, which is `personal` for one customer:
+
+```javascript
+import { WorkflowsApi } from '@widgetic/api-sdk-ts';
+
+const workflows = new WorkflowsApi(process.env.WIDGETIC_API_KEY);
+
+const { data } = await workflows.listWorkspaceWorkflows({
+  workspaceId: 'personal',
+  xManagedUserId: managedUserId,
+});
+// data.items holds that customer's workflows and no one else's
 ```
 
 ### Sending an Idempotency-Key
