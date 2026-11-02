@@ -15,10 +15,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const localSourcePath = path.resolve(
-  __dirname,
-  '../../../Services/api-gateway-service/client-sdk/openapi-spec-public.json'
-);
+const GATEWAY_ROOT = process.env.GATEWAY_ROOT
+  ? path.resolve(process.env.GATEWAY_ROOT)
+  : path.resolve(__dirname, '../../../Services/api-gateway-service');
+const localSourcePath = path.join(GATEWAY_ROOT, 'client-sdk/openapi-spec-public.json');
 
 const targetPath = path.resolve(
   __dirname,
