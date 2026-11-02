@@ -13,6 +13,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { HOW_TO_WRITE_FOR_PRODUCTION, checkProductionServer } = require('./lib/openApiServerAddress');
 
 // Paths
 const LOCAL_SOURCE_PATH = path.resolve(
@@ -67,6 +68,16 @@ async function syncOpenApiSpecAsync() {
 
   const sourceSpec = await readSourceSpec();
   const spec = JSON.parse(sourceSpec);
+
+  // The docs show the address the description names. A description written on a machine whose .env says
+  // API_URL=http://localhost:3000 would put localhost into the API reference and into every code sample: refuse it.
+  const addressProblems = checkProductionServer(spec);
+  if (addressProblems.length > 0) {
+    for (const problem of addressProblems) console.error('❌', problem);
+    console.error('');
+    for (const line of HOW_TO_WRITE_FOR_PRODUCTION) console.error(line);
+    process.exit(1);
+  }
 
   // Log spec info
   const pathCount = Object.keys(spec.paths || {}).length;

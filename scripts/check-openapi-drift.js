@@ -14,6 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { HOW_TO_WRITE_FOR_PRODUCTION, checkProductionServer } = require('./lib/openApiServerAddress');
 
 const localSourcePath = path.resolve(
   __dirname,
@@ -76,6 +77,17 @@ function normalizeJson(text) {
 async function main() {
   const sourceRaw = await readSourceOrThrow();
   const targetRaw = readFileOrThrow(targetPath);
+
+  // A description written for another machine (API_URL=http://localhost:3000 in a laptop's .env) is not one the docs can be
+  // synced to, so "out of sync" would send the reader to a sync that refuses it: say what is wrong with the source first.
+  const addressProblems = checkProductionServer(JSON.parse(sourceRaw));
+  if (addressProblems.length > 0) {
+    console.error('OpenAPI drift cannot be judged: the generated public spec is not written for production.');
+    for (const problem of addressProblems) console.error(`  - ${problem}`);
+    console.error('');
+    for (const line of HOW_TO_WRITE_FOR_PRODUCTION) console.error(line);
+    process.exit(1);
+  }
 
   const source = normalizeJson(sourceRaw);
   const target = normalizeJson(targetRaw);
