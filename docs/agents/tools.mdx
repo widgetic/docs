@@ -47,6 +47,17 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `draft_workflow_from_widgets` | Saves a draft workflow from widgets you built, one step for each, in the order you give; nothing a visitor sees changes | `widgetic.write` | 0 |
 | `get_brand_kit` | Shows the Brand Kit your widgets start from: colors, fonts, corner radius, style notes and the names of your icons | `widgetic.read` | 0 |
 | `update_brand_kit` | Changes parts of your Brand Kit (colors, fonts, corner radius, style notes); widgets already built keep their look | `widgetic.write` | 0 |
+| `list_ab_tests` | Lists your A/B tests in the workspace you are signed in to, a few at a time | `widgetic.read` | 0 |
+| `get_ab_test_options` | Lists the goals a test can use and your published widgets that can be a version | `widgetic.read` | 0 |
+| `get_ab_test` | Shows one A/B test: setup, results, recommendation, winner and embed code | `widgetic.read` | 0 |
+| `save_ab_test` | Creates a draft A/B test or changes a draft; nothing a visitor sees changes | `widgetic.write` | 0 |
+| `set_ab_test_state` | Starts, pauses or stops an A/B test | `widgetic.write` | 0 |
+| `list_translations` | Lists your translations in the workspace you are signed in to, a few at a time | `widgetic.read` | 0 |
+| `get_translation_options` | Lists the languages available and how many a translation may hold | `widgetic.read` | 0 |
+| `get_translation` | Shows one translation: each language's state and the embed code | `widgetic.read` | 0 |
+| `create_translation` | Translates one of your widgets into up to five languages; nothing a visitor sees yet | `widgetic.write` | 0 |
+| `add_translation_languages` | Adds up to five more languages to a translation | `widgetic.write` | 0 |
+| `set_translation_state` | Activates or pauses a translation | `widgetic.write` | 0 |
 
 Permissions are the scopes you approve when you sign in; see [Authentication](/docs/agents/authentication#permissions).
 
@@ -217,6 +228,61 @@ Your Brand Kit is the look every new widget starts from: a palette, a font for e
   </Accordion>
 </AccordionGroup>
 
+## A/B tests
+
+An A/B test splits visitors between two to four of your published widgets on one embed and measures which version reaches a goal you choose. You set it up as a draft, start it when you are ready, read how it is doing, and stop it with an optional winner. A test made here opens on widgetic.com, and the other way round.
+
+<Note>
+  The A/B test tools work in the workspace you are signed in to on widgetic.com, your own or a team's, and every answer says which. The assistant cannot pick another one: switch workspace on widgetic.com first. A/B testing is included in the Teams plan and in a partner agreement; on another plan the tools say so in one plain sentence. None of them uses credits. Saving a test changes only the draft: nothing a visitor sees changes until the test is started. Starting a test needs a connection approved with the publish permission. While a test runs, its embed tag shows the versions; when it is paused or stopped the tag shows no widget, so after you stop with a winner you put that widget's own embed code on the page.
+</Note>
+
+<AccordionGroup>
+  <Accordion title="list_ab_tests" icon="chart-line">
+    Your A/B tests in the workspace you are signed in to, newest first, up to 20 at a time: the name, the state (draft, running, paused, completed or graduated), the goal, how many versions it has and how many days ago it started. You can filter by state, search the name, and ask for the next page with the cursor. It only reads and does not show how a test is doing.
+  </Accordion>
+  <Accordion title="get_ab_test_options" icon="list-check">
+    What a test can use before you make one: the goals (each says whether the embed counts it automatically or only when the widget reports it) and your published widgets that can be a version (each lists the goals it reports). Look up particular widgets by id, or search by name; widgets come newest first, up to 20 at a time, with a cursor for more. It only reads.
+  </Accordion>
+  <Accordion title="get_ab_test" icon="eye">
+    One A/B test: the goal, the versions with their share of traffic, the settings, the results so far (visitors, how many reached the goal, each version's rate and its lift over the control) with a recommendation (`continue`, pick a winner or stop), the winner once there is one, and the embed code. Visitors see the versions only while the test is running. A draft has no visitor numbers yet. It only reads.
+  </Accordion>
+  <Accordion title="save_ab_test" icon="floppy-disk">
+    Without a test id, creates a new draft (a name, a goal and two to four versions are required; each version is one of your published widgets by composition id, optionally named and with a share of traffic; leave out the shares for an even split). With a test id, changes a draft's name, description, goal or settings. Saving shows nothing to visitors: a test starts only with `set_ab_test_state`. The versions of a saved test cannot be changed here, and a test that has already started cannot be edited. The assistant should read `get_ab_test_options` first. It uses no credits.
+  </Accordion>
+  <Accordion title="set_ab_test_state" icon="toggle-on">
+    Starts a draft or a paused test (`start`), pauses a running one (`pause`), or stops a running or paused one for good (`stop`, with `winner_version_id` when there is one). Starting splits real visitors between the versions on every page that carries the test's embed code. Stopping cannot be undone: a stopped test cannot be started again. When you stop with a winner, put that widget's own embed code (`get_embed_code`) on the page in place of the test's tag, because a stopped test's tag shows no widget. Asking for the state a test is already in changes nothing. Starting needs a connection approved with the publish permission. It uses no credits.
+  </Accordion>
+</AccordionGroup>
+
+## Translations
+
+A translation makes one of your widgets available in several languages on one embed: each language is its own copy, and visitors see the copy that matches their browser's language while the translation is active. You make a translation, add more languages if you need them, and activate it when you are ready.
+
+<Note>
+  The translation tools work in the workspace you are signed in to on widgetic.com, your own or a team's, and every answer says which. The assistant cannot pick another one: switch workspace on widgetic.com first. Translations are included in the Teams plan and in a partner agreement; on another plan the tools say so in one plain sentence. None of them uses credits. One call translates up to five languages; a translation holds at most twenty languages in all, the original included. Nothing is shown to visitors until `set_translation_state` activates the translation. Activating needs a connection approved with the publish permission. The widget must be one you made yourself.
+</Note>
+
+<AccordionGroup>
+  <Accordion title="list_translations" icon="language">
+    Your translations in the workspace you are signed in to, newest first, up to 20 at a time: the name, the state (making, ready, active, paused or unfinished), the original language, the languages it holds and the widget it was made from. You can filter by state, search the name, and ask for the next page with the cursor. It only reads.
+  </Accordion>
+  <Accordion title="get_translation_options" icon="list-check">
+    Which languages a widget can be translated into (code, English and native name, region and whether it is one most translations start with) and the limits: how many languages one call translates and how many a translation holds in all. It takes no input and only reads.
+  </Accordion>
+  <Accordion title="get_translation" icon="eye">
+    One translation: its state, the original language, and for each language whether its copy is ready, still being translated or failed, with the widget of each copy; the languages being added right now; and the embed code, which shows each visitor their language only while the translation is active. It only reads.
+  </Accordion>
+  <Accordion title="create_translation" icon="globe">
+    Translates one of your widgets into other languages: it makes a copy of the widget for each language you name and groups them as one translation. Give the language the widget is written in now and one to five languages to translate into; the original is kept as it is. The call waits for under a minute and then answers even if some languages are still being translated; check them with `get_translation`, and add more later with `add_translation_languages`. The new translation is ready but not shown to visitors until `set_translation_state` activates it. It uses no credits.
+  </Accordion>
+  <Accordion title="add_translation_languages" icon="plus">
+    Adds one to five more languages to a translation you already made, or tries again for a language that failed or was left unfinished. A language that is already there and ready is skipped. A translation holds at most twenty languages in all. The call waits for under a minute and then answers even if some languages are still being translated; check them with `get_translation`. Visitors get a new language only while the translation is active. It uses no credits.
+  </Accordion>
+  <Accordion title="set_translation_state" icon="toggle-on">
+    `activate` makes the embed show each visitor the language of their browser; `pause` takes it away again. A translation can be activated once it is ready, or when it is paused; not while it is still being made. Nothing is deleted and each action can be undone. Asking for the state a translation is already in changes nothing. Activating needs a connection approved with the publish permission. It uses no credits.
+  </Accordion>
+</AccordionGroup>
+
 ## Account
 
 <AccordionGroup>
@@ -250,3 +316,8 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | `save_workflow` | no | yes (it replaces the draft; what visitors see is not touched, and a change made elsewhere since the revision the assistant read is never overwritten) | no |
 | `publish_workflow` | no | yes (it replaces the version visitors get; every earlier version is kept) | yes (it makes the workflow what embeds on the public internet show) |
 | `set_workflow_state` | no | yes (it changes what visitors get; nothing is deleted and each change can be undone) | yes (it changes what embeds on the public internet show) |
+| `list_ab_tests`, `get_ab_test_options`, `get_ab_test`, `list_translations`, `get_translation_options`, `get_translation` | yes | no | no |
+| `save_ab_test` | no | yes (it replaces the draft; what visitors see is not touched) | no |
+| `set_ab_test_state` | no | yes (it changes what visitors get on pages that carry the test's embed code; stopping cannot be undone) | yes (it changes what embeds on the public internet show) |
+| `create_translation`, `add_translation_languages` | no | no (they add language copies; what visitors see is not touched until the translation is activated) | no |
+| `set_translation_state` | no | yes (it changes what visitors get on pages that carry the translation's embed code; nothing is deleted and each action can be undone) | yes (it changes what embeds on the public internet show) |
