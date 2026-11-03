@@ -84,7 +84,6 @@ Every method takes one request object, for example `getWidgets({ page: 1, size: 
 | `PartnersApi` | Partner operations: contract, billing overview, credits, storage, notifications, analytics and presets |
 | `CreditsApi` | Account credit balance and ledger |
 | `InvoicesApi` | Invoices |
-| `PartnerApi` | The calls a partner integration uses, gathered in one class. Most of them also exist on the class of their own area |
 | `PublicEmbedApi` | The public routes behind the embed script: embed state, frame, status and entries. These routes are not under `/v1`, so build it with the API address as its base path (below) |
 
 The public embed routes are at `https://api.widgetic.com/embed`. The SDK's default base path ends in `/v1`, so pass the address without it:
