@@ -42,7 +42,6 @@
         "summary": "Append a visitor entry through the gateway",
         "description": "Public append-only write into a published composition database. No API key. The browser must send a permitted `Origin` header: the artifact iframe origin, or any website when the owner has not restricted the allowed websites (when the owner has, one of the websites the owner listed, Widgetic's own sites, the visitor's own machine or the owner's own platform). When the request comes from the shared artifact origin, it must also carry the per-composition write token (`X-Widgetic-Write-Token` header or `writeToken` body field, handed to the widget in `widgetic:host` as `entries.writeToken` and returned as `entryWriteToken` on `getPublicCompositionEmbed`). Host `context` is stored for partner attribution; it is not authenticated unless the partner signs it (see **Signed context**). Request bodies are limited to 16 KB before parsing.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}/entries/{table}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n**Signed context.** A partner that wants to trust `context` (to bill a customer by it, say) makes a signing secret (`rotatePartnerEntryContextSecret`), and its server signs the context it hands to the embed. The signature travels inside `context` as two reserved keys, `widgetic_exp` (UTC seconds, at most seven days ahead) and `widgetic_sig`. The gateway checks them after the `Origin` and before anything else is judged, stored or announced, and keeps and announces the context WITHOUT them. A context that is not signed as the partner requires is refused with 403 `CONTEXT_SIGNATURE_REQUIRED`, `CONTEXT_SIGNATURE_INVALID` or `CONTEXT_SIGNATURE_EXPIRED`; when the check cannot be made just now the answer is a retryable 503 `CONTEXT_SIGNATURE_UNAVAILABLE`, never an unchecked entry. Until a partner makes a secret nothing changes: the two keys are dropped and the rest is taken as it came. A signature is good until its `widgetic_exp` and may be used again until then, so a partner that must count each submission once keeps a unique value of its own (a `submissionId`, say) in the context. The recipe and a test vector are in the description of `rotatePartnerEntryContextSecret`.",
         "tags": [
-          "Partner",
           "Public Embed"
         ],
         "x-visibility": "public",
@@ -201,7 +200,6 @@
         "summary": "Read the published Workflow of an embed",
         "description": "Public read of a workflow for the embed that carries `workflow-id`. No API key. The answer is the live version (its graph, the composition a new visitor starts on, the time zone, the languages its compositions can be shown in, and the token that lets the browser report counts), or `status: paused` with nothing else, in which case the embed shows only its first composition. A workflow that is a draft, archived or unknown answers 404, and the embed then behaves as a plain embed of its `composition-id`. So does a workflow whose owner is not being served (a plan that lapsed, a partner whose agreement is not in force): the answer is the one the compositions of that owner give.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\nThe answer may be reused for a few seconds (`Cache-Control: public, max-age=15`), so a publish or a pause reaches visitors within moments. The graph is readable by anyone who has the workflow's id: its rules run in the visitor's browser, so a rule must never hold a secret.",
         "tags": [
-          "Partner",
           "Public Embed"
         ],
         "x-visibility": "public",
@@ -223,6 +221,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "PublicWorkflowResponse",
                   "type": "object",
                   "required": [
                     "success",
@@ -298,7 +297,6 @@
         "summary": "Read one published version of a Workflow",
         "description": "Public read of one version of a workflow, for a visitor who started on it before a newer one was published: they finish on the version they started on (for up to 30 days; after that they get the latest). The graph of a version never changes once published; the languages its compositions can be shown in (`translations`) are read each time, as for the live version. Like the read of the live version, it answers `status: paused` with nothing else while the workflow is paused, and 404 when the workflow is a draft or archived, or has no such version.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/versions/{versionId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
         "tags": [
-          "Partner",
           "Public Embed"
         ],
         "x-visibility": "public",
@@ -329,6 +327,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "PublicWorkflowResponse",
                   "type": "object",
                   "required": [
                     "success",
@@ -404,7 +403,6 @@
         "summary": "Report what visitors did in a Workflow, as counts",
         "description": "Public report of counts for a workflow, sent by the embed. No API key. Each event is one id and a number: a visitor reached a block (`n`), took a connection (`e`), or could not be moved on (`f`). Nothing else is kept: no visitor, no value a visitor typed, no address. A batch carries at most 100 events and 16 KB. The same report may carry `heights`: how tall a step settled at in the browser, which the embed code of the workflow uses to start its box at a real height (a composition, a whole number of pixels, nothing about the visitor).\nA report is accepted only with the `token` the workflow's own read handed out for that `versionId`, so a page that never read the workflow cannot raise its numbers. An expired token (`EVENT_TOKEN_EXPIRED`) is refused with 401: read the workflow again for a new one. Counts for ids that are not in that version, or for a workflow that is not live, are not recorded and the answer says so (`recorded: false`) with 200: the visitor's page has nothing to fix.\nThe body is JSON, sent as `application/json` or as `text/plain` (a \"simple\" cross-origin request, which is what lets a report leave a page that is being closed).\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/events`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
         "tags": [
-          "Partner",
           "Public Embed"
         ],
         "x-visibility": "public",
@@ -570,9 +568,8 @@
       "get": {
         "operationId": "getPublicWorkflowFrame",
         "summary": "Show a published Workflow in a page of its own",
-        "description": "A page that runs a published workflow, for a place that can only be given an address or an iframe: a chat messenger, a link page, a site builder, a blog that follows oEmbed. No API key, no SDK to add. The page holds the Embed SDK and the same tag a website carries (`<widgetic workflow-id composition-id>`), so a visitor moves from one composition to the next in place, by the same rules, exactly as on a website. A paused workflow shows its first composition alone, as its embeds do.\n**What the frame can count.** Only what happens inside it: entries, a widget's goals and actions, and waits. The page events a website can send to a workflow (`widgetic:workflow-event`) are events of the page around the embed, and they do not cross an iframe, so a connection that waits for one never fires from a frame.\nA workflow that is a draft, is archived, or does not exist, and one whose owner is not being served, answers 404 with a short page that gives no reason. If the owner of the workflow's first composition listed the websites it may appear on, the page is sent with `Content-Security-Policy: frame-ancestors` naming those websites (and Widgetic's own), so a browser refuses to show it inside any other website. Opening the address directly still works. An owner who listed nothing is not restricted.\nThe page links its oEmbed card, so a site that follows oEmbed turns the address of the frame into an embed.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/frame`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
+        "description": "A page that runs a published workflow, for a place that can only be given an address or an iframe: a chat messenger, a link page, a site builder, a blog that follows oEmbed. No API key, no SDK to add. The page holds the Embed SDK and the same tag a website carries (`<widgetic workflow-id composition-id>`), so a visitor moves from one composition to the next in place, by the same rules, exactly as on a website. A paused workflow shows its first composition alone, as its embeds do.\n**What the frame can count.** Only what happens inside it: entries, a widget's goals and actions, and waits. The page events a website can send to a workflow (`widgetic:workflow-event`) are events of the page around the embed, and they do not cross an iframe, so a connection that waits for one never fires from a frame.\nA workflow that is a draft, is archived, or does not exist, and one whose owner is not being served, answers 404 with a short page that gives no reason. If the owner of the workflow's first composition listed the websites it may appear on, the page is sent with `Content-Security-Policy: frame-ancestors` naming those websites (and Widgetic's own, and the website where the partner the owner administers integrates Widgetic, with its subdomains), so a browser refuses to show it inside any other website. Opening the address directly still works. An owner who listed nothing is not restricted.\nThe page links its oEmbed card, so a site that follows oEmbed turns the address of the frame into an embed.\n**Address.** `https://api.widgetic.com/embed/workflows/{workflowId}/frame`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.",
         "tags": [
-          "Partner",
           "Public Embed"
         ],
         "x-visibility": "public",
@@ -654,7 +651,6 @@
         "summary": "Resolve a composition UUID to a published widget URL",
         "description": "Public customer embed lookup. No API key. Used by embed-sdk.js on third-party sites.\nIf the composition's owner listed the websites it may appear on (the workspace's domain list, or the `allowedDomains` of a partner the owner administers), a request from any other website is refused with 403 `DOMAIN_NOT_ALLOWED`. The website is read from the `Origin` header, or the host of `Referer` when there is no `Origin`; a request that names neither (a server, a tool) is not refused. An owner who listed nothing is not restricted, and a page on the visitor's own machine (`localhost`, `127.0.0.1` or `[::1]`, on any port) is always allowed. So is the website where a partner integrates Widgetic, with every subdomain of it (`platformDomain` in the answer of `GET /partners/mine`), for the widgets of that partner: a partner's list never has to name it. The list stops other websites from showing the embed in a visitor's browser; it does not hide the published content from someone who holds the composition ID.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n**Limit.** 500 calls for each visitor address and browser in one counting window, shared with the frame and the status routes. Over it the answer is 429 `RATE_LIMITED` with a `Retry-After` header.\n",
         "tags": [
-          "Partner",
           "Public Embed"
         ],
         "x-visibility": "public",
@@ -849,7 +845,6 @@
         "summary": "Embed a published composition with its saved values",
         "description": "Public HTML wrapper with an inner published artifact iframe. No API key or SDK required.\nIf the composition's owner listed the websites it may appear on, the page is sent with `Content-Security-Policy: frame-ancestors` naming those websites (and Widgetic's own, and the website where the partner the owner administers integrates Widgetic, with its subdomains), so a browser refuses to show it inside any other website whatever `Referer` policy that website uses. Opening the address directly still works. An owner who listed nothing is not restricted.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}/frame`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n",
         "tags": [
-          "Partner",
           "Public Embed"
         ],
         "x-visibility": "public",
@@ -921,7 +916,6 @@
         "summary": "Batch-check whether compositions are currently served for embed",
         "description": "Public batch health check for embed-sdk.js. No API key. Uses the same serving gate and domain policy as `GET /embed/compositions/{compositionId}`: the caller's website is read from `Origin`, or the host of `Referer` when there is no `Origin`. A request that names neither (a server or tool) is not refused for domain reasons.\n**Address.** `https://api.widgetic.com/embed/compositions/status`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n**Limit.** The route counts against the same limit as the lookup and the frame routes: 500 calls for each visitor address and browser in one counting window. A call is ONE hit whatever the number of `ids` it carries (up to 100), so a server that checks many compositions spends one call for each hundred of them. A visitor who is over the limit gets 429 `RATE_LIMITED` for the WHOLE call, with a `Retry-After` header and no state for any id: there is no per-composition rate-limit state in the answer.",
         "tags": [
-          "Partner",
           "Public Embed"
         ],
         "x-visibility": "public",
@@ -1037,7 +1031,6 @@
         "summary": "Call a gateway operation of an adapter a published widget uses",
         "description": "The door a widget's adapter module calls, from the visitor's browser, for the operations that cannot run in the browser: anything with a secret, a charge in credits or the owner's storage behind it. A widget that uses such an adapter is handed the address of this route as `adapters.url` in its `widgetic:host` message (see the host bridge contract) and calls `{adapters.url}/{adapterId}/{operation}`. It is not meant to be called by hand, and it takes no API key.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}/adapters/{adapterId}/{operation}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n**What it serves.** Only an adapter, and a version of it, that the widget's LIVE manifest (what the version that is published uses) lists, and only an operation that runs on the gateway. Anything else is one 404 `ADAPTER_NOT_AVAILABLE`, whatever the reason, so the route is no way to ask what a widget contains. An adapter an administrator stopped offering to NEW widgets keeps serving the widgets that already use it.\n**Who may call.** The same rule as the entry route: a permitted `Origin` header, which is the artifact origin the widget runs from or any website when the owner has not restricted the allowed websites (when the owner has, one of the websites the owner listed, Widgetic's own sites, the visitor's own machine or the owner's own platform). Page script cannot forge it. A request without a permitted `Origin` is 403 `ORIGIN_NOT_ALLOWED`. A composition that is not served (unpublished, or its owner's plan does not serve it) is 404, with the codes of the other public embed routes. When the partner of the owner signs the host context, a context that is not signed as the partner requires is refused with 403 `CONTEXT_SIGNATURE_REQUIRED`, `CONTEXT_SIGNATURE_INVALID` or `CONTEXT_SIGNATURE_EXPIRED`.\n**Cost and retries.** An operation priced in credits is charged to the owner of the widget (for a customer a partner manages, to the partner's administrator, within the monthly credits set for that customer), once for each `requestId`, before it runs, and given back if it does not answer. A `requestId` that was charged and not given back is 409 `REQUEST_ALREADY_USED` and the operation is NOT run a second time; one whose charge was given back may be tried again with the same `requestId`. A visitor never sees an owner's balance: a feature that cannot be used because its owner has no credits left, because the customer's monthly credits are spent, or because an administrator stopped the adapter, is the same 503 `ADAPTER_UNAVAILABLE` as every other \"not right now\". The owner is told through a notice.\n**Limits.** In front of everything, 120 calls a minute for each visitor address and composition and 600 a minute for a composition (429 `RATE_LIMITED`). Then, for each operation of a widget, a rate for each visitor address a minute and a cap for the widget a day: 30 and 5000 for an operation that is free, 10 and 500 for one that costs credits, unless the adapter says otherwise (never above 120 and 100000). A visitor over the rate is 429 `RATE_LIMITED`; a widget over its cap is 429 `WIDGET_LIMIT_REACHED`. Both carry a `Retry-After` header. The body is at most 64 KiB (413 `PAYLOAD_TOO_LARGE`) and JSON (415 `UNSUPPORTED_MEDIA_TYPE`); an operation has 30 seconds to answer (504 `ADAPTER_TIMEOUT`, and the charge is given back).",
         "tags": [
-          "Partner",
           "Public Embed"
         ],
         "x-visibility": "public",
@@ -1221,7 +1214,6 @@
         "summary": "Send the file a visitor chose through the upload adapter of a published widget",
         "description": "The second of the two calls the `upload` adapter's module makes from the visitor's browser (the first, the `begin-upload` operation of `callPublicCompositionAdapter`, answers with the ticket this route takes). The module sends the file itself, as the body, with its media type as the `Content-Type`. It is not meant to be called by hand, and it takes no API key.\n**Address.** `https://api.widgetic.com/embed/compositions/{compositionId}/adapters/upload/files/{ticket}`: the root of the API host, NOT under `/v1`. A client generated from this description for `https://api.widgetic.com/v1` must be given the base address `https://api.widgetic.com` for the calls of the `Public Embed` tag.\n**The ticket.** Single-use and valid for ten minutes, given for one file: its name, its media type and its exact size are what the visitor said when the ticket was asked for, after the widget's owner's settings (the kinds of file they take, the largest size) were applied. The `Content-Type` and the `Content-Length` of this request must be those, and the body must be exactly that many bytes (400 `UPLOAD_FILE_CHANGED` otherwise). The gateway never believes the type it was told: the first bytes of the file must be a file of that type and one the owner accepts (422 otherwise). A ticket whose file was stored and is sent again is answered with the same file, so a visitor whose connection dropped after the file landed does not store it twice; a ticket whose attempt failed is spent, and the module asks for a new one.\n**The virus check.** Before anything is stored, the file is checked for viruses, wherever it would be kept (Widgetic's storage or a partner's own bucket). A file that fails the check is refused with 422 `UPLOAD_FILE_UNSAFE` and nothing is stored. When the check cannot be done, nothing is stored either, and the answer is the same neutral 503 `UPLOAD_UNAVAILABLE` as for any other cause the visitor is not told. The ticket of a refused file is spent.\n**What it stores.** The file goes to the widget owner's storage: Widgetic's, or the partner's own bucket for a widget of a customer a partner manages. It counts against the owner's storage allowance and is filed in the folder the owner chose, as a file sent by a visitor, which the owner's own file list leaves out. A full allowance, a partner's storage that cannot be used and a stopped feature are all the same 503 `UPLOAD_UNAVAILABLE` to a visitor, and the owner is told through a notice.\n**Who may call.** The same rule as the entry route: a permitted `Origin` header, which is the artifact origin the widget runs from or any website when the owner has not restricted the allowed websites (when the owner has, one of the websites the owner listed, Widgetic's own sites, the visitor's own machine or the owner's own platform). A request without a permitted `Origin` is 403 `ORIGIN_NOT_ALLOWED`. A composition that is not served (unpublished, or its owner's plan does not serve it) is 404, with the codes of the other public embed routes.\n**Limits.** 30 requests a minute for each visitor address and composition and 240 a minute for a composition (429 `RATE_LIMITED`, with a `Retry-After` header); at most 10 MB for a file, and only so many files held in memory at once on each gateway process (503 `UPLOAD_BUSY`, with a `Retry-After`). A file that does not arrive within two minutes is 408 `UPLOAD_TIMEOUT`. Every answer but a success closes the connection, so a client that is refused before it has sent the file reads the answer and stops.",
         "tags": [
-          "Partner",
           "Public Embed"
         ],
         "x-visibility": "public",
@@ -1479,9 +1471,7 @@
         "summary": "List the compositions a workflow can show, and what each can do",
         "description": "The workspace's compositions as the workflow editor offers them, newest first. For each one: whether it can be\nshown (its widget has a published version), the websites it may be embedded on, and which triggers it supports.\n\n- **Input added** (`inputs`) is enabled only for a composition that declares at least one table a visitor's\n  entries can be written to. Its `tables` are all of them; its `fields` are the columns a rule may read (not\n  `id` and `created_at`, not a column that is not text, a number or yes/no, and not one whose name says it holds\n  a person's private details, such as an email or a phone number).\n- **Action in the widget** (`actions`) is enabled only when the published widget version declares at least one\n  goal. Its `items` are the goals a trigger can wait for.\n\nWhen one of them is not enabled, `reason` says why (`widget_keeps_no_data`, `widget_reports_no_actions` or\n`widget_not_published`), so the editor can show the trigger disabled with an explanation. Publishing checks every\nreference again against what the composition can do at that moment.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read it.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -1614,9 +1604,7 @@
         "summary": "List the starting points for a new Workflow",
         "description": "The workflows you can start from in this workspace: published workflows that Widgetic offers or, for one of a\npartner's managed users, that the partner offers (a managed user is never shown Widgetic's, and a person is never\nshown a partner's). Only what can be started now is listed, in the order the offerer set (smallest `position`\nfirst, then by `key`). Each shows what you would get, and none shows who made it or any id of its own.\nStart from one with `createWorkspaceWorkflowFromPreset`.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read the list.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -1712,9 +1700,7 @@
         "summary": "Start a Workflow from a starting point",
         "description": "Makes your own copy of a starting point (`listWorkspaceWorkflowPresets`): a copy of every widget it chains (an\nordinary private widget that serves the starting point's published code), a composition of your own on each copy\n(a draft, with the content, design, embed settings and tables of the original), and a draft workflow wired like the\nstarting point's live version. The workflow is named as you ask, or after the starting point. Nothing you do to the\ncopy reaches the starting point, and nothing its offerer changes afterwards reaches your copy. The workflow stays a\ndraft: publish it when it is ready.\n\nA start takes a few seconds, because each widget is copied. Send an `Idempotency-Key` so that asking again after\na timeout makes one copy. When a start fails (503 with `details.reason` `preset_copy_failed`) the compositions it\nmade are removed again, so asking again is safe; the widget copies it made stay in the workspace as ordinary\nwidgets. The workspace's limit of workflows is checked before anything is copied.\n\nA starting point that is not offered to you, or that can no longer be started, is 404.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can start one.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -1772,6 +1758,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowDetailResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -1862,9 +1849,7 @@
         "summary": "List the Workflows of a Workspace",
         "description": "Lists the workspace's workflows, newest first unless `sort` says otherwise. Archived workflows are left out\nunless `status` asks for them (`archived`, or `all`).\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read the list.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -2012,9 +1997,7 @@
         "summary": "Create a Workflow",
         "description": "Makes a draft workflow. Give it a composition and the workflow is born with one block, which starts it; without\none it starts empty. A workspace holds up to 500 workflows.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can create one.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -2076,6 +2059,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowDetailResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -2156,9 +2140,7 @@
         "summary": "Get a Workflow",
         "description": "Reads a workflow with its draft graph and the version that is live.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read it.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -2187,6 +2169,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowDetailResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -2265,9 +2248,7 @@
         "summary": "Save the Draft of a Workflow",
         "description": "Saves the name, the time zone and/or the graph of the draft. Send at least one. The save names the `revision` the\neditor started from and is refused with 409 (`BUSINESS_STATE_CONFLICT`) when the draft has moved on, so two\npeople editing do not overwrite each other without knowing; read the workflow again and apply the change to it.\nA save is never refused for what is wrong with the graph (a block with no connection yet is normal in a draft):\nonly the shape is judged here, and what stops a workflow going live is told when it is published. A graph larger\nthan 200,000 bytes, or with more than 100 blocks or 300 connections, is refused.\nAn archived workflow cannot be saved. Saving a live workflow changes the draft only: visitors keep getting the\npublished version until the changes are published.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can save.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -2328,6 +2309,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -2416,9 +2398,7 @@
         "summary": "Delete a Workflow",
         "description": "Deletes a workflow, in whatever state it is in (draft, live, paused or archived), with all its versions and\ncounts. It cannot be undone: archive the workflow instead to keep it. The compositions it chained are not\ntouched, and a page whose embed still names the workflow shows the embed's first composition, as for a paused\none. Asking for a workflow that is already gone is \"not found\".\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can delete.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -2527,9 +2507,7 @@
         "summary": "Duplicate a Workflow",
         "description": "Makes a draft copy of a workflow (its draft graph, not its versions or counts), named \"<name> (copy)\".\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can duplicate.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -2561,6 +2539,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowDetailResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -2651,9 +2630,7 @@
         "summary": "Publish the Draft of a Workflow",
         "description": "Checks the draft and, when nothing stops it, makes it the next version and the one new visitors get. Versions never\nchange once published. A visitor already partway through keeps the version they started on (for up to 30 days).\nThe check reads what each composition can do right now (a table the visitor adds to, a goal the widget reports,\nthe websites it may be embedded on), so a workflow never goes live pointing at something that has gone.\nIt is refused with 422 (`BUSINESS_OPERATION_INVALID`) when the draft has errors; the `issues` in the error's\n`details` name the blocks to fix: an unconnected trigger, a condition without rules, a composition that is not\npublished, a field or action that is gone, a composition whose allowed websites exclude the site the workflow\nstarts on. Nothing is published when the draft has no changes since the live version.\nThe `revision` is the one the editor read, and a publish of a draft that has moved on is refused with 409.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can publish.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -2804,9 +2781,7 @@
         "summary": "Discard the Unpublished Changes of a Workflow",
         "description": "Puts the draft back to the live version (its graph and its time zone). Only for a workflow that has been\npublished; one that never was has no live version to go back to. Names the `revision` the editor read.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can discard.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -2854,6 +2829,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowDetailResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -2944,9 +2920,7 @@
         "summary": "List the Published Versions of a Workflow",
         "description": "Every version the workflow has had, newest first, with who published it and when. The one visitors get is marked\n`isLive`.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -3055,9 +3029,7 @@
         "summary": "Get a Published Version of a Workflow",
         "description": "One published version with its graph, for the read-only preview and for the Runs view.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -3169,9 +3141,7 @@
         "summary": "Restore a Version of a Workflow into the Draft",
         "description": "Copies a published version into the draft, so it can be changed and published again. Nothing is published and\nnothing visitors see changes: the version stays in the history as it was. Names the `revision` the editor read.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can restore.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -3222,6 +3192,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowDetailResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -3312,9 +3283,7 @@
         "summary": "Pause a Workflow",
         "description": "While a workflow is paused, its embeds show only their first composition (the `composition-id` of the embed) and no\nvisitor moves on. The live version is kept, and visitors partway through carry on from where they were when it is\nresumed. Only a live workflow can be paused.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can pause.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -3343,6 +3312,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -3433,9 +3403,7 @@
         "summary": "Resume a Paused Workflow",
         "description": "Makes a paused workflow live again, on the version that was live when it was paused.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can resume.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -3464,6 +3432,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -3554,9 +3523,7 @@
         "summary": "Archive a Workflow",
         "description": "Takes a workflow out of the default list and stops it serving: its embeds show only their first composition,\nas when paused. It is kept, with its versions and counts, until it is deleted.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can archive.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -3585,6 +3552,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -3675,9 +3643,7 @@
         "summary": "Unarchive a Workflow",
         "description": "Brings an archived workflow back into the list: as paused when it was ever published (resume it to serve visitors\nagain), as a draft when it never was.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can unarchive.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -3706,6 +3672,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "WorkflowResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -3796,9 +3763,7 @@
         "summary": "Get what Visitors Did in a Workflow",
         "description": "Counts per block and per connection over a range of UTC days (the last 30 days when not given, up to 366), for one\nversion or for all of them. Only counts: how many visitors reached a block, took a connection, or could not be\nmoved on. No visitor and no value a visitor typed is ever stored.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read.\n",
         "tags": [
-          "Partner",
-          "Workflows",
-          "Workspaces"
+          "Workflows"
         ],
         "security": [
           {
@@ -3937,9 +3902,7 @@
         "summary": "List the workflows a partner offers as places to start",
         "description": "The partner's starting points, ordered by `position` and then by `key`: the published workflows it offers its managed\nusers when they make a new workflow. Each says whether people can start from it now and, when they cannot, why. The\nlist is the same for every managed user, and a managed user is shown only what is available.\n\nA starting point is one of the partner account's own published workflows, built from compositions the account made\nfor itself (not for a customer or a team) and from widgets the partner already offers as presets\n(`setPartnerPreset`), and it uses at most 10 widgets. A partner offers up to 50.\n\nThe caller must be the person who administers the partner (an API key of that account works), or a Widgetic\nadministrator.\n",
         "tags": [
-          "Partner",
-          "Partners",
-          "Workflows"
+          "Partners"
         ],
         "security": [
           {
@@ -4056,9 +4019,7 @@
         "summary": "Offer a workflow as a place to start, or replace what a key offers",
         "description": "Offers one of the partner account's own published workflows to its managed users under `key`. If the partner already\noffers something under that key it is replaced, so sending the same request twice is safe. Saving replaces the whole\nstarting point: a `title`, `description` or `position` you leave out goes back to its default.\n\nKeys are 1 to 64 characters: lowercase letters, digits, hyphens and underscores, the first a letter or a digit.\n\nA workflow is offered once. What people get is the workflow's live version as it is when they start, so publishing\nthe workflow changes what new starts get; workflows people already started are never touched. The offer is\nrefused, and `error.details.reason` says why, when the workflow:\n\n- is not the partner account's own (a workflow of a team or of a customer, or of somebody else), or does not exist:\n  404, the same for both;\n- is archived (409 `workflow_archived`), or was never published (409 `workflow_not_published`);\n- shows no composition (422 `workflow_empty`), or a block shows a composition made for a customer or a team\n  (422 `composition_not_own`);\n- chains more than 10 widgets (422 `too_many_widgets`), or a widget that the partner does not offer as a preset\n  (422 `widget_not_preset`; `error.details.widgets` lists them, each with its `id` and `name`, so they can be offered\n  first with `setPartnerPreset`);\n- is already offered under another key (409 `workflow_already_offered`; `error.details.key` says which), or the\n  partner already offers 50 (409 `too_many_presets`).\n\nThe caller must be the person who administers the partner (an API key of that account works), or a Widgetic\nadministrator, who offers the partner's workflow on its behalf.\n",
         "tags": [
-          "Partner",
-          "Partners",
-          "Workflows"
+          "Partners"
         ],
         "security": [
           {
@@ -4203,9 +4164,7 @@
         "summary": "Stop offering a workflow as a place to start",
         "description": "Removes the starting point under `key`. The workflow itself is not touched, and neither are the workflows people\nalready started from it.\n\nRemoving a starting point the partner does not offer is not an error: the answer is `removed: false`.\n",
         "tags": [
-          "Partner",
-          "Partners",
-          "Workflows"
+          "Partners"
         ],
         "security": [
           {
@@ -4332,7 +4291,6 @@
         "summary": "List Widgets",
         "description": "Lists the widgets your account owns, newest first. A widget is the reusable piece a composition is made\nfrom; this is your own library, not a catalogue of Widgetic's widgets.\n\nPass `page` (counting from 1) and `size` (1 to 100, 20 when left out) to read the list one page at a time.\n`meta` then carries `total`, `hasNextPage` and `hasPreviousPage`, so a client can walk the list to its end.\nA page past the end is an empty list. Without `page` and `size` the call returns the whole list in one\nresponse, which only suits an account with a few widgets.\n\nPass `canvasId` to list only the widgets on one of your canvases. That list is always returned whole,\nwhatever `page` and `size` say.\n\nPass `managedUserId` (Widgetic's id for one of your managed users) or `managedUserExternalId` (your own\nidentifier for the user) to list only the widgets made for that managed user. The widgets of your other\nmanaged users, and your own, are left out. It combines with `page`, `size` and `canvasId`. A managed user\nthat is not yours, or does not exist, is answered with 404 and `MANAGED_USER_NOT_FOUND`.\n",
         "tags": [
-          "Partner",
           "Widgets"
         ],
         "x-access-level": "user",
@@ -4476,7 +4434,6 @@
         "summary": "Create Widget",
         "description": "Creates a widget for your account: a named record with a type and some starting content, on a canvas of\nits own (or one of yours that you name). It costs no credits and has no code yet; the code is generated for\nit afterwards. The new widget is yours, and you can list it with `getWidgets`. A widget is a draft until\nyou say otherwise (`isDraft: false`).\n\nIf a step after the widget was saved does not go through, the widget is still created, and\n`data.warnings` says what did not. Read it before relying on the widget.\n\nA widget can be placed on one of your canvases (`canvasId`), in a project you can edit (`projectId`) or in an\norganization where you may create widgets (`organizationId`). Naming anything you cannot use is refused\nwith 403, and the answer is the same whether it exists or not.\n\nTo make the widget for one of your managed users, send `managedUserId` or `managedUserExternalId`. The widget\nstays in your account and is yours to edit; the tag lets you list one user's widgets with `getWidgets`. The\nmanaged user must be yours and active: one that is not yours, or does not exist, is answered with 404 and\n`MANAGED_USER_NOT_FOUND`, and one that is switched off with 409 and `MANAGED_USER_INACTIVE`. The tag is set\nhere and does not change afterwards.\n\nThis call has a limit of its own: 120 per minute for each account (ask Widgetic if you need more). Past\nthat the call is answered with 429 and a `Retry-After`. A widget has no database of its own: what the\nvisitors of a composition leave is kept in the tables of that composition, made when the composition is.\nThe `Idempotency-Key` header is required; send the same key when you retry, so one widget is created, not\ntwo.\n",
         "tags": [
-          "Partner",
           "Widgets"
         ],
         "x-access-level": "user",
@@ -4618,7 +4575,6 @@
         "summary": "Create a composition for a widget in one call",
         "description": "After a managed user publishes a widget from the creator, call this with the widget id, the customer's\nmanaged user (when the widget is not already filed under one), and optional content, design, embed settings\nand locale. Every input is validated before a single insert; a failure never leaves a half-made composition.\n\nWhen the widget is already tagged with a managed user, you may omit `managedUserId`. When you send it, it\nmust match that tag.\n\nA widget that keeps what visitors send (a form, a vote, a rating) declares its tables in its own source\n(`src/lib/meta/database.json`); they are made for the composition here, in a schema of its own, as the widget\nwas when it was last published. A widget that keeps nothing leaves the composition without tables. If the\ntables cannot be made just now, or the widget's file cannot be used, the composition is still created (`201`)\nand `meta.warnings` says why; the tables are made the next time the widget is generated.\n\nThe widget must be published. The `Idempotency-Key` header is required.\n",
         "tags": [
-          "Partner",
           "Widgets"
         ],
         "security": [
@@ -4689,22 +4645,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Composition"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMeta"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ]
+                  "$ref": "#/components/schemas/CompositionResponse"
                 }
               }
             }
@@ -4778,7 +4719,6 @@
         "summary": "Get Widgets Batch",
         "description": "Retrieves multiple widgets by their IDs in a single request. An id that is not found, or that is not yours, is reported in `errors` exactly like one that does not exist. Called with an editor session, only the widgets made for the session's managed user are returned.",
         "tags": [
-          "Partner",
           "Widgets"
         ],
         "x-access-level": "user",
@@ -4849,7 +4789,6 @@
         "summary": "List the websites allowed to show your widgets",
         "description": "Lists the websites on an account's own list, newest first. It is the list Widgetic checks when a widget of the account is embedded: when it holds at least one website, the widget is shown on those websites (and on Widgetic's own) and nowhere else; when it is empty, the widget can be shown anywhere. If the account administers a partner, the websites set on the partner record by Widgetic are added to them. Widgets that belong to an organization use the organization's list instead.\nThe answer holds the whole list, however long it is: a partner's list has no limit.",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -4937,7 +4876,6 @@
         "summary": "Allow a website to show your widgets",
         "description": "Adds a website to an account's own list. Give a website name such as `example.com`, or `*.example.com` for a website and all of its subdomains. A scheme, a port, a path, capital letters and a leading `www.` are dropped, so `https://www.Example.com/shop` is kept as `example.com`, and `example.com` covers `www.example.com` too. Something that is not a website name is refused, not stored.\nUntil the first website is added nothing is restricted, and a widget can be shown anywhere. Once the list has one, a widget of the account is shown on the listed websites (and on Widgetic's own) and nowhere else. A page on your own machine (`localhost`, `127.0.0.1` or `[::1]`, on any port) is always allowed, so there is nothing to add to test locally. So is the website where a partner your account administers integrates Widgetic, with every subdomain of it (`platformDomain` in the answer of `GET /partners/mine`), so there is nothing to add for it either and a list can never lock it out. A change can take about 15 seconds to reach every server.\nThe list is a safeguard against other websites showing your widgets in a visitor's browser. It is not access control: anyone who knows a widget's id can still fetch its published content with a plain request that names no website.\nThere is no limit on the list of an account that administers a partner, so a partner can add the website of each of its customers as they publish on their own domain, one call each. Any other account can list at most 50 websites, and the 51st is answered with a 409 (`BUSINESS_STATE_CONFLICT`). A wildcard such as `*.example.com` counts as one website, not one per subdomain, so use it instead of listing each subdomain.\nA page that frames a widget can name only so many websites to the browser (about fifty of ordinary length). Past that, the browser no longer checks the list for that page; the lookup that the Embed SDK makes for the widget still refuses every website that is not on the list.",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -5039,7 +4977,6 @@
         "summary": "Change a website on your list",
         "description": "Replaces the website of one entry on an account's own list. The same rules apply as when adding one (`addPersonalWorkspaceDomain`): a website name such as `example.com` or `*.example.com`, kept in its cleaned form, and refused when it is not a website name or is already on the list.",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -5149,7 +5086,6 @@
         "summary": "Stop allowing a website to show your widgets",
         "description": "Removes one entry from an account's own list. When it was the last one, nothing is restricted any more and a widget can be shown anywhere again. A change can take about 15 seconds to reach every server.",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -5231,7 +5167,6 @@
         "summary": "List the API keys of an account",
         "description": "Lists the API keys of an account, in the order they were made: name, the first characters of the key, when it was made, when it expires, when it was last used, whether it is switched on and what it is limited to (`scopes` and `preset`). The secret of a key is never part of the list. A caller can list its own account's keys; Widgetic staff can list any account's.",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -5319,7 +5254,6 @@
         "summary": "Create an API key",
         "description": "Makes a new API key for an account and returns its secret in `key`. That is the only time the secret is shown: Widgetic keeps a hash, so a key that was not stored cannot be recovered, only replaced. To rotate a key, make the new one, switch the integration over to it, then delete the old one.\nOnly a person signed in on widgetic.com can make a key: a request made with an API key, or with an SDK token, is refused with 403. That way a leaked key cannot be used to make a second one that survives its revocation. Make keys from the dashboard; a key can still list, rename, switch off and delete keys.\nAn `Idempotency-Key` header is required (8 to 50 characters: letters, digits, `-` and `_`). A retry with the same header and the same body returns the same answer instead of making a second key, and the same header with a different body is refused with 422. Make keys one at a time: two requests for the same account that run at the same moment can overwrite each other.\nA key can be limited to what it needs. Send a `preset` (`read_only`, `content` or `full_access`) or a list of `scopes`, never both. Send neither for a key that can do everything its owner can, as every key made before scopes existed. A limited key is refused with 403 and the code `API_KEY_SCOPE_MISSING` on anything outside its scopes, so a key held by a build server or by a partner's backend can be given only the part of the API it uses. The scopes of a key are fixed when it is made: to widen one, make a new key and delete the old one. A limited key cannot make, change or delete keys, exchange tokens or reach the administration routes. The list of scopes is in the `ApiKeyScope` schema.\nAccounts with API access (Solo, Teams and partner accounts) have no limit on how many keys they hold. An account on a plan without API access cannot make one (a partner account is not asked about a plan).",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -5424,7 +5358,6 @@
         "summary": "Rename an API key, or switch it off or on",
         "description": "Renames a key, or switches it off (`isActive: false`) or back on. A key that is switched off is refused at once by the server that took the request and within a minute by the others, and can be switched on again; deleting is for a key that is not coming back. The secret, the expiry and the scopes of a key cannot be changed. Only a key with full access can make these requests: a key limited to some scopes is refused with 403 and the code `API_KEY_SCOPE_MISSING`.\nRenaming and switching off can be done with an API key. Switching a key on needs a person signed in on widgetic.com: a request that asks for it with an API key or an SDK token is refused with 403, so a leaked key cannot bring a dormant key back to life.",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -5533,7 +5466,6 @@
         "summary": "Delete an API key",
         "description": "Deletes a key and the record of what it was used for. The key stops working at once on the server that took the request and within a minute on the others, and cannot be brought back: make a new one instead. To stop a key without losing it, switch it off with `updateUserApiKey`.",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -5614,7 +5546,6 @@
         "summary": "Read what an API key was used for",
         "description": "Lists the calls made with one key, newest first: when, which path and method, and the status each ended with. Use it to see whether a key is still in use before deleting it, or to see what a key that should not be in use has been doing.",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -5705,7 +5636,6 @@
       "post": {
         "operationId": "uploadsPost",
         "tags": [
-          "Partner",
           "Uploads"
         ],
         "summary": "Upload a file",
@@ -5884,7 +5814,6 @@
       "get": {
         "operationId": "uploadsGet",
         "tags": [
-          "Partner",
           "Uploads"
         ],
         "summary": "List the account's uploads",
@@ -5993,7 +5922,6 @@
       "get": {
         "operationId": "uploadsLimitsGet",
         "tags": [
-          "Partner",
           "Uploads"
         ],
         "summary": "Upload size limits and accepted file types",
@@ -6033,7 +5961,6 @@
       "get": {
         "operationId": "uploadsIdGet",
         "tags": [
-          "Partner",
           "Uploads"
         ],
         "summary": "Get an upload by id",
@@ -6093,7 +6020,6 @@
       "delete": {
         "operationId": "uploadsIdDelete",
         "tags": [
-          "Partner",
           "Uploads"
         ],
         "summary": "Delete an upload",
@@ -6179,7 +6105,6 @@
     "/tokens/validate": {
       "get": {
         "tags": [
-          "Partner",
           "Tokens"
         ],
         "operationId": "validateToken",
@@ -6274,7 +6199,6 @@
         "summary": "Find the partner you administer",
         "description": "Returns the partner (nearly always one) that the signed-in account administers, with the id every other\npartner route asks for and the standing it is in: `active`, `inactive` (not activated yet), `suspended`\n(paused, with the reason Widgetic gave) or `payment_arrears` (a contract invoice is past its due date and\nunpaid, since `overdueSince`; the partner is stopped until it is paid). A partner API key is that account's\nkey, so it reads its own partner here.\n\nAn account that administers no partner is not refused: it gets `standing: not_a_partner` and an empty\nlist, so a dashboard can tell \"this is not a partner account\" from \"something failed\".\n\nThe call stays open while the partner is paused, not yet active or in payment arrears: that is when its\ndashboard has to say why.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -6324,7 +6248,6 @@
         "summary": "Get partner credit balance",
         "description": "Returns the credits the partner has, and how much of that is reserved by operations that are still running.\nA partner has ONE account for its credits: the account of the person who administers it, the same account\nits API key acts as. There is nothing else to create or to fund. What its customers' editor sessions and its\nown API calls spend comes out of that account, and the credits a paid invoice carries are added to it, so\nthis is the same balance `getUserCreditBalance` reads for that person.\n\nA partner with no administrator has no account to hold credits, and reads a balance of 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -6396,7 +6319,6 @@
         "summary": "Get partner credit transaction history",
         "description": "Lists what happened to the partner's credits, newest first: the entries of the credit ledger of the account of\nthe person who administers it, the one account a partner has for its credits. Every operation that spends\ncredits is a `debit` entry, and the credits an invoice carried arrive as `credit` entries when the invoice is\npaid, so this is also how the partner's usage is read. It is the same ledger `getUserCreditTransactions`\nreads for that person.\n\nA partner with no administrator has no account, and an empty ledger.\n\nThe page is always bounded: `limit` defaults to 20 and is capped at 100, `offset` defaults to 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -6453,6 +6375,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AccountCreditTransactionListResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -6515,7 +6438,6 @@
         "summary": "Buy extra credits for a partner",
         "description": "Asks Widgetic for an invoice for extra credits, on top of the credits of the contract. Name the dollars; the\ninvoice is for the most whole credits they buy at the **list price** of a credit (the price a contract may\nlower belongs to the contract), so it is never for more than you asked: 12.34 buys 123 credits and the invoice\nsays 12.30. The smallest purchase is 10 dollars and one request buys at most 100000 (ask Widgetic for an\ninvoice for more).\n\nPay the invoice with the link in the answer. When it is paid the credits are added **once, for good**, to the\naccount of the person who administers the partner, which is the account everything the partner builds is\ncharged to (`getPartnerCreditBalance` shows it). Extra credits **do not expire**, unlike the credits of a\ncontract period, which end with it. Nothing is added before the invoice is paid, and an unpaid invoice for\nextra credits never stops the partner: only an unpaid invoice of the contract does (`payment_arrears`).\n\nAvailable only to partners that have an active paid contract in force with Widgetic (`NO_PAID_CONTRACT` when\nnone is in force) and no overdue contract invoice (`CONTRACT_INVOICE_OVERDUE` while a contract invoice is past\nits due day). A partner that has run out of credits during its period can buy more at the list price.\n\nAn `Idempotency-Key` is required, and it is what makes a retry safe: the same key with the same body returns\nthe invoice already issued, the same key with a different body is refused with 422, and a duplicate that\narrives while the first is still running is refused with 409. Use one key per purchase you mean to make, and\na new key for the next one. At most 10 requests an hour.\n\nWho may ask: the person who administers the partner, or a Widgetic administrator. A key limited to scopes\nneeds `billing:write`.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -6659,7 +6581,6 @@
         "summary": "Get comprehensive partner billing overview",
         "description": "Retrieves the partner's credits (`operationalCredits`), the partner's contract terms (`partnerCustomization`, the same fields as `getPartnerContract`) and billing integration status. Internal negotiation notes are not part of it.\n`operationalCredits` is the one account a partner has for its credits: the account of the person who administers it. It holds `balance` (the same balance `getPartnerCreditBalance` reads), `reservedBalance`, `availableBalance` (what a new operation can use) and `recentTransactions` (the ten newest entries of the ledger `getPartnerCreditTransactions` lists). A partner with no administrator has no account, and reads 0 and an empty list.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -6716,7 +6637,6 @@
         "summary": "Get a partner's contract",
         "description": "Returns the commercial terms agreed with the partner: price, included credits and storage, billing\ncycle, commitment, support level, and the dates the contract runs between.\n\nA partner reads its own: the caller must be the person who administers the partner (an API key of\nthat account works), and anyone else is refused with 403 whether or not the partner exists. Widgetic\nadministrators can read any partner's. Responds 404 while no contract has been recorded for the\npartner, which is the case until Widgetic sets its terms.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -6788,7 +6708,6 @@
         "summary": "Set where a partner's uploaded files are stored",
         "description": "Points the partner at a bucket of its own on an S3-compatible service (Cloudflare R2, Amazon S3,\nWasabi, MinIO and the like). From then on, every file the account that administers the\npartner stores is kept in that bucket instead of with Widgetic, whichever way it arrives: a file sent with\n`uploadsPost` (with an API key, an SDK token, an editor session or from the Widgetic website), a resumable\nupload, the media library, and the files the agent tools and the MCP server save. It takes none of the\naccount's storage allowance, and its `url` is served from `publicBaseUrl`. The chunks of a resumable\nupload wait in Widgetic's temporary staging area until it is completed and are removed then: the finished\nfile is stored in your bucket and nowhere else.\n\nA destination is required. Partner storage is not optional: your customers' files, and your own however they\narrive, are kept in this destination and nowhere else. An editor session\n(`createManagedUserEditorSession`) of any surface cannot be made until a destination is set (409\n`PARTNER_STORAGE_REQUIRED`), a destination removed later stops the uploads of the sessions already made\n(the same 409), and your own upload with no destination (on any route, including a resumable upload, which\nis refused when it is started) is refused in the same way instead of being stored with Widgetic. A partner\ncannot be activated until it has a destination that works.\n\nThe destination is checked before it is saved. Widgetic writes a small test file under\n`<keyPrefix>widgetic-check/`, reads it back from `<publicBaseUrl>/<its key>`, and deletes it. If any\nstep fails nothing is saved and the answer is 422 `STORAGE_DESTINATION_UNVERIFIED`: `details.step` says\nwhere (`endpoint`, `write` or `public_read`), `details.reason` says why, and `param` names the field most\nlikely to be wrong.\n\nWhat the bucket needs:\n- an access key that may put objects into it (it may also delete objects, which lets the test file be\n  cleaned up, but that is not required);\n- its files publicly readable at `publicBaseUrl`, either because the bucket is public or through a CDN.\n\nThe secret access key is stored encrypted and is never returned or logged; a response shows only the last\nfour characters of the access key id (`accessKeyHint`). Saving replaces the whole destination, so send\nevery field again, including the secret. Files already stored stay where they are, and keep working for\nas long as that bucket stays publicly readable.\n\nOnce a destination is set, an upload is never stored with Widgetic instead: when the destination cannot be\nused the upload is refused with 503 `STORAGE_DESTINATION_UNAVAILABLE`, and when the bucket rejects the\nfile with 502 `STORAGE_DESTINATION_WRITE_FAILED`.\n\nThe caller must be the person who administers the partner (an API key of that account works); anyone else\nis refused with 403 whether or not the partner exists. Widgetic administrators can set any partner's.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -6908,7 +6827,6 @@
         "summary": "Get where a partner's uploaded files are stored",
         "description": "Returns the partner's storage destination without its secret: the endpoint, bucket, folder and public\naddress, the last four characters of the access key id, when the destination last passed the check, and\nwhy the latest re-check failed if it did. Responds 404 while the partner has no destination, which means\nthe partner cannot be activated, its uploads are refused, and no editor session is made for its customers\nuntil a destination is set.\n\nThe caller must be the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -6978,7 +6896,6 @@
         "summary": "Stop storing a partner's uploaded files in its own bucket",
         "description": "Removes the partner's storage destination. Partner storage is not optional, so after this every upload of\nthe account, on any route, and the uploads of your customers' editor sessions are refused (409\n`PARTNER_STORAGE_REQUIRED`) until a destination is set again, and no editor session can be made. Files\nalready in the partner's bucket are not touched and are not moved: they stay where they are, at the\naddresses they were given.\n\nRemoving a destination the partner does not have is not an error: the answer is `removed: false`.\n\nThe caller must be the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -7050,7 +6967,6 @@
         "summary": "Check that a partner's storage destination still works",
         "description": "Runs the same check as `setPartnerStorageDestination` against the destination already saved: a test\nfile is written, read back from the public address and deleted. Use it after rotating a key or changing\na bucket policy, or when uploads are failing with 502 or 503.\n\nThe result is recorded either way. A pass refreshes `verifiedAt` and clears `lastVerificationError`; a\nfailure answers 422 `STORAGE_DESTINATION_UNVERIFIED` and is recorded in `lastVerificationError` and\n`lastVerificationFailedAt`, so the destination shows what went wrong the next time it is read. A failed\ncheck does not remove the destination or stop uploads from using it.\n\nThe caller must be the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -7152,7 +7068,6 @@
         "summary": "List the widgets a partner offers as presets",
         "description": "Returns the partner's presets, ordered by `position` and then by `key`: the widgets it offers its managed\nusers as starting points. The list is the same for every managed user.\n\nUse a preset in one of two ways:\n- **Make a composition of it** (the content and design editor): call `createComposition` with the preset's\n  `widgetId` and the managed user. The widget itself stays yours; a composition is the user's own content.\n- **Give the user a copy to build on** (the widget creator): call `copyPresetForManagedUser`. The user gets\n  a widget and a canvas of their own.\n\nPresets are not the same as the widgets Widgetic puts on every new Widgetic account. Those are chosen by\nWidgetic and are copied at sign-up. A preset here is yours, and is copied only when you ask.\n\nThe caller must be the person who administers the partner (an API key of that account works), or a\nWidgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -7252,7 +7167,6 @@
         "summary": "Make a widget a preset, or replace a preset",
         "description": "Offers one of the partner's own widgets as a preset under `key`. If the partner already has a preset under\nthat key it is replaced, so sending the same request twice is safe. Saving replaces the whole preset: a\n`title`, `description` or `position` you leave out goes back to its default.\n\nKeys are 1 to 64 characters: lowercase letters, digits, hyphens and underscores, the first a letter or a\ndigit (`rating`, `quiz-3`).\n\nThe widget must belong to the partner's account; a widget that does not exist and one that belongs to\nsomebody else are refused in the same way (404 `PRESET_WIDGET_NOT_FOUND`). A widget is a preset under at\nmost one key (409 `PRESET_WIDGET_ALREADY_USED`; `details.key` says which), and an account can have at\nmost 100 presets (409 `PRESET_LIMIT_REACHED`).\n\nLater changes to the widget reach new copies and new compositions; copies made earlier are not touched.\nDeleting the widget removes its preset.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -7362,7 +7276,6 @@
         "summary": "Take a widget off the partner's presets",
         "description": "Removes the preset under `key`. The widget itself is not touched, and neither are the copies and the\ncompositions already made from it.\n\nRemoving a preset the partner does not have is not an error: the answer is `removed: false`.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -7453,7 +7366,6 @@
         "operationId": "getPartnerDesignDefaults",
         "summary": "Read partner-wide design defaults",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -7480,6 +7392,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "DesignDefaultsResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -7537,7 +7450,6 @@
         "summary": "Set or clear partner-wide design defaults",
         "description": "Send `{ \"design\": { ... } }` or `{ \"design\": null }` to remove. New compositions merge this layer over the\nwidget base and under each managed user's default and the request body.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -7590,6 +7502,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "DesignDefaultsResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -7659,7 +7572,6 @@
         "summary": "What a partner's customers store",
         "description": "Says how many files, and how many bytes, your account keeps, in total and for each of your managed users, and\nhow much of it is in Widgetic's storage and how much in your own storage destination\n(`setPartnerStorageDestination`). Use it to see which customers store the most, or to charge them for it.\n\nA file is counted for a managed user when it was filed under that user: by naming `managed_user_id` or\n`managed_user_external_id` when you upload it (`uploadsPost`, or the metadata of a resumable upload), or\nbecause it was uploaded through that user's editor session, which files everything under its user. The files\nthat are not filed under anyone (your own, and the ones uploaded without naming a managed user) are the row\nwhose `managedUserId` is null. Deleted files are not counted. To list the files of one managed user, use the\n`managed_user_id` filter of `uploadsGet`.\n\nThe answer is counted when you ask, so it is always current. The groups are ordered by size, the heaviest\nfirst, and `page.hasMore` says whether more follow.\n\nThe caller must be the person who administers the partner (an API key of that account works, with the\n`partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -7790,7 +7702,6 @@
         "summary": "What was done with a partner's published widgets",
         "description": "Counts what the visitors of the compositions made through your account did in a period: how many times a\ncomposition was **viewed**, how many times a visitor **interacted** with one, and how many different visitors\nthere were. It covers every composition of your account, your own and the ones made for your managed users;\nnarrow it to one managed user with `managedUserId` or `managedUserExternalId` (not both).\n\nThe numbers come from the events the embedded widgets send while they are shown (the Widgetic embed SDK sends\nthem by itself), counted when you ask. Only views and interactions are counted; the events that describe a\nvisit (its start, its end, the device and the referrer) are not.\n\nThe period runs from `startDate` (included) to `endDate` (not included): the 30 days before now when you give\nneither, and at most 366 days. A date without a time is midnight UTC at the start of that day, so for all of\nOctober give `startDate=2026-10-01` and `endDate=2026-11-01`.\n\nThe caller must be the person who administers the partner (an API key of that account works, with the\n`partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -7933,7 +7844,6 @@
         "summary": "What each managed user's widgets did",
         "description": "Lists every one of your managed users with what their widgets and compositions did in a period: views,\ninteractions and visitors, and how many widgets and compositions they have made. A managed user whose widgets\nwere not viewed is listed too, with zeros. The most viewed come first, and `page.hasMore` says whether more\nfollow.\n\nOnly the compositions made for a managed user count for it: file them under the user when you create them\n(`managedUserId` on `createComposition`), or let the user's editor session do it, which files everything under\nits user. What a visitor did with a composition that is not filed under anyone is in the summary of the whole\naccount (`getPartnerAnalyticsSummary`) and in no managed user's row.\n\nThe period works as it does for `getPartnerAnalyticsSummary`. The caller must be the person who administers the\npartner (an API key of that account works, with the `partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -8073,7 +7983,6 @@
         "summary": "Which widgets were viewed the most",
         "description": "Lists the widgets whose compositions were viewed the most in a period, with their views, interactions,\nvisitors and how many of their compositions were viewed. A widget that nobody viewed or used is not listed. The\nmost viewed come first (then the most used), and at most `limit` are listed. Narrow it to one managed user with\n`managedUserId` or `managedUserExternalId` (not both).\n\nThe period works as it does for `getPartnerAnalyticsSummary`. The caller must be the person who administers the\npartner (an API key of that account works, with the `partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -8220,7 +8129,6 @@
         "summary": "What was done with a partner's widgets, day by day",
         "description": "Counts views, interactions and visitors for each day of a period (UTC days), oldest first, for a chart. Every\nday of the period is in the list, also one on which nothing happened (all zeros), so the list can be drawn as\nit is. Narrow it to one managed user with `managedUserId` or `managedUserExternalId` (not both).\n\nThe period works as it does for `getPartnerAnalyticsSummary`; `startDate` and `endDate` are best given as dates,\nso that the first and the last day are whole days. The caller must be the person who administers the partner\n(an API key of that account works, with the `partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -8356,7 +8264,6 @@
         "summary": "What your partner account was told",
         "description": "Lists the notifications of a partner, the newest first: the invoices Widgetic issued and their payments, the\nreminders to pay them, a warning when your credits run low, and the changes to the standing of the account\n(activated, paused, resumed). It is the same list your dashboard shows, and each entry is what your webhook\nreceives as `data` when you have one (`updatePartnerNotificationSettings`).\n\nA page holds `limit` notifications (20 by default, at most 100). When there are older ones `nextBefore` is\nset: ask again with it as `before` to get the next page.\n\nThe caller must be the person who administers the partner (an API key of that account works, with the\n`partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -8465,7 +8372,6 @@
         "summary": "How your notifications reached you",
         "description": "Lists the sends of your notifications, the newest first: each email to one address and each call to your\nwebhook, with whether it was delivered, when it is tried again if not, how many attempts it had, and why the\nlast one failed. Use it to find out why a webhook of yours did not receive an event.\n\nAn email counts as delivered when it was handed to the mail service; a call to your webhook counts as\ndelivered when your endpoint answered with a 2xx status. Anything else is tried again, after 1 minute, then\n5 minutes, 30 minutes, 2 hours, 6 hours, 12 hours and a day, eight attempts in all, because your address is\nread again at each attempt and you may have mended it. Two answers end the delivery at once: `410 Gone` and\n`413 Payload Too Large`.\n\nThe caller must be the person who administers the partner (an API key of that account works, with the\n`partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -8558,7 +8464,6 @@
         "summary": "Where your notifications go",
         "description": "Returns who gets the emails, which events you want by email and by webhook, the address of your webhook, and\nwhether it has a secret to sign with. The secret itself is never returned: it is shown once, when it is made.\n`events` lists every kind of event there is, for a settings screen.\n\nThe caller must be the person who administers the partner (an API key of that account works, with the\n`partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -8638,7 +8543,6 @@
         "summary": "Choose where your notifications go",
         "description": "Changes who gets the emails, which events you want by email and by webhook, and the address of your webhook.\nA key you leave out of the body is left as it was; send only what changes.\n\n**Email.** `emailRecipients` is the list of addresses (at most five). While it is empty the emails about\ninvoices go to the billing emails of your billing profile (your contact email when there are none), and the\nothers to your contact email. The events about money and about the standing of your account are always\nemailed, whatever `emailEvents` says; it narrows the others.\n\n**Webhook.** `webhookUrl` is where Widgetic sends a signed `POST` for each event, so that your own system\ncan act on it (mark an invoice paid, warn your team that credits are low). The address must be `https` on the\nstandard port, on a public site, and must not redirect. Setting an address when you have no secret yet makes\none, and the answer carries it as `webhookSecret`: **keep it now, it is shown once**. `webhookEvents` narrows\nwhat is sent.\n\nEach call has a JSON body, `{ \"id\": \"evt_...\", \"type\": \"invoice.paid\", \"createdAt\": \"...\", \"partnerId\": \"...\",\n\"data\": { ... } }` (`data` is the `data` of `PartnerNotification`), and these headers:\n`webhook-id` (the same as `id`, and the same on every retry), `webhook-timestamp` (seconds since 1970) and\n`webhook-signature` (`v1,` and a base64 HMAC-SHA256). It is the Standard Webhooks scheme, so any of its\nlibraries verifies it. By hand: take your secret without the `whsec_` prefix, decode it from base64, and sign\nthe text `<webhook-id>.<webhook-timestamp>.<the raw body>` with it; the header holds `v1,<base64 of the\nresult>` (two signatures separated by a space while a rotated secret overlaps). Reject a `webhook-timestamp`\nthat is more than five minutes old.\n\nAnswer with a 2xx status within ten seconds. Anything else is tried again, eight attempts in all over about\ntwo days (`listPartnerNotificationDeliveries` shows each). Delivery is at least once: if your answer was lost\nthe same event arrives again with the same `id`, so drop what you have already handled by it.\n\nChanging the settings needs an API key with full access: they decide where your notifications go.\nThe caller must be the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -8760,7 +8664,6 @@
         "summary": "Make a new secret for your webhook",
         "description": "Makes a new secret to sign your webhook with, and returns it in `webhookSecret`: **keep it now, it is shown\nonce** and cannot be read again. Use it when the secret was lost, or may have leaked.\n\nThe secret you had keeps signing beside the new one for a day, so that your receiver can switch without a\ncall being rejected: during that day each call carries two signatures (see `updatePartnerNotificationSettings`\nfor how they are verified). Rotating again within the day ends the overlap with the first secret.\n\nRetry this call with the same `Idempotency-Key` if its answer was lost: the answer, secret included, is then\ngiven again, and no second secret is made.\n\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -8872,7 +8775,6 @@
         "summary": "Send a webhook delivery again",
         "description": "Sends one earlier **webhook** delivery again to your **current** webhook address, with the same event `id`\n(`webhook-id`) as the original notification so a receiver that remembers ids can ignore a duplicate, and a\nnew `createdAt` and signature made with your current secret. The attempt is recorded in the delivery log as a\nnew row that points at the delivery you replayed.\n\nSet a webhook address (and secret) under notification settings before you replay. Changing the settings needs\nan API key with full access. The caller must be the person who administers the partner, or a Widgetic\nadministrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -9004,7 +8906,6 @@
         "summary": "Send a test event to your webhook",
         "description": "Sends ONE signed call, right now, to the webhook address you saved under notification settings, with a sample\nof what an event of the type you name carries, and answers how it went: whether your receiver answered with a\n2xx status, which status, how long it took, and why not when it did not arrive. Use it to write and try your\nreceiver (above all the signature check) before a real event happens.\n\nThe call is made like every other: it is signed with your current secret (and the previous one while a\nrotation overlaps), it carries the headers `webhook-id`, `webhook-timestamp`, `webhook-signature` and\n`x-widgetic-event` (the event type), and its body is `{ \"id\", \"type\", \"createdAt\", \"partnerId\", \"data\" }`.\nThree things differ. `id` starts with `evt_test_` and is new every time, so a receiver that remembers ids can\ntell a test from an event and drop it. `data` holds made-up values of the shape a real event of that type\ncarries (`PartnerNotification` describes each), never anything about your account. And the call is made once:\nit is not tried again, nothing is stored, and it appears neither in the delivery log nor in the notification\nlist.\n\nIt is sent whatever `webhookEvents` says: a test is not filtered by what you subscribed to. The answer is 200\nwhether or not your receiver took the call (read `delivered`); a call that gets no answer within ten seconds\nis given up and reported as a `timeout`.\n\nA webhook address and a signing secret must be saved first (`updatePartnerNotificationSettings`); until then\nthe answer is 409. This needs an API key with full access, and `Idempotency-Key` is required: a retry with the\nsame key gets the first answer back and no second call is made. The caller must be the person who\nadministers the partner, or a Widgetic administrator. Five tests a minute.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -9137,7 +9038,6 @@
         "summary": "See how the context of your embeds is signed",
         "description": "Says whether you have a secret to sign the `context` of your embeds with, when it was made, whether the secret\nit replaced is still accepted, and whether an entry without a valid signature is refused (`required`). The\nsecret itself is never part of the answer: it is shown once, when it is made\n(`rotatePartnerEntryContextSecret`, which also explains what signing is for and how to sign).\n\nSigning covers the entries written through the gateway into the compositions of your managed users and into\nthose of your own account. The caller must be the person who administers the partner (an API key of that\naccount works, with the `partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -9245,7 +9145,6 @@
         "summary": "Require a signed context, or stop requiring it",
         "description": "Chooses what the gateway does with an entry whose `context` carries no valid signature.\n\nWith `required: false` (the default) an entry that carries a signature is checked and refused when the\nsignature is wrong or out of date, and an entry that carries none is accepted, as it always was. With\n`required: true` an entry without a valid signature is refused with 403 `CONTEXT_SIGNATURE_REQUIRED`: use it\nonce every page of yours that embeds a composition signs its context.\n\nSignatures cannot be required before you have made a secret (`rotatePartnerEntryContextSecret`): the answer\nis 409, so that you cannot lock your own compositions out of taking entries. The change reaches every part of\nthe gateway within a minute.\n\nSaving the same choice twice leaves the same state, so a retry is harmless and `Idempotency-Key` is optional.\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -9380,7 +9279,6 @@
         "summary": "Make a secret to sign the context of your embeds",
         "description": "Makes a secret to sign the `context` of your embeds with, and returns it in `secret`: **keep it now, it is\nshown once** and cannot be read again. Keep it on your server only: whoever holds it can write contexts your\ncompositions accept. Call this again to make a new secret; the one it replaces is still accepted for a day, so\nthat your server can switch without an entry being refused (making another within that day ends the overlap\nwith the first).\n\n**What signing is for.** `<widgetic composition-id=\"...\" context='{\"customerId\":\"c_42\"}'>` hands attribution to\na widget, which sends it with every entry it saves. The page is yours but the browser is the visitor's:\nanybody can change that attribute and file an entry under another customer's id. When your server signs the\ncontext, the gateway refuses an entry whose context was changed, and the entries you keep hold attribution\nyour server wrote.\n\n**How to sign** (on your server, for each page you render):\n\n1. Take the context to give the widget. It may hold text and whole numbers only (within ±2^53, written without\n   a fraction or an exponent).\n2. Choose when the signature stops being good: `widgetic_exp`, in seconds since 1970 (UTC), no more than\n   seven days from now. A minute of difference between clocks is forgiven.\n3. Write the text to sign, with no spaces except those inside values:\n   `widgetic-context.v1.<compositionId>.<widgetic_exp>.<json>`. `<compositionId>` is the id of the composition\n   in lower case. `<json>` is the context as JSON with the keys in character-code order (so `Z` comes before\n   `a`, and `10` before `9`), no spaces, strings escaped as JSON escapes them, and the two keys of the\n   signature left out.\n4. Sign that text: HMAC-SHA256 with the 32 bytes the secret stands for (the base64 text after `ctxsec_`), and\n   write the result as base64url without padding.\n5. Give the widget the context with two keys added: `widgetic_exp` and `widgetic_sig` (the signature). The whole\n   attribute, the two keys included, stays within the limits of any context: at most 20 keys, 2048 bytes of\n   JSON, strings up to 500 characters. The two keys take two of the 20 keys and 87 bytes of the 2048.\n\nA test vector, to check your code against before you rely on it. Secret\n`ctxsec_AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=` (the bytes 0 to 31), composition\n`7c9e6679-7425-40de-944b-e07fc1f90ae7`, `widgetic_exp` 1792000000 and context\n`{\"customerId\":\"c_42\",\"plan\":\"pro\",\"seats\":3}` sign the text\n`widgetic-context.v1.7c9e6679-7425-40de-944b-e07fc1f90ae7.1792000000.{\"customerId\":\"c_42\",\"plan\":\"pro\",\"seats\":3}`\nand give the signature `j6g7151F54tl9C8oEY9levaYSppHME4fAPZ7WPwL8C8`. (The secret is the example's, not a\nreal one.)\n\n**What the gateway does with an entry.** When you have a secret, an entry whose context carries a signature is\nchecked: a signature that does not match is refused with 403 `CONTEXT_SIGNATURE_INVALID`, and one that is past\n`widgetic_exp` with 403 `CONTEXT_SIGNATURE_EXPIRED`. When you also require signatures\n(`updatePartnerEntryContextSigning`) an entry whose context carries none is refused with 403\n`CONTEXT_SIGNATURE_REQUIRED`. The two keys are taken out before the entry is stored or announced: your entries\nand your `entry.created` events hold the context you wrote. A change you make reaches every part of the\ngateway within a minute.\n\n**What it does not do.** A signed context that has been seen (a page's source is public) can be sent again by\nanyone until `widgetic_exp`; when you must not accept the same context twice, put a value that is new for each\npage view in it (a `submissionId` you made up) and keep the ones you have seen. The signature covers the\nentries that reach Widgetic's gateway: a row that gets into a table another way (your own code writing\nstraight into a database you brought, or the record calls of the composition's owner) does not pass\nthrough it, and carries no context.\n\nRetry this call with the same `Idempotency-Key` if its answer was lost: the answer, secret included, is then\ngiven again, and no second secret is made. This needs an API key with full access. The caller must be the\nperson who administers the partner, or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -9497,7 +9395,6 @@
         "summary": "Keep the data of a partner's compositions in a Neon database of its own",
         "description": "Points the partner at a Neon database of its own. From then on, what visitors leave in the compositions of\nthe partner's managed users, and of the compositions made in the partner's own account (the votes, ratings,\nanswers and form submissions of the widgets that collect them), is stored in that database and nowhere else.\nWidgetic's own database is not used for them any more, and nothing of it is copied there.\n\n**What to give.** The connection string of a Neon database and a role made for this, as Neon shows it under\n*Connect* (`postgresql://<role>:<password>@ep-<name>.<region>.aws.neon.tech/<database>`). Only Neon databases\nare accepted; a string for any other host is refused with 400. What the database needs:\n- an empty database of its own, so that nothing else of yours shares it. Widgetic makes one schema in it for\n  each composition (named `comp_` followed by the composition's id). In that schema go the tables the widget\n  declares for what its visitors leave, and two small tables of Widgetic's own, whose names start with\n  `_widgetic_`: the context a host page sent with an entry, and how far Widgetic has read the entries to tell\n  you about new ones. It touches nothing else;\n- a role that may create schemas and tables in it (the CREATE privilege on the database). The role Neon makes\n  with a project has it. A role made in the Neon console can also read and write every other database of the\n  same project, so if you keep other data in Neon give Widgetic a project of its own, or make the role with\n  SQL (`CREATE ROLE ... LOGIN PASSWORD ...`) and grant it only the CREATE privilege on this database;\n- connections from anywhere: Widgetic's addresses are not fixed, so a Neon project that only accepts\n  connections from an allow list of addresses cannot be used. A suspended compute is fine: it wakes on the\n  first request.\n\n**It is checked before it is saved.** Widgetic makes a schema in your database, creates a table in it, writes\na row, reads it back, and removes the schema again, all in one step, so that nothing is left if anything\nfails. If it cannot be done nothing is saved and the answer is 422 `PARTNER_DATABASE_UNVERIFIED`:\n`details.reason` says why (`INVALID_CREDENTIALS`, `DATABASE_NOT_FOUND`, `ACCESS_DENIED`, `ACCESS_BLOCKED`,\n`ENDPOINT_NOT_FOUND`, `ENDPOINT_UNREACHABLE`, `TIMEOUT`, `READ_ONLY`, `RATE_LIMITED`, `DATABASE_UNAVAILABLE`,\n`PROBE_MISMATCH` or `DATABASE_ERROR`) and `message` says what to do.\n\n**Existing data does not move.** The data of a composition lives in one database. If any composition of the\npartner already keeps data somewhere else (in Widgetic's database, or in the database you had set), and the\nnew database does not hold it, the change is refused with 409 `PARTNER_DATABASE_HOLDS_DATA` and nothing is\nchanged: those compositions would read as empty from then on. `details.compositionsWithData` says how many.\nSet your database before your customers collect data, or delete the compositions you no longer need. Saving\nthe same database again (a new password) moves nothing and is never refused.\n\n**It is never a fallback.** Once a database is set, a request that needs it while it cannot be used (the\npassword was changed, the project was deleted) is refused with 503 `PARTNER_DATABASE_UNAVAILABLE`. What the\nvisitor sent is not stored with Widgetic instead. Fix the connection and set the database again, or check it\nwith `verifyPartnerDataDatabase`.\n\n**When it takes effect.** A change reaches every part of Widgetic within about a minute.\n\n**What Widgetic keeps.** The connection string is stored encrypted and is never returned or logged; a response\nshows the host, the database and the role, never the password. Widgetic's servers open it to read and write the\ndata of your compositions while they handle a request for it. To cut that off, change the role's password in\nNeon: the compositions stop saving until you set the new string.\n\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator. A retry is harmless: saving the same database twice only refreshes when it was\nchecked and saved.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -9634,7 +9531,6 @@
         "summary": "See the Neon database a partner keeps the data of its compositions in",
         "description": "Returns the database set with `setPartnerDataDatabase`, without its password: the host, the database and the\nrole, when it last passed the check, and why the latest re-check failed if it did. Responds 404 while the\npartner has no database of its own, which means the data of its compositions is kept by Widgetic.\n\nThe caller must be the person who administers the partner (an API key of that account works, with the\n`partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -9721,7 +9617,6 @@
         "summary": "Stop keeping the data of a partner's compositions in its own database",
         "description": "Removes the partner's database from Widgetic: Widgetic forgets the connection string, and from then on the data\nof the partner's compositions is kept in Widgetic's database again. Nothing in your database is deleted.\n\nRemoving is refused with 409 `PARTNER_DATABASE_HOLDS_DATA` while any composition of the partner keeps its data in\nyour database: it would read as empty from then on, and what it holds would stay where nothing reads it. Delete\nthe compositions you no longer need, or keep the database. If Widgetic cannot check what your database holds\n(it cannot be reached) the answer is 503 `PARTNER_DATABASE_UNAVAILABLE`; check it with\n`verifyPartnerDataDatabase`, or set the same database again to repair its connection.\n\nRemoving a database the partner does not have is not an error: the answer is `removed: false`.\n\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -9820,7 +9715,6 @@
         "summary": "Check that a partner's own database still works",
         "description": "Runs the same check as `setPartnerDataDatabase` against the database already saved: a schema is made in it, a\ntable created, a row written and read back, and the schema removed again. Use it after changing the role's\npassword or the project's settings in Neon, or when saving is failing with 503 `PARTNER_DATABASE_UNAVAILABLE`.\n\nThe result is recorded either way. A pass refreshes `verifiedAt` and clears `lastVerificationError`; a failure\nanswers 422 `PARTNER_DATABASE_UNVERIFIED` and is recorded in `lastVerificationError` and\n`lastVerificationFailedAt`, so the database shows what went wrong the next time it is read. A failed check does\nnot remove the database. `details.reason` is one of the reasons `setPartnerDataDatabase` lists, or\n`STORED_STRING_UNREADABLE` when the connection string Widgetic stored can no longer be read: set the database\nagain, with its connection string.\n\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -9929,7 +9823,6 @@
         "summary": "Get operation status",
         "description": "Follows work that carries on after the response that started it. Duplicating a composition,\nfor one, answers 202 with an `operationId`: ask for that operation until its `status` is\n`completed` (or `failed`, with the reason in `error`). A finished duplication names the new\ncomposition in `metadata.newCompositionId`.\n\nAn operation belongs to the user who started it. Asking for somebody else's operation answers\n404, exactly as for one that does not exist. Administrators may read any operation.\n",
         "tags": [
-          "Partner",
           "Operations"
         ],
         "x-access-level": "user",
@@ -9991,7 +9884,6 @@
         "summary": "Get Managed Users",
         "description": "Retrieve the managed users you manage, with pagination support. (Admins see every partner's managed users.)",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -10096,7 +9988,6 @@
         "summary": "Create Managed User",
         "description": "Creates a new managed user for a partner account.\n\nThe `Idempotency-Key` header is required (`400` without it). Send the same key when you retry, so one\nmanaged user is created, not two.\n",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -10196,7 +10087,6 @@
         "summary": "Get Managed Users By Manager",
         "description": "Retrieve managed users for a specific manager with pagination support.",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -10288,7 +10178,6 @@
         "summary": "Get Managed User By ID",
         "description": "Retrieves a specific managed user by ID.",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -10358,7 +10247,6 @@
         "summary": "Update Managed User",
         "description": "Updates an existing managed user. Only `externalId`, `metadata` and `isActive` can change, and `metadata`\nis replaced as a whole, so send all of it. `isActive: false` switches the managed user off: what it\nalready has stays, and nothing new can be filed under it until you send `isActive: true`. Switching it\noff also ends all of its editor sessions, and they do not come back when you switch it on again.\n\nThe `Idempotency-Key` header is required (`400` without it).\n",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -10461,7 +10349,6 @@
         "summary": "Delete Managed User",
         "description": "Deletes a managed user by ID. Its editor sessions end with it. What was filed under it (compositions, widgets, uploads) stays in your account, untagged.",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -10489,6 +10376,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "ManagedUserRemovalResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -10548,7 +10436,6 @@
         "summary": "Create an editor session for a managed user",
         "description": "Makes a short-lived credential that lets the browser of ONE of your managed users use Widgetic's editor\npieces, such as the File Browser and the composition editor, without your API key ever reaching that\nbrowser. Call this from your server when the page that hosts the editor opens, and hand the `token` in\nthe answer to that page.\n\nThe token is shown once. It starts with `wgt_ses_` and the browser sends it as\n`Authorization: Bearer <token>`. It can do only what the `surfaces` you name allow, and only for this\nmanaged user:\n\n- `files`: upload a file (`uploadsPost`) and list the files uploaded for this user (`uploadsGet`). Every\n  file is filed for this user and stored in your own storage destination, never in Widgetic's: a file a\n  customer uploads is yours to keep, and takes none of your storage allowance. Partner storage is not\n  optional, so no session, whatever its surfaces, can be made until you have set a destination\n  (`setPartnerStorageDestination`); until then it is refused with 409 and `PARTNER_STORAGE_REQUIRED`, and\n  when the destination cannot be used with 503 and `STORAGE_DESTINATION_UNAVAILABLE`. A destination you\n  remove after the session was made stops its uploads too (the same 409; the browser is only told that\n  the feature is not available right now). To keep a customer from uploading, leave `files` out of the\n  session and hand the editors your own media library instead (`mediaLibrary`).\n- `editor`: edit one of this user's compositions: read it (`getCompositionById`, its content, design,\n  embed settings and schemas), check a content change (`validateCompositionContent`), and change its\n  name, content, design and embed settings (`updateComposition`, `setDynamicContent`). For a widget that\n  answers visitors' questions from documents (the `ai-answers` adapter), it also lists those documents,\n  adds one as text or as a file (a text file or a picture; a PDF once PDFs are read), and removes one\n  (`getAiAnswersKnowledge`, `addAiAnswersKnowledgeDocument`, `addAiAnswersKnowledgeFile`,\n  `removeAiAnswersKnowledgeDocument`); adding costs no credits, and is limited for each of your users\n  separately. It can reach\n  only compositions you created for this managed user (tag them with `managedUserId` when you create\n  them); any other composition, including another of your users', answers 404.\n- `creator`: use Widgetic's widget creator for this user, including its AI. Draw on canvases and save\n  them (`getAllCanvases`, `getCanvas`, `createCanvas`, `updateCanvas`, `previewDeleteCanvas`,\n  `deleteCanvas`); make, change, copy and delete the widgets on them (`createWidget`, `getWidgets`,\n  `getWidgetsBatch`, `updateWidget`, `uploadWidgetThumbnail`, `duplicateWidget`, `deleteWidget`);\n  list and make the compositions of a widget it built (`getAllCompositions`, `createComposition`), which\n  is how it shows the widget with sample values; keep the\n  conversation of each widget (`getConversationsByWidgetId`, `createConversationForWidget`,\n  `updateConversation`, `getMessages`, `createMessage`, `updateMessage`, `restoreCheckpoint`); and read a\n  widget's schemas and give it its repository (`getWidgetContentSchema`, `getWidgetDesignSchema`,\n  `updateWidgetRepository`). The AI that builds a widget is part of it: list the models\n  (`agentModelsGet`), open the widget's repository (`agentRepositoriesPost`,\n  `agentRepositoriesRepoIdGet`), start a generation and follow or cancel it (`agentCodeGeneratePost`,\n  `operationsStreamGet`, `operationsIdGet`, `operationsIdCancelPost`), build and preview the result\n  (`agentWidgetBuilderRepoHeadWidgetIdGet`, `buildWidgetFromRepo`, `previewWidgetVersion`), publish a\n  version of the widget and move between its versions (`agentWidgetBuilderPublishWidgetIdPost`,\n  `getWidgetPublishHistory`, `setWidgetPublishHistoryLive`, `renameWidgetPublishHistoryTitle`), and\n  turn a stroke or a sentence into a decision (`agentShapeRecognizePost`, `agentDesignResolvePost`). It can\n  also offer the customer your presets as starting points: read them and ask for a copy for this customer\n  (`listMyPresets`, `copyMyPreset`; you choose the presets with `setPartnerPreset`).\n  What the session makes is filed for this managed user, and the lists it reads hold only this user's\n  canvases, widgets and compositions. It can reach only canvases, widgets, compositions, repositories,\n  uploaded files and operations made for this managed user (tag the canvases and widgets you create\n  with `managedUserId`); any other canvas, widget, composition, conversation, message, repository, file\n  or operation, including another of your users', answers 404. The creator also saves the composition\n  it is editing (`updateComposition`, from the `editor` surface) and attaches pictures to its chat\n  (`uploadsPost`, from the `files` surface), and the surfaces do not imply one another: to open the\n  whole creator for a user, ask for `creator`, `editor` and `files` together. A generation or a build\n  one user starts can be followed and cancelled by that user and by you, never by another of your\n  users. The AI is paid for by your account, as your own calls are: its credits and allowances are\n  yours. A session cannot make a widget public (publishing a version does not), file one under a\n  project or an organization, or set anything the creator does not set: a body with another field is\n  refused with 403 and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n- `workflows`: use Widgetic's Workflows editor for this user. List their workflows and the compositions\n  a workflow of theirs can chain (`listWorkspaceWorkflows`, `listWorkspaceWorkflowCompositionOptions`);\n  list the starting points you offer them and make a workflow from one, which gives the user their own copy\n  of every widget it chains, a composition of their own on each copy, and a draft\n  (`listWorkspaceWorkflowPresets`, `createWorkspaceWorkflowFromPreset`; you offer them with\n  `setPartnerWorkflowPreset`);\n  make, open, change and delete one (`createWorkspaceWorkflow`, `getWorkspaceWorkflow`,\n  `saveWorkspaceWorkflow`, `deleteWorkspaceWorkflow`) and copy it (`duplicateWorkspaceWorkflow`); publish\n  it or discard the changes of its draft (`publishWorkspaceWorkflow`,\n  `discardWorkspaceWorkflowChanges`); read and restore its versions (`listWorkspaceWorkflowVersions`,\n  `getWorkspaceWorkflowVersion`, `restoreWorkspaceWorkflowVersion`); pause, resume, archive and unarchive it\n  (`pauseWorkspaceWorkflow`, `resumeWorkspaceWorkflow`, `archiveWorkspaceWorkflow`,\n  `unarchiveWorkspaceWorkflow`); and read its counts (`getWorkspaceWorkflowStats`). The workspace in each\n  path is `personal`: a session has no other, and a path that names an organization is refused. What the\n  session makes is filed for this managed user (`managedUserId`), the lists hold only this user's workflows,\n  and it can reach only workflows made for this managed user; any other workflow, including one of yours\n  or of another of your users, answers 404. A workflow can chain only the compositions you made for this\n  managed user (tag them with `managedUserId`): one that belongs to anybody else is not available, and\n  publishing a workflow that uses it is refused. A customer can have at most 50 workflows, and what a\n  customer's session reads never says who published a version. A session cannot set who a workflow belongs\n  to or which workspace it is in: a body with another field is refused with 403 and\n  `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n\nEverything else is refused with 403 and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`: a session cannot read your\naccount, make more sessions, change your presets or delete a composition, and a session without the `creator` surface cannot\ncreate or list compositions. Create the composition yourself with your API key, then open the editor on it.\n\nA session ends at `expiresAt` (at most four hours), when you end it (`revokeManagedUserEditorSession`),\nor when the managed user is switched off or deleted. A managed user can have at most 100 live sessions at\nonce (`429 EDITOR_SESSION_LIMIT_REACHED`). A session that is bound to a web page (`allowedOrigin`) is\nrefused from any other origin.\n\nThe AI the session runs is paid for with your credits. Set `maxCredits` to hold the session to a number\nof them: once its generations have taken that many (a generation that fails is refunded and does not\ncount), the next one is refused with 402 and `EDITOR_SESSION_CREDIT_LIMIT_REACHED`, and the browser is told\nonly that the feature is not available right now. Without it, the limit Widgetic has set for your account\napplies when it has set one (the same limit for every session you make, and `maxCredits: null` asks for\nnone), and otherwise the credits of your account are the only ceiling. What each of your users' sessions\nhas spent is in `getManagedUserUsage`.\n\nEach call makes a new session. It does not take an `Idempotency-Key`: the answer holds the token, and\nthe token is never stored where a retry could read it back. The answer is sent with\n`Cache-Control: no-store`.\n",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -10675,7 +10562,6 @@
         "summary": "End every editor session of a managed user",
         "description": "Ends all of the managed user's live editor sessions at once, for example when the user signs out of your\nplatform. Their tokens stop working on the next request (on another server of ours, within a few seconds).\nIt is fine to call it for a user who has none.\n",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -10747,7 +10633,6 @@
         "summary": "End one editor session of a managed user",
         "description": "Ends the session at once: its token stops working on the next request (on another server of ours, within\na few seconds). Ending a session that has already ended is fine.\n",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -10785,6 +10670,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "ManagedUserRemovalResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -10844,7 +10730,6 @@
         "summary": "What a managed user's editor sessions spent",
         "description": "Says how many credits the editor sessions of one of your managed users took from your account over a\nperiod, in total and for each operation. A generation costs one credit, taken from your account when it\nstarts; one that fails is refunded and is counted as refunded, not as spent.\n\nOnly what was spent through editor sessions is here, and only since usage was first recorded: what you\nspend with your API key, and anything from before, is not. Use it to see which of your users spend the\nmost, or to charge them for it. To hold one session to a number of credits, set `max_credits` when you\nmake it (`createManagedUserEditorSession`).\n\nThe period runs from `startDate` (included) to `endDate` (not included): the 30 days before now when you\ngive neither, and at most 366 days. A date without a time is midnight UTC at the start of that day, so for\nall of October give `startDate=2026-10-01` and `endDate=2026-11-01`.\n",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -10949,7 +10834,6 @@
         "summary": "Give a managed user a copy of one of your presets",
         "description": "Copies the preset `key` (see `setPartnerPreset`) onto a new canvas for one of your managed users, so their\nwidget creator opens on a widget of their own that starts from yours. The copy is a draft widget in your\naccount, filed under the managed user: `getAllWidgets` with `managedUserId` lists it, and no other managed\nuser's editor can reach it.\n\nThe copy carries the preset's code, design and content schemas, and thumbnail, and starts from a fork of its\ncode repository, so the user's chat edits begin where yours left off. It does not carry the preset's\ndatabase or its compositions. It is not a preset itself, and changing or removing the preset afterwards\nnever touches it.\n\nTo start a composition (the content and design editor) instead, you do not need a copy: call\n`createComposition` with the preset's `widgetId` (from `listPartnerPresets`) and the managed user.\n\nThe `Idempotency-Key` header is required (`400` without it). Send the same key when you retry, so one copy\nis made, not two. A copy that could not be made leaves nothing behind (503 `PRESET_COPY_FAILED`).\n\nThe managed user must be yours and active.\n",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -11081,7 +10965,6 @@
         "summary": "Create a composition from one of your presets in one call",
         "description": "Validates the name, optional content, design, embed settings and locale, then creates a draft composition\nfiled under the managed user, built on the preset's widget, in a single insert. A failure never leaves a\nhalf-made composition.\n\nThe preset's widget must be published. The managed user must be yours and active.\n\nA widget that keeps what visitors send (a form, a vote, a rating) declares its tables in its own source\n(`src/lib/meta/database.json`); they are made for the composition here, in a schema of its own, as the widget\nwas when it was last published. A widget that keeps nothing leaves the composition without tables. If the\ntables cannot be made just now, or the widget's file cannot be used, the composition is still created (`201`)\nand `meta.warnings` says why; the tables are made the next time the widget is generated.\n\nThe `Idempotency-Key` header is required (`400` without it). Send the same key when you retry, so one\ncomposition is created, not two.\n",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -11159,22 +11042,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Composition"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMeta"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ]
+                  "$ref": "#/components/schemas/CompositionResponse"
                 }
               }
             }
@@ -11254,7 +11122,6 @@
         "operationId": "getManagedUserLimits",
         "summary": "Read monthly credit cap and usage for one managed user",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -11281,6 +11148,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "ManagedUserLimitsResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -11347,7 +11215,6 @@
         "summary": "Set or clear the monthly credit cap for one managed user",
         "description": "Send monthlyCredits as a whole number from 0 up to 2147483647 to cap what this customer's editor sessions may spend in a UTC calendar month, or null to remove the cap. The cap counts the credits the customer's sessions spent that month (refunded credits do not count) and applies to all of the customer's sessions together, beside any `max_credits` a single session was given. A cap of 0 stops all paid work by this customer until you raise it. The cap starts counting from the first of the month (UTC); a cap set below what was already spent this month stops further work at once.\n",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -11398,6 +11265,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "ManagedUserLimitsResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -11466,7 +11334,6 @@
         "operationId": "getManagedUserStorageUsage",
         "summary": "Storage used by one managed user's uploads",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -11607,7 +11474,7 @@
         "summary": "List entries across a managed user's compositions",
         "description": "Merges eligible tables (time and id columns) across the managed user's compositions in global time order, then compositionId, table, and id (byte order). Only tables with both a time and an id column take part. Rate limit 30 requests per minute.",
         "tags": [
-          "Partner"
+          "Managed Users"
         ],
         "x-access-level": "user",
         "x-visibility": "public",
@@ -11753,7 +11620,6 @@
         "operationId": "getManagedUserDesignDefaults",
         "summary": "Read design defaults for one managed user",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -11780,6 +11646,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "DesignDefaultsResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -11837,7 +11704,6 @@
         "summary": "Set or clear design defaults for one managed user",
         "description": "Send `{ \"design\": { ... } }` to store a JSON object (at most 64 KB, nesting depth 32), or `{ \"design\": null }`\nto remove the override. New compositions for this customer merge this layer over the partner default and\nunder the request body.\n",
         "tags": [
-          "Partner",
           "Managed Users"
         ],
         "security": [
@@ -11890,6 +11756,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "DesignDefaultsResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -11959,7 +11826,6 @@
         "summary": "List a partner's invoices",
         "description": "Lists the invoices issued to a partner, newest first. Each carries the price (`subtotal`), the tax on\nit (`taxAmount`) and what is paid (`total`), its status as the payment provider reports it, why the\nlast payment failed (`failureReason`), and the page where it is paid (`hostedInvoiceUrl`).\n\nA partner reads its own: the caller must be the person who administers the partner (an API key of\nthat account works), and anyone else is refused with 403 whether or not the partner exists.\nWidgetic administrators can read any partner's and see exactly what the partner sees; the full\nrecords, with the internal fields, are `getAllInvoices` filtered by partner.\n\nThe page is always bounded: `limit` defaults to 50 and is capped at 100, `offset` defaults to 0.\n",
         "tags": [
-          "Partner",
           "Invoices"
         ],
         "security": [
@@ -12079,7 +11945,6 @@
         "summary": "Get partner entitlements",
         "description": "Retrieves all entitlements for a partner (admin or partner access).",
         "tags": [
-          "Partner",
           "Entitlements"
         ],
         "security": [
@@ -12187,7 +12052,6 @@
         "summary": "Get managed user entitlements",
         "description": "Retrieves all entitlements for a managed user (admin or partner access).",
         "tags": [
-          "Partner",
           "Entitlements"
         ],
         "security": [
@@ -12280,7 +12144,6 @@
         "summary": "Get an account's credit balance",
         "description": "Returns the credits an account holds: the balance, and how much of it is reserved by operations that\nare still running.\n\nAn account reads its own balance; with a partner's API key, that is the account of the person who\nadministers the partner. Widgetic administrators can read any account's. An account that has never held\ncredits reads a balance of 0. `getPartnerCreditBalance` reads this same balance by partner id.\n",
         "tags": [
-          "Partner",
           "Credits"
         ],
         "security": [
@@ -12352,7 +12215,6 @@
         "summary": "List an account's credit ledger",
         "description": "Lists the entries of an account's credit ledger, newest first. This is also how an account's usage is\nread: every operation that spends credits is a `debit` entry, so summing the `debit` entries over a\nperiod gives the credits consumed in it, and the other types give what was added.\n\nAn account reads its own ledger; with a partner's API key, that is the account of the person who\nadministers the partner. Widgetic administrators can read any account's. `getPartnerCreditTransactions`\nreads this same ledger by partner id.\n\nThe page is always bounded: `limit` defaults to 100 and is capped at 500, `offset` defaults to 0.\n",
         "tags": [
-          "Partner",
           "Credits"
         ],
         "security": [
@@ -12409,6 +12271,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AccountCreditTransactionListResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -12461,7 +12324,6 @@
         "summary": "Get All Compositions",
         "description": "Retrieves all compositions with pagination support.\n\nPass `managedUserId` (Widgetic's id for one of your managed users) or `managedUserExternalId` (your own\nidentifier for the user) to list only the compositions made for that managed user. The compositions of\nyour other managed users, and your own, are left out. It combines with the other filters and with paging.\nA managed user that is not yours, or does not exist, is answered with 404 and `MANAGED_USER_NOT_FOUND`.\n\nAn editor session with the `creator` surface may call this to list the compositions of ONE widget it\nbuilt: it must send `widgetId`, and the answer holds only the compositions made for the session's\nmanaged user.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -12643,7 +12505,6 @@
         "summary": "Create Composition",
         "description": "Creates a new composition.\n\nTo make the composition for one of your managed users, send `managedUserId` or `managedUserExternalId`.\nThe composition stays in your account and is yours to edit; the tag lets you list one user's compositions\nwith `getAllCompositions`. The managed user must be yours and active: one that is not yours, or does not\nexist, is answered with 404 and `MANAGED_USER_NOT_FOUND`, and one that is switched off with 409 and\n`MANAGED_USER_INACTIVE`. The tag is set here and does not change afterwards. A copy made with\n`duplicateComposition` keeps the tag of the original.\n\nAn editor session with the `creator` surface may call this to start a composition of a widget it built:\nit sends only `name`, `widgetId` (a widget made for the session's managed user) and `content`, and the\ncomposition is always made for that managed user.\n\nSend `databaseSchema` to give the composition tables of its own for what visitors send it (the shape, the\nallowed types and the limits are described on the field). A `databaseSchema` that cannot be used is refused\nbefore anything is created, with `400` and `INVALID_DATABASE_SCHEMA`. If the composition is created but its\ntables cannot be made just now, the answer is still `201` and `meta.warnings` says so.\n\nLeave `databaseSchema` out and the composition gets the tables its widget declares in its own source\n(`src/lib/meta/database.json`), if it declares any: they are made the same way, in a schema of the\ncomposition's own. A widget that keeps nothing leaves the composition without tables. If the widget's file\ncannot be used, or its tables cannot be made just now, the answer is still `201` and `meta.warnings` says so.\nThe widget is read as it was when it was last published (as it is now, when it never was).\n\nThe `Idempotency-Key` header is required (`400` without it). Send the same key when you retry, so one\ncomposition is created, not two.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -12669,22 +12530,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Composition"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMeta"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ]
+                  "$ref": "#/components/schemas/CompositionResponse"
                 }
               }
             }
@@ -12756,7 +12602,6 @@
         "summary": "Duplicate Composition",
         "description": "Creates a duplicate of an existing composition for the authenticated user.\n\nThe duplicate is made after the answer: the call returns `202` with an `operationId`. Ask\n`GET /operations/{id}` for that operation until its `status` is `completed`; the new composition is\nnamed in `metadata.newCompositionId`. A problem with the duplicate's database (for example, tables that\ncould not be made just now) is listed in `metadata.warnings`, which is absent when there is none.\n\nThe `Idempotency-Key` header is required (`400` without it). Send the same key when you retry, so one\nduplicate is made, not two.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -12890,7 +12735,6 @@
         "summary": "Get Composition Versions",
         "description": "Retrieves version history for a specific composition.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -12983,7 +12827,6 @@
         "summary": "Update Composition Status",
         "description": "Updates the status of a specific composition.\n\nThe `Idempotency-Key` header is required (`400` without it). Send the same key when you retry.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -13095,7 +12938,6 @@
         "summary": "Get Composition",
         "description": "Retrieves a specific composition by its ID.\n\nThe answer carries `direct`, which says whether the widget the composition is made from is drawn straight\ninto your page (`true`) or inside a frame (`false`), or `null` while the widget has no published version.\nRead it before you go live: a widget drawn without a frame writes its entries from your own page, so the\npublic entry route looks at the website that page is on. While the composition's allowed list is empty (you\nhave not restricted the allowed websites), every website may write; once you list websites, only those may,\nbesides Widgetic's own sites, the visitor's own machine and your own platform. A widget in a frame writes from\nWidgetic's own frame and is accepted whatever the list says. The public JSON of the composition stays open to\nevery website.\n\nFor a composition a team shares (one filed under a project of an organization, or made in a Shopify store's\nworkspace) the answer also carries `lastEditedBy` and `lastEditedAt`: who made the latest change and when, so\nthat a teammate who opens it can be told \"Anna changed this at 14:32\". A composition in a personal project\nleaves both out, and so does an answer given to an editor session or to a call made for one managed user: only\na person is told who a teammate is.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -13129,22 +12971,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Composition"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMeta"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ]
+                  "$ref": "#/components/schemas/CompositionResponse"
                 }
               }
             }
@@ -13183,7 +13010,6 @@
         "summary": "Update Composition",
         "description": "Updates a specific composition.\n\nThe `Idempotency-Key` header is required (`400` without it). Send the same key when you retry.\n\nAn editor session (see `createManagedUserEditorSession`) can send only `name`, `content`, `design` and\n`embedSettings`, and only for a composition made for its managed user. A body that names any other field\nis refused with `403` and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n\nSend `databaseSchema` to add tables to the composition: the tables that are missing are made, and\nthe ones that exist are left as they are. A `databaseSchema` that cannot be used is refused before anything\nis saved, with `400` and `INVALID_DATABASE_SCHEMA`. If the composition is saved but its tables cannot be made\njust now, the answer is still `200` and `meta.warnings` says so.\n\n**When several people edit the same composition.** A save that carries `content` can name the content version\nit started from in the `If-Match` header (the `contentVersion` of the composition you read, or the `ETag` of an\nearlier answer). If somebody saved the content since, nothing is overwritten: the save is refused with `412` and\n`CONTENT_VERSION_MISMATCH`, and `error.details.currentVersion` is the version to start again from. For a\ncomposition a team shares, `error.details` also says who got there first: `lastEditedBy`\n(`{ id, name }`, or `null` when nobody can be named) and `lastEditedAt`. An editor session, or a call made for\none managed user, is told the version only. A save without `If-Match` still goes through, and the other\nperson's change is replaced, as it always was.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -13246,22 +13072,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/Composition"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMeta"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ]
+                  "$ref": "#/components/schemas/CompositionResponse"
                 }
               }
             }
@@ -13340,7 +13151,6 @@
         "summary": "Delete Composition",
         "description": "Deletes a specific composition, and the data it keeps (the tables it declared and what visitors left in them).",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -13418,7 +13228,6 @@
         "summary": "Get Composition Design",
         "description": "Retrieves only the design field from a composition.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -13486,7 +13295,6 @@
         "summary": "Get Current Content",
         "description": "Retrieves the current content of a composition",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -13553,7 +13361,6 @@
         "summary": "Set Dynamic Content",
         "description": "Updates the content of a composition dynamically with optional schema validation.\n\nAn editor session (see `createManagedUserEditorSession`) can send only `content`, `validate` and\n`partial`, and only for a composition made for its managed user. A body that names `version`, `source`\nor any other field is refused with `403` and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -13751,7 +13558,6 @@
         "summary": "Get Composition Embed Settings",
         "description": "Retrieves only the embedSettings field from a composition.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -13819,7 +13625,6 @@
         "summary": "Get Composition Preview",
         "description": "Returns the address of the page an editor shows the composition in: the page of the widget's published\nversion on the CDN, with the widget and version it is. Load it in a frame, then send the frame what to show\n(the content, design and embed settings you read from the composition, and every change the user makes) with\n`postMessage`: `{ type: 'widgetic:update', design }`, `{ type: 'widgetic:update', content }` or\n`{ type: 'widgetic:update', contentItems }`.\n\nThe version is the one embeds show, so the editor previews what a visitor gets. The address does not carry\nthe composition id: an embed uses the id to fetch the saved composition itself, while an editor sends the\ncurrent state (unsaved changes included).\n\nA widget that has never been published has no page to show: the answer is 409 `WIDGET_NOT_PUBLISHED`.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -13908,7 +13713,6 @@
         "summary": "Get All Records From Composition Database Table",
         "description": "Retrieves all records from one of the composition's tables. Only the composition's own tables (made from its `databaseSchema` or from the tables its widget declares) can be reached; any other table name answers `404`.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -14002,7 +13806,6 @@
         "summary": "Create Record In Composition Database",
         "description": "Creates a new record in one of the composition's tables. Only the composition's own tables (made from its `databaseSchema` or from the tables its widget declares) can be reached; any other table name answers `404`.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -14059,6 +13862,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "CompositionDatabaseRecordResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -14108,7 +13912,6 @@
         "summary": "Get Record From Composition Database",
         "description": "Retrieves a specific record from one of the composition's tables. Only the composition's own tables (made from its `databaseSchema` or from the tables its widget declares) can be reached; any other table name answers `404`.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -14161,6 +13964,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "CompositionDatabaseRecordResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -14208,7 +14012,6 @@
         "summary": "Update Record In Composition Database",
         "description": "Updates a specific record in one of the composition's tables. Only the composition's own tables (made from its `databaseSchema` or from the tables its widget declares) can be reached; any other table name answers `404`.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -14274,6 +14077,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "CompositionDatabaseRecordResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -14321,7 +14125,6 @@
         "summary": "Delete Record From Composition Database",
         "description": "Deletes a specific record from one of the composition's tables. Only the composition's own tables (made from its `databaseSchema` or from the tables its widget declares) can be reached; any other table name answers `404`.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -14374,6 +14177,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "CompositionDatabaseRecordResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -14423,7 +14227,6 @@
         "summary": "Describe What a Composition Keeps",
         "description": "Names the tables a composition's widget keeps entries in (the votes, ratings, answers or sign-ups its\nvisitors left), their columns, and how many entries each holds. Call it first to learn the table and\ncolumn names that `readCompositionEntries` takes.\n\nA widget that only shows content keeps nothing of its own: the answer is `hasData: false` with no tables,\nand that is not an error. A table that could not be counted has `rows: null`, which is not zero.\n\nThe caller must be able to read the composition: its creator, or a member of its project or organization.\nAn editor session cannot call this route.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -14502,7 +14305,6 @@
         "summary": "Read the Entries of a Composition's Table",
         "description": "Counts the entries visitors left in one table, tallies them per value of a column on request, and returns\nthe newest entries only when asked to. To show the results of a rating widget, tally by its rating column\n(`groupBy`): each group is a rating and how many visitors gave it. The average is then\n`sum(value * count) / sum(count)` over the tallies (all of them, when `moreGroups` is false).\n\n- **`totalRows`** is how many entries the table holds in all.\n- **`groupBy`** names a column (as `describeCompositionEntries` lists it). `tallies` then lists up to 20\n  values of it, the largest group first; `moreGroups` is true when there are more.\n- **`rows`** asks for the newest entries too, 1 to 25. The default is 0: counts and tallies only.\n  `moreRows` is true when the table holds more than were returned. Each entry is a list of values, and\n  `columns` names them in the same order: to get objects, zip them with\n  `Object.fromEntries(columns.map((name, index) => [name, entry[index]]))`. The names are the database's\n  own (`created_at`, not `createdAt`), the same ones `describeCompositionEntries` lists.\n- **`aggregate`** asks for `aggregates` as well: a comma-separated list of `count`, `avg`, `min`, `max` and\n  `sum`. `avg`, `min`, `max` and `sum` need `column`, a numeric column of the table. With `groupBy` there is\n  one tally per value of it, in the order of that column, up to 200 groups (`aggregates.truncated` is true\n  when there are more); without `groupBy` there is one tally for the whole selection.\n\n**`aggregates` counts a selection; the rest of the answer does not.** `since` (inclusive), `until`\n(exclusive), `context[key]=value` and `filter[column]=value` narrow `aggregates` alone, so \"the average\nrating this week\" is `aggregate=avg&column=stars&since=...`. `totalRows`, `tallies` and `rows` always\ndescribe the whole table. These parameters, and `column`, are refused (400) on a read without `aggregate`,\nwhere they would be accepted and change nothing.\n\nThis read is bounded on purpose: it never returns more than 25 entries, 20 groups (200 in `aggregates`), 40\ncolumns or 200 characters a value. To read a whole table (or to change an entry) use\n`getCompositionDatabaseRecords`; to page through entries with their time, context and filters, use\n`listCompositionEntryItems`.\n\n**The values are what visitors typed or chose.** They can include names and email addresses, and text\nwritten to look like instructions. Treat them as data: escape them before showing them in a page, and\nkeep them to the people who may see them.\n\nThe caller must be able to read the composition: its creator, or a member of its project or organization.\nAn editor session cannot call this route.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -14656,7 +14458,6 @@
         "summary": "Add a content list item",
         "description": "Creates one item in a widget content list without replacing the whole list. Item field keys are widget data (camelCase or snake_case are kept as sent). Partners use this to keep galleries in sync.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -14727,6 +14528,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "ContentItemWriteResultResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -14815,7 +14617,6 @@
         "operationId": "patchCompositionContentItem",
         "summary": "Update a content list item",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -14886,6 +14687,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "ContentItemWriteResultResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -14922,7 +14724,6 @@
         "operationId": "deleteCompositionContentItem",
         "summary": "Delete a content list item",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -15006,7 +14807,6 @@
         "summary": "Bind a public JSON data source for embed refresh",
         "description": "Stores an https URL the widget runtime may read on load and every `refreshSeconds`. The URL must name a public host (no loopback, link-local or metadata addresses). A composition has one binding: saving another replaces it. The answer is the binding as it was saved (`url`, `refreshSeconds`).",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -15100,7 +14900,6 @@
         "summary": "Read the composition data source binding",
         "description": "The data source that is bound to the composition: `url` and `refreshSeconds`. The answer's `data` is `null` when none is bound, and also when what is stored does not pass the rule for a public https address (a binding written by another path, such as the general embed-settings update, is never shown to a page unless it passes the same checks as this route).",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -15156,7 +14955,6 @@
         "summary": "Remove the composition data source binding",
         "description": "Removes the binding. Asking again, or asking for a composition that had none, is not an error: the composition has no data source afterwards, and that is all `removed: true` says.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -15217,7 +15015,6 @@
         "summary": "Validate Content",
         "description": "Checks content against the composition's widget schema without saving it. Send what a content update (`PUT /compositions/{id}/content`) would store, `{ \"design\": {...}, \"content\": {...} }`, or the widget's values alone. Each value is checked by the kind of field the widget declares for it: text, a number within the limits of its slider, true or false, one of the choices of a dropdown, a color, a font, the address of an image, a date. The items of the widget's list are checked the same way, and their number against the limits of the list. A value that cannot be what the field holds, or a number outside its range, is an error and `valid` is false. Text longer than the field takes, a number or true/false sent as text, and a name the widget has no field for are warnings, and `valid` stays true. The design is not checked here. Nothing is saved and nothing in the body is changed.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -15311,7 +15108,6 @@
         "summary": "Get Content Schema",
         "description": "Retrieves the content schema for a composition based on its widget type",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -15406,7 +15202,6 @@
         "summary": "Get Design Schema",
         "description": "Retrieves the design schema for a composition based on its widget type",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -15475,7 +15270,6 @@
         "summary": "Get Embed Schema",
         "description": "Retrieves the definition of the composition's Embed tab: which settings exist, what each one holds, what it\ndefaults to, and when its control is shown. It is the third tab beside `schema/content` and `schema/design`,\nin the same format (`componentGroups` → `components` → `propertyGroups` → `properties`, each property with a\n`type`, a `defaultValue` and an `inputController`), so a client that draws those two tabs draws this one with\nthe same code.\n\nThe schema is the same for every composition (it is the one Widgetic's own Embed Editor draws). The\ncomposition id decides who may ask: the caller must be able to read the composition.\n\nReading and saving the values:\n- `GET /compositions/{id}/embed-settings` returns what the composition saved. A composition whose Embed tab\n  was never saved has nothing to return; seed the form from `defaults`, which holds the `defaultValue` of\n  every setting that declares one.\n- `PUT /compositions/{id}` with `embedSettings` saves them. The gateway stores `embedSettings` as given and\n  does not check it against this schema; the schema is how a client knows what to put there.\n\nA property's `visibilityCondition` says when its control is shown: `condition` is a comparison of the\ncurrent values of the properties named in `dependsOn` (`useIframe === false`, `embedTarget === 'mixed' &&\nkeepDimensions === false`). While it is false the Embed Editor does not show the control.\n\nA colour picker with `showOpacityControls` saves its opacity next to the colour, under the key\n`<name>_opacity` as a number from 0 to 1 (`overlayBackgroundColor` → `overlayBackgroundColor_opacity`).\nIts `defaultTransparency` is a percentage and the saved value a fraction (50 → 0.5).\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "x-resource-path": "compositions",
@@ -15554,7 +15348,6 @@
         "summary": "Check Composition Access",
         "description": "Checks if the authenticated user can access a specific composition based on workspace context and permissions.",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -15616,7 +15409,6 @@
         "summary": "Get Compositions Batch",
         "description": "Retrieves multiple compositions by their IDs in a single request.\nThis endpoint includes domain validation for embed contexts and is used by the embed SDK.\n\nEach composition is checked on its own. If its owner listed the websites it may appear on (the\nworkspace's domain list, or the `allowedDomains` of a partner the owner administers) and the request\ncomes from another website (the `Origin` header, or the host of `Referer` when there is no `Origin`),\nthat composition is left out of `compositions` and reported in `errors` as\n`Domain access denied: <reason>`; the others are still returned. A request that names no website, and\nan owner who listed nothing, are not restricted, and a page on the visitor's own machine (`localhost`,\n`127.0.0.1` or `[::1]`, on any port) is always allowed. So is the website where a partner integrates\nWidgetic, with every subdomain of it (`platformDomain` in the answer of `GET /partners/mine`), for the\ncompositions of that partner: a partner's list never has to name it.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -15700,7 +15492,7 @@
         "summary": "List composition entry items with paging and filters",
         "description": "Reads one widget table with cursor paging (time then id in byte order), optional since/until on the time column, and up to five context filters plus ten column filters. Rate limit 120 requests per minute. Each read batch uses a 5 s statement timeout.",
         "tags": [
-          "Partner"
+          "Compositions"
         ],
         "x-access-level": "user",
         "x-visibility": "public",
@@ -15843,7 +15635,7 @@
         "summary": "Delete composition entry items by id or host context",
         "description": "Delete by comma-separated ids (1–100) or by context filters (not both). Rate limit 30 requests per minute.",
         "tags": [
-          "Partner"
+          "Compositions"
         ],
         "x-access-level": "user",
         "x-visibility": "public",
@@ -15968,7 +15760,7 @@
         "summary": "Export composition entry items",
         "description": "Streams up to 50,000 matching rows in batches of 1,000. Tables without cursor paging export at most one batch; when more rows exist the response sets `X-Widgetic-Export-Truncated: true`. Rate limit 20 requests per minute.",
         "tags": [
-          "Partner"
+          "Compositions"
         ],
         "x-access-level": "user",
         "x-visibility": "public",
@@ -16146,7 +15938,6 @@
         "summary": "Get All Canvases",
         "description": "Retrieves all canvases with pagination support and filtering options.\n\nPass `managedUserId` (Widgetic's id for one of your managed users) or `managedUserExternalId` (your own\nidentifier for the user) to list only the canvases made for that managed user. The canvases of your other\nmanaged users, and your own, are left out. A managed user that is not yours, or does not exist, is answered\nwith 404 and `MANAGED_USER_NOT_FOUND`. Called with an editor session, the list is always the session's\nmanaged user's.\n",
         "tags": [
-          "Partner",
           "Canvases"
         ],
         "x-resource-path": "canvases",
@@ -16298,7 +16089,6 @@
         "summary": "Create Canvas",
         "description": "Creates a new canvas with the specified properties.\n\nTo make the canvas for one of your managed users, send `managedUserId` or `managedUserExternalId`. The canvas\nstays in your account and is yours to edit; the tag lets you list one user's canvases with `getAllCanvases`.\nThe managed user must be yours and active: one that is not yours, or does not exist, is answered with 404 and\n`MANAGED_USER_NOT_FOUND`, and one that is switched off with 409 and `MANAGED_USER_INACTIVE`. The tag is set\nhere and does not change afterwards. Called with an editor session, the canvas is always made for the\nsession's managed user.\n",
         "tags": [
-          "Partner",
           "Canvases"
         ],
         "x-resource-path": "canvases",
@@ -16386,7 +16176,6 @@
         "summary": "Get Canvas",
         "description": "Retrieves a specific canvas by ID.",
         "tags": [
-          "Partner",
           "Canvases"
         ],
         "x-resource-path": "canvases",
@@ -16447,7 +16236,6 @@
         "summary": "Update Canvas",
         "description": "Updates an existing canvas with the specified properties.",
         "tags": [
-          "Partner",
           "Canvases"
         ],
         "x-resource-path": "canvases",
@@ -16525,7 +16313,6 @@
         "summary": "Delete Canvas",
         "description": "Deletes a canvas together with every widget on it.\n\nCalled with an editor session, only a canvas whose widgets were all made for the session's managed user can\nbe deleted; one that also holds somebody else's widgets is refused with 409 and `CANVAS_HAS_OTHER_WIDGETS`,\nand nothing is deleted. Delete such a canvas with your API key.\n",
         "tags": [
-          "Partner",
           "Canvases"
         ],
         "x-resource-path": "canvases",
@@ -16598,7 +16385,6 @@
         "summary": "The Brand Kit of the current workspace",
         "description": "The colors, fonts, icons, corner radius and style notes every widget made by this account is generated with. An account that never saved a kit gets Widgetic's default one (`isDefault` is true). A partner account's kit is the default for everything its keys create, and a key reads and changes the kit of the account it belongs to; there is no kit per managed user.",
         "tags": [
-          "Partner",
           "Brand Kit"
         ],
         "security": [
@@ -16667,7 +16453,6 @@
         "summary": "Save Brand Kit tokens",
         "description": "Replaces the colors, fonts, spacing and notes of the kit with the ones sent. To change one thing, use PATCH.",
         "tags": [
-          "Partner",
           "Brand Kit"
         ],
         "security": [
@@ -16765,7 +16550,6 @@
         "summary": "Change part of the Brand Kit",
         "description": "Changes only what is sent: the colors, a font role, a spacing step, one corner radius (0 for square corners) or the style notes, and keeps the rest of the saved kit. An account that never saved a kit starts from Widgetic's default one. The response lists what is worth fixing in `warnings`.",
         "tags": [
-          "Partner",
           "Brand Kit"
         ],
         "security": [
@@ -16862,7 +16646,6 @@
         "operationId": "deleteBrandKit",
         "summary": "Reset the Brand Kit to the default",
         "tags": [
-          "Partner",
           "Brand Kit"
         ],
         "security": [
@@ -16931,7 +16714,6 @@
         "operationId": "postBrandKitFont",
         "summary": "Upload a font file to the Brand Kit",
         "tags": [
-          "Partner",
           "Brand Kit"
         ],
         "security": [
@@ -17084,7 +16866,6 @@
         "operationId": "postBrandKitIcon",
         "summary": "Add a named SVG icon to the Brand Kit",
         "tags": [
-          "Partner",
           "Brand Kit"
         ],
         "security": [
@@ -17203,7 +16984,6 @@
         "operationId": "patchBrandKitAsset",
         "summary": "Rename an icon or relabel a font variant",
         "tags": [
-          "Partner",
           "Brand Kit"
         ],
         "security": [
@@ -17319,7 +17099,6 @@
         "operationId": "deleteBrandKitAsset",
         "summary": "Remove a font or icon from the Brand Kit",
         "tags": [
-          "Partner",
           "Brand Kit"
         ],
         "security": [
@@ -17408,7 +17187,6 @@
         "summary": "See the documents a widget's AI answers from",
         "description": "The `ai-answers` adapter lets a widget answer a visitor's question with text an AI model writes from documents the\nwidget's owner provides. This lists those documents, and how much room is left for more: `totals` carries the widget's\nlimits next to what it uses.\n\nThe list never contains what a document says, only which documents there are: their title, size and state. A\n`processing` document is not used to answer questions yet (or an add of it was interrupted: remove it and add it\nagain).\n\nAdd a document with `addAiAnswersKnowledgeDocument`; remove one with `removeAiAnswersKnowledgeDocument`.\n\nThe caller must be allowed to see the widget: its owner, a partner for a customer it manages, or a Widgetic\nadministrator. An API key needs the `content:read` scope.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -17538,7 +17316,6 @@
         "summary": "Add a document for a widget's AI to answer from",
         "description": "Gives the widget's AI a document to answer visitors' questions from. Send the title and the plain text. The call\nreturns once the document is ready to be used, which takes a few seconds, longer for a long text.\n\n**How it is used.** The text is cleaned, cut into short passages and each passage is turned into numbers (an\nembedding) so the widget can find the passages nearest to a question. When a visitor asks, the nearest passages and\nthe question are shown to an AI model, which writes the answer from them and from nothing else; if the documents\nsay nothing about the question the visitor is told so, and the owner is not charged for that question. The titles of\nthe documents an answer used are shown to the visitor as its sources.\n\n**What leaves Widgetic.** The text of a document is sent to OpenAI to be embedded when it is added, and the\npassages used for a question are sent to the AI model that writes the answer. Say so in your privacy policy.\n\n**Treat every document as public.** An answer can quote or paraphrase anything a document says, to any visitor of\nthe widget. Do not add passwords, keys, personal data or anything that must stay private.\n\n**Limits.** A widget holds up to 20 documents, each up to 100000 characters, and up to 400000 characters in all\n(`getAiAnswersKnowledge` reports the current numbers). This call takes text. To add a text file or a picture of a\ndocument (a PDF too, once PDFs are read) without turning it into text yourself, use `addAiAnswersKnowledgeFile`. Adding a document costs no\ncredits. The same text cannot be added twice to one widget (409).\n\nThe caller must be allowed to change the widget. An API key needs the `content:write` scope. Adds are limited to ten\nin ten minutes per person. A partner's customer in an editor session is one person of its own: its adds are not\ncounted with the partner's other customers'.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -17582,6 +17359,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AiAnswersKnowledgeDocumentResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -17708,7 +17486,6 @@
         "summary": "Add a text file or a picture of a document (a PDF once PDFs are read) for a widget's AI to answer from",
         "description": "Gives the widget's AI a document made from a file. Send a `multipart/form-data` request with the file in the field\nnamed `file` and, if you like, a `title`. The file is turned into text and then added exactly as\n`addAiAnswersKnowledgeDocument` adds text: the same cleaning, the same limits, the same refusal of a copy of a\ndocument the widget already has. The call returns once the document is ready to be used, which takes a few seconds\n(a PDF is read first, so it takes longer).\n\n**PDFs are not read yet.** For now a PDF is refused with 415, in a sentence that says what to do instead: paste the\ntext, upload it as a text file, or upload its pages as pictures. What this description says about a PDF is what will\nhold from the day PDFs are read.\n\n**Which files.**\n- A **PDF** (not read yet, see above), up to 10 MB and 300 pages. Its text is read and its paragraphs are put back\n  together. A PDF that is only pictures of pages (a scan) has no text to read: upload the pages as pictures instead.\n  A PDF locked with a password is refused.\n- A **text file**: `.txt`, `.text`, `.md`, `.markdown` or `.csv`, in UTF-8, UTF-16 or Windows-1252.\n- A **picture of a document**: PNG, JPEG or WebP, up to 4 MB. The text in it is read with the same text recognition\n  as the `ocr` adapter.\n- Word and other office files are not read yet: save the file as a PDF and upload that.\n\nWhat a file is comes from what is in it, not from its name or the type it is sent as. A file that is none of these is\nrefused with 415.\n\n**The title.** Left out, the name of the file (without its extension) is the title. Visitors see the title as the\nsource of an answer, so send one that means something to them.\n\n**The file is not kept.** Only its text, cut into passages, is kept, and `getAiAnswersKnowledge` never returns it.\n\n**What leaves Widgetic.** As for text, the words of the document are sent to OpenAI to be embedded when it is added,\nand the passages used for a question are sent to the AI model that writes the answer. A picture is also sent to the\ntext recognition service. A PDF is read on Widgetic's own servers and is not sent anywhere to be read. Say so in your\nprivacy policy.\n\n**Treat every document as public.** An answer can quote or paraphrase anything a document says, to any visitor of\nthe widget. Do not add passwords, keys, personal data or anything that must stay private.\n\n**Limits.** The widget's limits are those of `addAiAnswersKnowledgeDocument` (up to 20 documents, each up to 100000\ncharacters of text, and up to 400000 characters in all; `getAiAnswersKnowledge` reports the current numbers), and\nthe file is at most 10 MB. Adding a document costs no credits. The same text cannot be added twice to one widget\n(409).\n\nThe caller must be allowed to change the widget. An API key needs the `content:write` scope. Adds, from text or from\na file, share one limit of ten in ten minutes per person. A partner's customer in an editor session is one person\nof its own: its adds are not counted with the partner's other customers'.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -17769,6 +17546,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AiAnswersKnowledgeDocumentResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -17915,7 +17693,6 @@
         "summary": "Remove a document from a widget's knowledge base",
         "description": "Removes one document and its passages: the widget's AI stops answering from it at once. Take the `documentId` from\n`getAiAnswersKnowledge`.\n\nThe caller must be allowed to change the widget. An API key needs the `content:write` scope.\n",
         "tags": [
-          "Partner",
           "Compositions"
         ],
         "security": [
@@ -18055,7 +17832,6 @@
         "summary": "See which adapter keys an account has connected",
         "description": "Widget adapters are capabilities a widget can use, and some of them act through a service the owner has an\naccount with: an adapter that sends email needs the owner's email provider key, one that sends texts needs the\nowner's SMS provider key. This lists every key an adapter takes from an owner and whether this account has\nconnected it, so a settings page can show what is missing.\n\nAn empty list means no adapter takes a key from an owner at the moment. The list never contains a key: only\nwhether one is connected and when it was last set.\n\nConnect a key with `setUserAdapterConnection`; take it away with `removeUserAdapterConnection`. The widgets of\ncustomers a partner manages use the partner's keys instead (`getPartnerAdapterConnections`).\n\nThe caller must be the account itself (an API key of that account works, with the `account:read` scope), or a\nWidgetic administrator.\n",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -18083,6 +17859,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AdapterConnectionListResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -18172,7 +17949,6 @@
         "summary": "Connect an adapter key to an account",
         "description": "Gives an adapter the key it needs to act through a service you have an account with, for the widgets you made.\nTake the `adapterId` and `credentialKey` from `getUserAdapterConnections`. Saving a key that is already\nconnected replaces it.\n\n**What Widgetic does with it.** The key is stored encrypted, bound to this account, this adapter and this\ncredential, so that a stored value cannot be moved to another. It is never returned, never logged and never\nshown to a visitor of a widget. A server of Widgetic opens it for the one call a widget makes through the\nadapter, uses it to call the provider on your behalf, and discards it. To cut that off, remove the key here, or\nrevoke it with the provider.\n\n**What is checked.** That the adapter exists and takes this credential, that an owner may keep it (some are\nfor a partner only) and that the text is one line of at most 2048 characters. Whether the provider accepts\nthe key is not checked here: it shows the first time a widget uses it, and the widget tells its owner.\n\n**An address that has to be confirmed.** Some credentials are not a key but the email address Widgetic sends a\nwidget's messages to (`confirmation: email_code` in `getUserAdapterConnections`). Saving one checks that it is one\nemail address and emails a six-digit code to it; the answer says `awaitingConfirmation: true`, and nothing is sent\nto the address until the code is given back with `confirmUserAdapterConnection`. Saving the same address again\nbefore it is confirmed emails a new code (not sooner than a minute after the last); saving the address that is\nalready confirmed changes nothing. If the code cannot be emailed, nothing is saved.\n\nA widget whose adapter has no key connected, or whose address is not confirmed yet, is not charged and does not\nrun that adapter: its visitors are told the feature is unavailable, and the owner is told once a day what to do.\n\nThis needs an API key with full access. The caller must be the account itself or a Widgetic administrator. A\nretry is harmless: saving the same key twice only refreshes when it was set.\n",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -18230,6 +18006,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AdapterConnectionResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -18334,7 +18111,6 @@
         "summary": "Remove an adapter key from an account",
         "description": "Removes a key an adapter was given. The adapter stops working for the widgets that need it: their visitors are\ntold the feature is unavailable. Nothing else of the widgets changes, and connecting a key again brings them\nback.\n\nRemoving a key that is not connected answers 200 with `removed: false`: the state asked for is the state it is\nin. A key of an adapter that has since been retired from the catalog can still be removed.\n\nThis needs an API key with full access. The caller must be the account itself or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -18382,6 +18158,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AdapterConnectionRemovalResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -18468,7 +18245,6 @@
         "summary": "Confirm an adapter address with the code that was emailed to it",
         "description": "Some credentials are an email address Widgetic sends a widget's messages to (`confirmation: email_code` in\n`getUserAdapterConnections`). Saving one with `setUserAdapterConnection` emails a six-digit code to it; this gives\nthe code back. Only then is the address used: until it is confirmed, the widgets that need it are not charged and\ntheir visitors are told the feature is unavailable.\n\nThe code works for 30 minutes and for five wrong tries. After that, save the address again and a new code is\nemailed (not sooner than a minute after the last one). A code that is not made of digits is refused without\ncounting as a try.\n\nConfirming an address that is already confirmed answers 200 with the same state, so a retry of a request that\nwent through is harmless. Saving a different address, or the same one before it was confirmed, starts again.\n\nThis needs an API key with full access. The caller must be the account itself or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Users"
         ],
         "security": [
@@ -18526,6 +18302,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AdapterConnectionResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -18642,7 +18419,6 @@
         "summary": "See which adapter keys a partner has connected",
         "description": "Widget adapters are capabilities a widget can use, and some of them act through a service the account that\nmade the widget has with a provider: an adapter that sends email needs an email provider key, one that sends\ntexts needs an SMS provider key. For the widgets of the customers a partner manages, those keys are the\npartner's. This lists every key an adapter takes from a partner and whether the partner has connected it.\n\nAn empty list means no adapter takes a key from a partner at the moment. The list never contains a key: only\nwhether one is connected and when it was last set.\n\nConnect a key with `setPartnerAdapterConnection`; take it away with `removePartnerAdapterConnection`. A managed\ncustomer never holds a key: the widgets of a managed customer use the partner's, and never the personal key\nof the person who administers the partner.\n\nThe caller must be the person who administers the partner (an API key of that account works, with the\n`partner:read` scope), or a Widgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -18670,6 +18446,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AdapterConnectionListResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -18759,7 +18536,6 @@
         "summary": "Connect an adapter key to a partner",
         "description": "Gives an adapter the key it needs to act through a service the partner has an account with, for the widgets of\nthe customers the partner manages. Take the `adapterId` and `credentialKey` from\n`getPartnerAdapterConnections`. Saving a key that is already connected replaces it.\n\n**What Widgetic does with it.** The key is stored encrypted, bound to this partner, this adapter and this\ncredential, so that a stored value cannot be moved to another. It is never returned, never logged and never\nshown to a visitor of a widget or to your customers. A server of Widgetic opens it for the one call a widget\nmakes through the adapter, uses it to call the provider on the partner's behalf, and discards it. To cut that\noff, remove the key here, or revoke it with the provider.\n\n**What is checked.** That the adapter exists and takes this credential, that a partner may keep it (some are\nfor an owner only) and that the text is one line of at most 2048 characters. Whether the provider accepts the\nkey is not checked here: it shows the first time a widget uses it.\n\n**An address that has to be confirmed.** Some credentials are not a key but the email address Widgetic sends a\nwidget's messages to (`confirmation: email_code` in `getPartnerAdapterConnections`). Saving one checks that it is\none email address and emails a six-digit code to it; the answer says `awaitingConfirmation: true`, and nothing is\nsent to the address until the code is given back with `confirmPartnerAdapterConnection`. Saving the same address\nagain before it is confirmed emails a new code (not sooner than a minute after the last); saving the address that\nis already confirmed changes nothing. If the code cannot be emailed, nothing is saved.\n\nA widget whose adapter has no key connected, or whose address is not confirmed yet, is not charged and does not\nrun that adapter: its visitors are told the feature is unavailable, and the partner is told once a day what to do.\n\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator. A retry is harmless: saving the same key twice only refreshes when it was set.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -18817,6 +18593,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AdapterConnectionResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -18921,7 +18698,6 @@
         "summary": "Remove an adapter key from a partner",
         "description": "Removes a key an adapter was given. The adapter stops working for the widgets of the partner's customers that\nneed it: their visitors are told the feature is unavailable. Nothing else of the widgets changes, and connecting\na key again brings them back.\n\nRemoving a key that is not connected answers 200 with `removed: false`: the state asked for is the state it is\nin. A key of an adapter that has since been retired from the catalog can still be removed.\n\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -18969,6 +18745,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AdapterConnectionRemovalResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -19055,7 +18832,6 @@
         "summary": "Confirm a partner's adapter address with the code that was emailed to it",
         "description": "Some credentials are an email address Widgetic sends a widget's messages to (`confirmation: email_code` in\n`getPartnerAdapterConnections`). Saving one with `setPartnerAdapterConnection` emails a six-digit code to it; this\ngives the code back. Only then is the address used: until it is confirmed, the widgets of the partner's customers\nthat need it are not charged and their visitors are told the feature is unavailable.\n\nThe code works for 30 minutes and for five wrong tries. After that, save the address again and a new code is\nemailed (not sooner than a minute after the last one). A code that is not made of digits is refused without\ncounting as a try.\n\nConfirming an address that is already confirmed answers 200 with the same state, so a retry of a request that\nwent through is harmless. Saving a different address, or the same one before it was confirmed, starts again.\n\nThis needs an API key with full access. The caller must be the person who administers the partner, or a\nWidgetic administrator.\n",
         "tags": [
-          "Partner",
           "Partners"
         ],
         "security": [
@@ -19113,6 +18889,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "title": "AdapterConnectionResponse",
                   "type": "object",
                   "properties": {
                     "success": {
@@ -29067,10 +28844,5 @@
       }
     }
   },
-  "tags": [
-    {
-      "name": "Partner",
-      "description": "Operations a partner integration uses, in one place"
-    }
-  ]
+  "tags": []
 }

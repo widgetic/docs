@@ -16,10 +16,10 @@ const path = require('path');
 const { HOW_TO_WRITE_FOR_PRODUCTION, checkProductionServer } = require('./lib/openApiServerAddress');
 
 // Paths
-const LOCAL_SOURCE_PATH = path.resolve(
-  __dirname,
-  '../../../Services/api-gateway-service/client-sdk/openapi-spec-public.json'
-);
+const GATEWAY_ROOT = process.env.GATEWAY_ROOT
+  ? path.resolve(process.env.GATEWAY_ROOT)
+  : path.resolve(__dirname, '../../../Services/api-gateway-service');
+const LOCAL_SOURCE_PATH = path.join(GATEWAY_ROOT, 'client-sdk/openapi-spec-public.json');
 const TARGET_PATH = path.resolve(
   __dirname,
   '../openapi/widgetic-api-public.json'
