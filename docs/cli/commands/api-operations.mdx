@@ -7,12 +7,12 @@ description: '1 command for the Operations operations of the REST API, generated
 
 `widgetic api operations <command>` runs the Operations operations of the REST API. It has 1 command. Every command also takes [the flags every command takes](/docs/cli/commands/index).
 
-## `widgetic api operations operations-id-get`
+## `widgetic api operations get-operation`
 
 Get operation status
 
 - Request: `GET /operations/{id}`
-- Operation: `operationsIdGet` (`widgetic api call operationsIdGet` runs it by that name)
+- Operation: `getOperation` (`widgetic api call getOperation` runs it by that name)
 - Also written: `widgetic api operations get`
 - Works with any API key.
 
@@ -20,4 +20,4 @@ Get operation status
 | --- | --- | --- | --- |
 | `--id <uuid>` | uuid | yes | Operation identifier returned when the job was created. |
 
-The whole description and the schemas: `widgetic schema api operations operations-id-get`.
+The whole description and the schemas: `widgetic schema api operations get-operation`.

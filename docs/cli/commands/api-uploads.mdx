@@ -7,12 +7,55 @@ description: '5 commands for the Uploads operations of the REST API, generated f
 
 `widgetic api uploads <command>` runs the Uploads operations of the REST API. It has 5 commands. Every command also takes [the flags every command takes](/docs/cli/commands/index).
 
-## `widgetic api uploads uploads-get`
+## `widgetic api uploads delete-upload`
+
+Delete an upload
+
+- Request: `DELETE /uploads/{id}`
+- Operation: `deleteUpload` (`widgetic api call deleteUpload` runs it by that name)
+- Also written: `widgetic api uploads delete`
+- Works with any API key.
+- It deletes something, so it asks first; without a terminal it needs `--yes`.
+
+| Flag | Takes | Required | What it does |
+| --- | --- | --- | --- |
+| `--id <uuid>` | uuid | yes |  |
+
+The whole description and the schemas: `widgetic schema api uploads delete-upload`.
+
+## `widgetic api uploads get-upload`
+
+Get an upload by id
+
+- Request: `GET /uploads/{id}`
+- Operation: `getUpload` (`widgetic api call getUpload` runs it by that name)
+- Also written: `widgetic api uploads get`
+- Works with any API key.
+
+| Flag | Takes | Required | What it does |
+| --- | --- | --- | --- |
+| `--id <uuid>` | uuid | yes | The upload to read |
+
+The whole description and the schemas: `widgetic schema api uploads get-upload`.
+
+## `widgetic api uploads get-upload-limits`
+
+Upload size limits and accepted file types
+
+- Request: `GET /uploads/limits`
+- Operation: `getUploadLimits` (`widgetic api call getUploadLimits` runs it by that name)
+- Works with any API key.
+
+This command takes only the flags every command takes.
+
+The whole description and the schemas: `widgetic schema api uploads get-upload-limits`.
+
+## `widgetic api uploads list-uploads`
 
 List the account's uploads
 
 - Request: `GET /uploads`
-- Operation: `uploadsGet` (`widgetic api call uploadsGet` runs it by that name)
+- Operation: `listUploads` (`widgetic api call listUploads` runs it by that name)
 - Also written: `widgetic api uploads list`
 - Works with any API key.
 
@@ -22,57 +65,14 @@ List the account's uploads
 | `--managed-user-id <uuid>` | uuid |  | List only the files uploaded for this managed user (Widgetic's id for the user). Send this or `managedUserExternalId`, not both. |
 | `--managed-user-external-id <text>` | text |  | List only the files uploaded for the managed user you registered with this `externalId` (your own identifier for the user). Send this or `managedUserId`, not both. |
 
-The whole description and the schemas: `widgetic schema api uploads uploads-get`.
+The whole description and the schemas: `widgetic schema api uploads list-uploads`.
 
-## `widgetic api uploads uploads-id-delete`
-
-Delete an upload
-
-- Request: `DELETE /uploads/{id}`
-- Operation: `uploadsIdDelete` (`widgetic api call uploadsIdDelete` runs it by that name)
-- Also written: `widgetic api uploads delete`
-- Works with any API key.
-- It deletes something, so it asks first; without a terminal it needs `--yes`.
-
-| Flag | Takes | Required | What it does |
-| --- | --- | --- | --- |
-| `--id <uuid>` | uuid | yes |  |
-
-The whole description and the schemas: `widgetic schema api uploads uploads-id-delete`.
-
-## `widgetic api uploads uploads-id-get`
-
-Get an upload by id
-
-- Request: `GET /uploads/{id}`
-- Operation: `uploadsIdGet` (`widgetic api call uploadsIdGet` runs it by that name)
-- Also written: `widgetic api uploads get`
-- Works with any API key.
-
-| Flag | Takes | Required | What it does |
-| --- | --- | --- | --- |
-| `--id <uuid>` | uuid | yes | The upload to read |
-
-The whole description and the schemas: `widgetic schema api uploads uploads-id-get`.
-
-## `widgetic api uploads uploads-limits-get`
-
-Upload size limits and accepted file types
-
-- Request: `GET /uploads/limits`
-- Operation: `uploadsLimitsGet` (`widgetic api call uploadsLimitsGet` runs it by that name)
-- Works with any API key.
-
-This command takes only the flags every command takes.
-
-The whole description and the schemas: `widgetic schema api uploads uploads-limits-get`.
-
-## `widgetic api uploads uploads-post`
+## `widgetic api uploads upload-file`
 
 Upload a file
 
 - Request: `POST /uploads`
-- Operation: `uploadsPost` (`widgetic api call uploadsPost` runs it by that name)
+- Operation: `uploadFile` (`widgetic api call uploadFile` runs it by that name)
 - Also written: `widgetic api uploads create`
 - Works with any API key.
 
@@ -85,4 +85,4 @@ Upload a file
 | `--managed-user-external-id <text>` | text |  | The same, by your own identifier for the user, the `externalId` you gave when you created the managed user. Send this or `managedUserId`, not both. |
 | `--purpose <text>` | one of `canvas`, `chat`, `field` |  | Where in your product you use the file. It is kept with the file, so that a customer's storage can be counted by purpose (`getManagedUserStorageUsage`). |
 
-The whole description and the schemas: `widgetic schema api uploads uploads-post`.
+The whole description and the schemas: `widgetic schema api uploads upload-file`.
