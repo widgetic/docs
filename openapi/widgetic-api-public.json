@@ -7691,7 +7691,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// What each customer stores, the heaviest first:\nconst usage = await partnersApi.getPartnerStorageUsage({ partnerId });\n\nconsole.log(usage.totals.totalBytes);\nfor (const customer of usage.managedUsers) {\n  console.log(customer.externalId, customer.totalBytes);\n}\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// What each customer stores, the heaviest first:\nconst { data: usage } = await partnersApi.getPartnerStorageUsage({ partnerId });\n\nconsole.log(usage.totals.totalBytes);\nfor (const customer of usage.managedUsers) {\n  console.log(customer.externalId, customer.totalBytes);\n}\n"
           }
         ]
       }
@@ -7833,7 +7833,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// How the widgets of one customer did in October:\nconst summary = await partnersApi.getPartnerAnalyticsSummary({\n  partnerId,\n  startDate: '2026-10-01',\n  endDate: '2026-11-01',\n  managedUserExternalId: 'customer-4711'\n});\n\nconsole.log(summary.views, summary.interactions, summary.visitors);\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// How the widgets of one customer did in October:\nconst { data: summary } = await partnersApi.getPartnerAnalyticsSummary({\n  partnerId,\n  startDate: '2026-10-01',\n  endDate: '2026-11-01',\n  managedUserExternalId: 'customer-4711'\n});\n\nconsole.log(summary.views, summary.interactions, summary.visitors);\n"
           }
         ]
       }
@@ -8361,7 +8361,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// The latest notifications, then the ones before them:\nconst page = await partnersApi.listPartnerNotifications({ partnerId, limit: 20 });\nconst older = page.nextBefore\n  ? await partnersApi.listPartnerNotifications({ partnerId, before: page.nextBefore })\n  : null;\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// The latest notifications, then the ones before them:\nconst { data: page } = await partnersApi.listPartnerNotifications({ partnerId, limit: 20 });\nconst older = page.nextBefore\n  ? await partnersApi.listPartnerNotifications({ partnerId, before: page.nextBefore })\n  : null;\n"
           }
         ]
       }
@@ -8653,7 +8653,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// Send every payment event to your own system:\nconst change = await partnersApi.updatePartnerNotificationSettings({\n  partnerId,\n  updatePartnerNotificationSettingsRequest: {\n    webhookUrl: 'https://example.com/widgetic/events',\n    webhookEvents: ['invoice.issued', 'invoice.paid', 'invoice.failed']\n  }\n});\n\n// Shown once: put it in your receiver's configuration now.\nconsole.log(change.webhookSecret);\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// Send every payment event to your own system:\nconst { data: change } = await partnersApi.updatePartnerNotificationSettings({\n  partnerId,\n  updatePartnerNotificationSettingsRequest: {\n    webhookUrl: 'https://example.com/widgetic/events',\n    webhookEvents: ['invoice.issued', 'invoice.paid', 'invoice.failed']\n  }\n});\n\n// Shown once: put it in your receiver's configuration now.\nconsole.log(change.webhookSecret);\n"
           }
         ]
       }
@@ -8764,7 +8764,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst change = await partnersApi.rotatePartnerWebhookSecret({ partnerId });\n\n// Shown once: put it in your receiver's configuration now.\nconsole.log(change.webhookSecret);\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: change } = await partnersApi.rotatePartnerWebhookSecret({ partnerId, idempotencyKey: randomUUID() });\n\n// Shown once: put it in your receiver's configuration now.\nconsole.log(change.webhookSecret);\n"
           }
         ]
       }
@@ -8895,7 +8895,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst delivery = await partnersApi.replayPartnerNotificationDelivery({\n  partnerId,\n  deliveryId: 'c3c3c3c3-3333-4333-8333-333333333333',\n});\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: delivery } = await partnersApi.replayPartnerNotificationDelivery({\n  partnerId,\n  deliveryId: 'c3c3c3c3-3333-4333-8333-333333333333',\n  idempotencyKey: randomUUID(),\n});\n"
           }
         ]
       }
@@ -9027,7 +9027,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst result = await partnersApi.sendPartnerNotificationTestEvent({\n  partnerId,\n  idempotencyKey: randomUUID(),\n  partnerNotificationTestEventRequest: { eventType: 'invoice.paid' },\n});\n\n// delivered: true when your receiver answered with a 2xx status\nconsole.log(result.delivered, result.statusCode, result.durationMs, result.error);\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: result } = await partnersApi.sendPartnerNotificationTestEvent({\n  partnerId,\n  idempotencyKey: randomUUID(),\n  partnerNotificationTestEventRequest: { eventType: 'invoice.paid' },\n});\n\n// delivered: true when your receiver answered with a 2xx status\nconsole.log(result.delivered, result.statusCode, result.durationMs, result.error);\n"
           }
         ]
       }
@@ -9136,7 +9136,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst signing = await partnersApi.getPartnerEntryContextSigning({ partnerId });\nconsole.log(signing.secretSet, signing.required);\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: signing } = await partnersApi.getPartnerEntryContextSigning({ partnerId });\nconsole.log(signing.secretSet, signing.required);\n"
           }
         ]
       },
@@ -9379,7 +9379,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst made = await partnersApi.rotatePartnerEntryContextSecret({ partnerId, idempotencyKey: randomUUID() });\n\n// Shown once: keep it on your server now.\nconsole.log(made.secret);\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: made } = await partnersApi.rotatePartnerEntryContextSecret({ partnerId, idempotencyKey: randomUUID() });\n\n// Shown once: keep it on your server now.\nconsole.log(made.secret);\n"
           },
           {
             "lang": "TypeScript",
@@ -9522,7 +9522,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst database = await partnersApi.setPartnerDataDatabase({\n  partnerId,\n  setPartnerDataDatabaseRequest: {\n    connectionString: 'postgresql://widgetic_data:YOUR_PASSWORD@ep-cool-name-123456.eu-central-1.aws.neon.tech/neondb',\n  },\n});\nconsole.log(database.host, database.databaseName, database.verifiedAt);\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: database } = await partnersApi.setPartnerDataDatabase({\n  partnerId,\n  setPartnerDataDatabaseRequest: {\n    connectionString: 'postgresql://widgetic_data:YOUR_PASSWORD@ep-cool-name-123456.eu-central-1.aws.neon.tech/neondb',\n  },\n});\nconsole.log(database.host, database.databaseName, database.verifiedAt);\n"
           }
         ]
       },
@@ -9608,7 +9608,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst database = await partnersApi.getPartnerDataDatabase({ partnerId });\nconsole.log(database.host, database.lastVerificationError);\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: database } = await partnersApi.getPartnerDataDatabase({ partnerId });\nconsole.log(database.host, database.lastVerificationError);\n"
           }
         ]
       },
@@ -9704,7 +9704,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { removed } = await partnersApi.removePartnerDataDatabase({ partnerId });\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: { removed } } = await partnersApi.removePartnerDataDatabase({ partnerId });\n"
           }
         ]
       }
@@ -9812,7 +9812,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst database = await partnersApi.verifyPartnerDataDatabase({ partnerId });\nconsole.log(database.verifiedAt);\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: database } = await partnersApi.verifyPartnerDataDatabase({ partnerId });\nconsole.log(database.verifiedAt);\n"
           }
         ]
       }
@@ -10071,7 +10071,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, ManagedUsersApi } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst managedUsersApi = new ManagedUsersApi(config);\n\ntry {\n  const managedUser = await managedUsersApi.createManagedUser(\n    {\n      newManagedUser: {\n        externalId: \"external-user-123\",\n        managerId: \"123e4567-e89b-12d3-a456-426614174001\",\n        metadata: {\n          firstName: \"John\",\n          lastName: \"Doe\",\n          role: \"editor\"\n        }\n      }\n    },\n    // The call needs an Idempotency-Key header and the SDK does not add one: keep the headers\n    // it already set and add the key. Reuse the same key if you retry this call.\n    async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': randomUUID() } })\n  );\n  \n  console.log('Created managed user:', managedUser);\n} catch (error) {\n  console.error('Failed to create managed user:', error);\n}\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, ManagedUsersApi } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst managedUsersApi = new ManagedUsersApi(config);\n\ntry {\n  const managedUser = await managedUsersApi.createManagedUser({\n    // The call needs an idempotency key: reuse the same key if you retry this call.\n    idempotencyKey: randomUUID(),\n    newManagedUser: {\n      externalId: \"external-user-123\",\n      managerId: \"123e4567-e89b-12d3-a456-426614174001\",\n      metadata: {\n        firstName: \"John\",\n        lastName: \"Doe\",\n        role: \"editor\"\n      }\n    }\n  });\n  \n  console.log('Created managed user:', managedUser);\n} catch (error) {\n  console.error('Failed to create managed user:', error);\n}\n"
           }
         ],
         "parameters": [
@@ -10823,7 +10823,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, ManagedUsersApi } from '@widgetic/api-sdk-ts';\n\nconst managedUsersApi = new ManagedUsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// What this user's editor sessions spent in October:\nconst usage = await managedUsersApi.getManagedUserUsage({\n  id: managedUserId,\n  startDate: '2026-10-01',\n  endDate: '2026-11-01'\n});\n\nconsole.log(usage.totals.credits, usage.operations);\n"
+            "source": "import { Configuration, ManagedUsersApi } from '@widgetic/api-sdk-ts';\n\nconst managedUsersApi = new ManagedUsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// What this user's editor sessions spent in October:\nconst { data: usage } = await managedUsersApi.getManagedUserUsage({\n  id: managedUserId,\n  startDate: '2026-10-01',\n  endDate: '2026-11-01'\n});\n\nconsole.log(usage.totals.credits, usage.operations);\n"
           }
         ]
       }
@@ -10954,7 +10954,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, ManagedUsersApi } from '@widgetic/api-sdk-ts';\n\nconst managedUsersApi = new ManagedUsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// Give one of your users their own copy of the preset you registered as \"rating\":\nconst copy = await managedUsersApi.copyPresetForManagedUser(\n  { id: managedUserId, key: 'rating' },\n  // The call needs an Idempotency-Key header and the SDK does not add one: keep the headers\n  // it already set and add the key. Reuse the same key if you retry this call.\n  async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': randomUUID() } })\n);\n\n// Open the widget creator on copy.canvasId and copy.widgetId.\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, ManagedUsersApi } from '@widgetic/api-sdk-ts';\n\nconst managedUsersApi = new ManagedUsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// Give one of your users their own copy of the preset you registered as \"rating\":\n// The call needs an idempotency key: reuse the same key if you retry this call.\nconst { data: copy } = await managedUsersApi.copyPresetForManagedUser({\n  id: managedUserId,\n  key: 'rating',\n  idempotencyKey: randomUUID(),\n});\n\n// Open the widget creator on copy.canvasId and copy.widgetId.\n"
           }
         ]
       }
@@ -11112,7 +11112,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, ManagedUsersApi } from '@widgetic/api-sdk-ts';\n\nconst api = new ManagedUsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\nconst composition = await api.createCompositionFromPreset(\n  { id: managedUserId, key: 'rating' },\n  // The request body is camelCase, like every answer of the API.\n  { name: 'Customer rating page', embedSettings: { width: 640, height: 480 }, locale: 'fr-FR' },\n  async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': randomUUID() } })\n);\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, ManagedUsersApi } from '@widgetic/api-sdk-ts';\n\nconst api = new ManagedUsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\nconst { data: composition } = await api.createCompositionFromPreset({\n  id: managedUserId,\n  key: 'rating',\n  // Reuse the same key if you retry this call.\n  idempotencyKey: randomUUID(),\n  // The request body is camelCase, like every answer of the API.\n  createCompositionFromPresetRequest: { name: 'Customer rating page', embedSettings: { width: 640, height: 480 }, locale: 'fr-FR' },\n});\n"
           }
         ]
       }
@@ -12580,7 +12580,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, CompositionsApi, ResponseError } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst compositionsApi = new CompositionsApi(config);\n\ntry {\n  const composition = await compositionsApi.createComposition(\n    {\n      newComposition: {\n        name: 'My New Composition',\n        widgetId: '123e4567-e89b-12d3-a456-426614174002',\n        content: {}\n      }\n    },\n    // The call needs an Idempotency-Key header and the SDK does not add one: keep the headers\n    // it already set and add the key. Reuse the same key if you retry this call.\n    async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': randomUUID() } })\n  );\n  \n  console.log('Created composition:', composition);\n} catch (error) {\n  if (error instanceof ResponseError && error.response.status === 400) {\n    // The body of the answer says what was wrong\n    console.error('Invalid input:', await error.response.json());\n  } else {\n    console.error('Failed to create composition:', error);\n  }\n}\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, CompositionsApi, ResponseError } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst compositionsApi = new CompositionsApi(config);\n\ntry {\n  const composition = await compositionsApi.createComposition({\n    // The call needs an idempotency key: reuse the same key if you retry this call.\n    idempotencyKey: randomUUID(),\n    newComposition: {\n      name: 'My New Composition',\n      widgetId: '123e4567-e89b-12d3-a456-426614174002',\n      content: {}\n    }\n  });\n  \n  console.log('Created composition:', composition);\n} catch (error) {\n  if (error instanceof ResponseError && error.response.status === 400) {\n    // The body of the answer says what was wrong\n    console.error('Invalid input:', await error.response.json());\n  } else {\n    console.error('Failed to create composition:', error);\n  }\n}\n"
           }
         ],
         "parameters": [
@@ -12724,7 +12724,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, CompositionsApi, OperationsApi } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst compositionsApi = new CompositionsApi(config);\nconst operationsApi = new OperationsApi(config);\n\ntry {\n  const started = await compositionsApi.duplicateComposition(\n    {\n      id: 'composition_123',\n      duplicateCompositionRequest: {\n        name: 'My Duplicated Composition',\n        includeDatabase: false\n      }\n    },\n    // The call needs an Idempotency-Key header and the SDK does not add one: keep the headers\n    // it already set and add the key. Reuse the same key if you retry this call.\n    async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': randomUUID() } })\n  );\n  \n  // The duplicate is made after the answer: ask for the operation until it has finished\n  const operationId = started.data?.operationId;\n  if (!operationId) throw new Error('The answer has no operationId');\n  \n  const finalStatuses = ['completed', 'failed', 'cancelled'];\n  let operation = await operationsApi.getOperation({ id: operationId });\n  while (!finalStatuses.includes(operation.status ?? '')) {\n    await new Promise((resolve) => setTimeout(resolve, 1000));\n    operation = await operationsApi.getOperation({ id: operationId });\n  }\n  \n  if (operation.status !== 'completed') {\n    console.error('Duplication did not finish:', operation.status, operation.error);\n  } else {\n    console.log('Duplicated composition:', operation.metadata?.newCompositionId);\n    if (operation.metadata?.warnings?.length) {\n      console.warn('Warnings:', operation.metadata.warnings);\n    }\n  }\n} catch (error) {\n  if (error.response?.status === 404) {\n    console.error('Source composition not found');\n  } else {\n    console.error('Failed to duplicate composition:', error);\n  }\n}\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, CompositionsApi, OperationsApi } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst compositionsApi = new CompositionsApi(config);\nconst operationsApi = new OperationsApi(config);\n\ntry {\n  const started = await compositionsApi.duplicateComposition({\n    id: 'composition_123',\n    // The call needs an idempotency key: reuse the same key if you retry this call.\n    idempotencyKey: randomUUID(),\n    duplicateCompositionRequest: {\n      name: 'My Duplicated Composition',\n      includeDatabase: false\n    }\n  });\n  \n  // The duplicate is made after the answer: ask for the operation until it has finished\n  const operationId = started.data?.operationId;\n  if (!operationId) throw new Error('The answer has no operationId');\n  \n  const finalStatuses = ['completed', 'failed', 'cancelled'];\n  let operation = await operationsApi.getOperation({ id: operationId });\n  while (!finalStatuses.includes(operation.data.status ?? '')) {\n    await new Promise((resolve) => setTimeout(resolve, 1000));\n    operation = await operationsApi.getOperation({ id: operationId });\n  }\n  \n  if (operation.data.status !== 'completed') {\n    console.error('Duplication did not finish:', operation.data.status, operation.data.error);\n  } else {\n    console.log('Duplicated composition:', operation.data.metadata?.newCompositionId);\n    if (operation.data.metadata?.warnings?.length) {\n      console.warn('Warnings:', operation.data.metadata.warnings);\n    }\n  }\n} catch (error) {\n  if (error.response?.status === 404) {\n    console.error('Source composition not found');\n  } else {\n    console.error('Failed to duplicate composition:', error);\n  }\n}\n"
           }
         ]
       }
@@ -12927,7 +12927,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst compositionsApi = new CompositionsApi(config);\n\ntry {\n  const composition = await compositionsApi.updateCompositionStatus(\n    {\n      id: 'composition_123',\n      updateCompositionStatusRequest: {\n        status: 'published'\n      }\n    },\n    // The call needs an Idempotency-Key header and the SDK does not add one: keep the headers\n    // it already set and add the key. Reuse the same key if you retry this call.\n    async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': randomUUID() } })\n  );\n  console.log('Status updated:', composition.status);\n} catch (error) {\n  if (error.response?.status === 404) {\n    console.error('Composition not found');\n  } else {\n    console.error('Failed to update status:', error);\n  }\n}\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst compositionsApi = new CompositionsApi(config);\n\ntry {\n  const composition = await compositionsApi.updateCompositionStatus({\n    id: 'composition_123',\n    // The call needs an idempotency key: reuse the same key if you retry this call.\n    idempotencyKey: randomUUID(),\n    updateCompositionStatusRequest: {\n      status: 'published'\n    }\n  });\n  console.log('Status updated:', composition.data.status);\n} catch (error) {\n  if (error.response?.status === 404) {\n    console.error('Composition not found');\n  } else {\n    console.error('Failed to update status:', error);\n  }\n}\n"
           }
         ]
       }
@@ -13142,7 +13142,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst compositionsApi = new CompositionsApi(config);\n\ntry {\n  const composition = await compositionsApi.updateComposition(\n    {\n      id: 'composition_123',\n      updateComposition: {\n        name: 'Updated Composition',\n        content: {\n          // Updated content object\n        },\n        embedSettings: {\n          width: '800',\n          height: '600'\n        }\n      }\n    },\n    // The call needs an Idempotency-Key header and the SDK does not add one: keep the headers\n    // it already set and add the key. Reuse the same key if you retry this call.\n    async ({ init }) => ({ headers: { ...init.headers, 'Idempotency-Key': randomUUID() } })\n  );\n  console.log('Updated composition:', composition.data);\n} catch (error) {\n  if (error.response?.status === 404) {\n    console.error('Composition not found');\n  } else {\n    console.error('Failed to update composition:', error);\n  }\n}\n"
+            "source": "import { randomUUID } from 'node:crypto';\nimport { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst compositionsApi = new CompositionsApi(config);\n\ntry {\n  const composition = await compositionsApi.updateComposition({\n    id: 'composition_123',\n    // The call needs an idempotency key: reuse the same key if you retry this call.\n    idempotencyKey: randomUUID(),\n    updateComposition: {\n      name: 'Updated Composition',\n      content: {\n        // Updated content object\n      },\n      embedSettings: {\n        width: '800',\n        height: '600'\n      }\n    }\n  });\n  console.log('Updated composition:', composition.data);\n} catch (error) {\n  if (error.response?.status === 404) {\n    console.error('Composition not found');\n  } else {\n    console.error('Failed to update composition:', error);\n  }\n}\n"
           }
         ]
       },
@@ -16080,7 +16080,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, CanvasesApi } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst canvasesApi = new CanvasesApi(config);\n\ntry {\n  const { data, total } = await canvasesApi.getAllCanvases({\n    page: 1,\n    size: 20\n  });\n  console.log(`Found ${total} canvases`);\n} catch (error) {\n  console.error('Failed to fetch canvases:', error);\n}\n"
+            "source": "import { Configuration, CanvasesApi } from '@widgetic/api-sdk-ts';\n\nconst config = new Configuration({\n  apiKey: 'YOUR_API_KEY'\n});\n\nconst canvasesApi = new CanvasesApi(config);\n\ntry {\n  const { data: list } = await canvasesApi.getAllCanvases({\n    page: 1,\n    size: 20\n  });\n  console.log(`Found ${list.total} canvases`);\n} catch (error) {\n  console.error('Failed to fetch canvases:', error);\n}\n"
           }
         ]
       },
@@ -17305,7 +17305,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst compositionsApi = new CompositionsApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { documents, totals } = await compositionsApi.getAiAnswersKnowledge({ id: compositionId });\nconsole.log(`${totals.documents} of ${totals.maxDocuments} documents`, documents.map((document) => document.title));\n"
+            "source": "import { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst compositionsApi = new CompositionsApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: { documents, totals } } = await compositionsApi.getAiAnswersKnowledge({ id: compositionId });\nconsole.log(`${totals.documents} of ${totals.maxDocuments} documents`, documents.map((document) => document.title));\n"
           }
         ]
       }
@@ -17475,7 +17475,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst compositionsApi = new CompositionsApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst document = await compositionsApi.addAiAnswersKnowledgeDocument({\n  id: compositionId,\n  addAiAnswersKnowledgeDocumentRequest: {\n    title: 'Shipping and returns',\n    text: 'Orders ship within 2 business days. Returns are accepted for 30 days after delivery.',\n  },\n});\nconsole.log(document.id, document.status);\n"
+            "source": "import { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst compositionsApi = new CompositionsApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: document } = await compositionsApi.addAiAnswersKnowledgeDocument({\n  id: compositionId,\n  addAiAnswersKnowledgeDocumentRequest: {\n    title: 'Shipping and returns',\n    text: 'Orders ship within 2 business days. Returns are accepted for 30 days after delivery.',\n  },\n});\nconsole.log(document.id, document.status);\n"
           }
         ]
       }
@@ -17682,7 +17682,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { openAsBlob } from 'node:fs';\nimport { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst compositionsApi = new CompositionsApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst document = await compositionsApi.addAiAnswersKnowledgeFile({\n  id: compositionId,\n  file: await openAsBlob('shipping-and-returns.pdf'),\n  title: 'Shipping and returns',\n});\nconsole.log(document.id, document.status);\n"
+            "source": "import { openAsBlob } from 'node:fs';\nimport { Configuration, CompositionsApi } from '@widgetic/api-sdk-ts';\n\nconst compositionsApi = new CompositionsApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: document } = await compositionsApi.addAiAnswersKnowledgeFile({\n  id: compositionId,\n  file: await openAsBlob('shipping-and-returns.pdf'),\n  title: 'Shipping and returns',\n});\nconsole.log(document.id, document.status);\n"
           }
         ]
       }
@@ -17938,7 +17938,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst connections = await usersApi.getUserAdapterConnections({ userId });\nconst missing = connections.filter((connection) => !connection.connected);\nconsole.log(missing.map((connection) => connection.label));\n"
+            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: connections } = await usersApi.getUserAdapterConnections({ userId });\nconst missing = connections.filter((connection) => !connection.connected);\nconsole.log(missing.map((connection) => connection.label));\n"
           }
         ]
       }
@@ -18102,7 +18102,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst connection = await usersApi.setUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n  setAdapterConnectionRequest: { credential: 'YOUR_PROVIDER_KEY' },\n});\nconsole.log(connection.connected, connection.updatedAt);\n\n// An address a widget's messages are emailed to: a code is emailed to it, and it is used once the code is given back.\nconst address = await usersApi.setUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  setAdapterConnectionRequest: { credential: 'owner@example.com' },\n});\nconsole.log(address.awaitingConfirmation);\n"
+            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: connection } = await usersApi.setUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n  setAdapterConnectionRequest: { credential: 'YOUR_PROVIDER_KEY' },\n});\nconsole.log(connection.connected, connection.updatedAt);\n\n// An address a widget's messages are emailed to: a code is emailed to it, and it is used once the code is given back.\nconst { data: address } = await usersApi.setUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  setAdapterConnectionRequest: { credential: 'owner@example.com' },\n});\nconsole.log(address.awaitingConfirmation);\n"
           }
         ]
       },
@@ -18234,7 +18234,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { removed } = await usersApi.removeUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n});\n"
+            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: { removed } } = await usersApi.removeUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n});\n"
           }
         ]
       }
@@ -18408,7 +18408,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// After setUserAdapterConnection emailed a code to the address:\nconst connection = await usersApi.confirmUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  confirmAdapterConnectionRequest: { code: '123456' },\n});\nconsole.log(connection.awaitingConfirmation, connection.confirmedAt);\n"
+            "source": "import { Configuration, UsersApi } from '@widgetic/api-sdk-ts';\n\nconst usersApi = new UsersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// After setUserAdapterConnection emailed a code to the address:\nconst { data: connection } = await usersApi.confirmUserAdapterConnection({\n  userId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  confirmAdapterConnectionRequest: { code: '123456' },\n});\nconsole.log(connection.awaitingConfirmation, connection.confirmedAt);\n"
           }
         ]
       }
@@ -18525,7 +18525,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst connections = await partnersApi.getPartnerAdapterConnections({ partnerId });\nconst missing = connections.filter((connection) => !connection.connected);\nconsole.log(missing.map((connection) => connection.label));\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: connections } = await partnersApi.getPartnerAdapterConnections({ partnerId });\nconst missing = connections.filter((connection) => !connection.connected);\nconsole.log(missing.map((connection) => connection.label));\n"
           }
         ]
       }
@@ -18689,7 +18689,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst connection = await partnersApi.setPartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n  setAdapterConnectionRequest: { credential: 'YOUR_PROVIDER_KEY' },\n});\nconsole.log(connection.connected, connection.updatedAt);\n\n// An address a widget's messages are emailed to: a code is emailed to it, and it is used once the code is given back.\nconst address = await partnersApi.setPartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  setAdapterConnectionRequest: { credential: 'owner@example.com' },\n});\nconsole.log(address.awaitingConfirmation);\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: connection } = await partnersApi.setPartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n  setAdapterConnectionRequest: { credential: 'YOUR_PROVIDER_KEY' },\n});\nconsole.log(connection.connected, connection.updatedAt);\n\n// An address a widget's messages are emailed to: a code is emailed to it, and it is used once the code is given back.\nconst { data: address } = await partnersApi.setPartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  setAdapterConnectionRequest: { credential: 'owner@example.com' },\n});\nconsole.log(address.awaitingConfirmation);\n"
           }
         ]
       },
@@ -18821,7 +18821,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { removed } = await partnersApi.removePartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n});\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\nconst { data: { removed } } = await partnersApi.removePartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'resendApiKey',\n});\n"
           }
         ]
       }
@@ -18995,7 +18995,7 @@
           {
             "lang": "TypeScript",
             "label": "TypeScript SDK",
-            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// After setPartnerAdapterConnection emailed a code to the address:\nconst connection = await partnersApi.confirmPartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  confirmAdapterConnectionRequest: { code: '123456' },\n});\nconsole.log(connection.awaitingConfirmation, connection.confirmedAt);\n"
+            "source": "import { Configuration, PartnersApi } from '@widgetic/api-sdk-ts';\n\nconst partnersApi = new PartnersApi(new Configuration({ apiKey: 'YOUR_API_KEY' }));\n\n// After setPartnerAdapterConnection emailed a code to the address:\nconst { data: connection } = await partnersApi.confirmPartnerAdapterConnection({\n  partnerId,\n  adapterId: 'email',\n  credentialKey: 'recipient',\n  confirmAdapterConnectionRequest: { code: '123456' },\n});\nconsole.log(connection.awaitingConfirmation, connection.confirmedAt);\n"
           }
         ]
       }
