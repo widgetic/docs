@@ -32,8 +32,10 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `get_widget_data` | Counts those entries, or tallies them per option; shows the entries themselves only when you ask | `widgetic.read` | 0 |
 | `rename_widget` | Gives a widget a different name | `widgetic.write` | 0 |
 | `delete_widget` | Permanently deletes a widget, after you confirm its title | `widgetic.delete` | 0 |
-| `save_to_media_library` | Saves images, videos, PDFs or data files (CSV, JSON, Excel) you provide to your media library | `widgetic.write` | 0 |
-| `list_media_library` | Lists the files in your media library | `widgetic.read` | 0 |
+| `save_to_media_library` | Saves images (SVG too), videos, audio, PDFs or data files (CSV, JSON, Excel) you provide to your media library | `widgetic.write` | 0 |
+| `list_media_library` | Lists the files in your media library, and which widgets each was given to | `widgetic.read` | 0 |
+| `manage_media_library` | Renames files in your media library or moves them to another folder, up to 20 at a time; widgets already built keep working | `widgetic.write` | 0 |
+| `delete_media_file` | Permanently deletes one file from your media library, after you confirm its name; a file that widgets use is refused unless you say you still want it gone | `widgetic.delete` | 0 |
 | `list_workflows` | Lists your workflows, a few at a time, with their state | `widgetic.read` | 0 |
 | `get_workflow_options` | Lists which of your published widgets a workflow can use, and what a visitor can do on each | `widgetic.read` | 0 |
 | `get_workflow` | Shows one workflow as a script: its start, steps and moves, its state and, once published, its embed code | `widgetic.read` | 0 |
@@ -208,10 +210,16 @@ A workflow chains published widgets on one embed: a visitor sees the first, and 
 
 <AccordionGroup>
   <Accordion title="save_to_media_library" icon="upload">
-    Saves images (PNG, JPEG, WebP, GIF, HEIC), videos (MP4, WebM, MOV), PDFs or data files (CSV, JSON, Excel `.xlsx`) you attached or linked. Links must be HTTPS and are not followed through redirects; files up to 250 MB each, JSON and Excel files up to 10 MB. A JSON or Excel file is read before it is saved and kept only if it holds a table: an Excel file is read from its first sheet (the values it stores, never a formula), and because a widget cannot load a workbook the builder is given its rows. They go into the folder you name (default "Assets") and count against your storage allowance. Files that cannot be saved are listed with the reason; the others are still saved.
+    Saves images (PNG, JPEG, WebP, GIF, HEIC, SVG), videos (MP4, WebM, MOV), audio (MP3, WAV, OGG, M4A), PDFs or data files (CSV, JSON, Excel `.xlsx`) you attached or linked. Links must be HTTPS and are not followed through redirects; files up to 250 MB each, an SVG up to 2 MB, JSON and Excel files up to 10 MB. An SVG is rewritten from a list of safe elements before it is stored, so scripts and other active content are removed. A JSON or Excel file is read before it is saved and kept only if it holds a table: an Excel file is read from its first sheet (the values it stores, never a formula), and because a widget cannot load a workbook the builder is given its rows. They go into the folder you name (default "Assets") and count against your storage allowance. Files that cannot be saved are listed with the reason; the others are still saved.
   </Accordion>
   <Accordion title="list_media_library" icon="images">
-    Browses what is already saved, as a carousel of thumbnails you can filter by folder, kind or name, and gives the file ids a widget can use.
+    Browses what is already saved, as a carousel of thumbnails you can filter by folder, kind or name, and gives the file ids a widget can use. A file that widgets were given says which (how many, and the most recent few by name). Widgetic has recorded that only since it began keeping track, so a file without it may still be in use.
+  </Accordion>
+  <Accordion title="manage_media_library" icon="folder-open">
+    Renames files in your media library, moves them to another folder, or both: up to 20 changes in one call, each naming a file by the id `list_media_library` gave. A name keeps the file's extension, so the assistant sends it without one, and a folder is made by naming it. Only the name and the folder change: the file's address does not, so widgets that already use the file keep showing it. Each change stands alone: one that cannot be made (no such file, an empty name) is listed with its reason and the others are still made. The result shows each file as it is now and as it was, so a change can be put back, and a request that changes nothing writes nothing. It works on your own files only and uses no credits.
+  </Accordion>
+  <Accordion title="delete_media_file" icon="trash-can">
+    Permanently deletes one file from your media library and gives its space back to your storage allowance. It cannot be undone, and the assistant has to pass the exact file name as you confirmed it. A widget that loads the file from its address stops showing it, so Widgetic first looks for the widgets that use it (the record of builds and customizations, and the values saved in your widgets and Brand Kit): a file that is used is refused, with the widgets' names, and so is a file whose use could not be checked in full, unless you say you still want it deleted. Widgetic cannot read the code of a widget built before it kept that record, so "no widgets found" never means that none uses the file. It works on your own files only and uses no credits.
   </Accordion>
 </AccordionGroup>
 
@@ -310,6 +318,8 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | `delete_widget` | no | yes (it removes the widget for good) | no |
 | `publish_widget` | no | yes (it replaces what embeds show) | yes (it makes the widget publicly reachable) |
 | `save_to_media_library` | no | no | yes (it fetches the links you give) |
+| `manage_media_library` | no | no (it changes a file's name or folder and returns what each was; the file's address does not change) | no |
+| `delete_media_file` | no | yes (it removes the file for good) | no |
 | `list_workflows`, `get_workflow_options`, `get_workflow`, `test_workflow` | yes | no | no |
 | `update_brand_kit` | no | no (it changes your saved colors, fonts, corner radius and style notes; what each was is returned, no widget is rebuilt and nothing leaves your account) | no |
 | `draft_workflow_from_widgets` | no | no (it adds a draft workflow and changes nothing that exists; what visitors see is not touched) | no |
