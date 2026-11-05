@@ -23,9 +23,10 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `show_widget` | Shows a widget as a card: progress, then the live preview | `widgetic.read` | 0 |
 | `list_widgets` | Lists your widgets, drafts or published, a few at a time | `widgetic.read` | 0 |
 | `publish_widget` | Makes the current draft, or an earlier version, live | `widgetic.publish` | 0 |
+| `unpublish_widget` | Takes a published widget offline without deleting anything; it goes back to a draft and `publish_widget` brings it back | `widgetic.publish` | 0 |
 | `list_widget_versions` | Lists the versions a widget has been through and which one is live | `widgetic.read` | 0 |
-| `get_widget_customization_options` | Lists what you can change on a published widget without rebuilding | `widgetic.read` | 0 |
-| `update_widget_customization` | Changes texts, images, list items, colors, fonts or sizes at once | `widgetic.write` | 0 |
+| `get_widget_customization_options` | Lists what you can change on a widget, a draft or a published one, without rebuilding | `widgetic.read` | 0 |
+| `update_widget_customization` | Changes texts, images, list items, colors, fonts or sizes: at once on a published widget, saved on a draft until it is published | `widgetic.write` | 0 |
 | `get_embed_code` | Returns the code or link to put a published widget on a website | `widgetic.read` | 0 |
 | `duplicate_composition` | Makes a second embeddable copy of a published widget | `widgetic.write` | 0 |
 | `list_widget_data` | Shows whether a published widget keeps what visitors send in (votes, RSVPs, form entries), and how much | `widgetic.read` | 0 |
@@ -130,7 +131,10 @@ In a client that can draw them, the suggestions appear as a list you tick and th
     All your widgets, only drafts that were never published, only published ones, or those whose name contains some words. It shows up to 8 at a time as a carousel and the assistant can ask for the next page.
   </Accordion>
   <Accordion title="publish_widget" icon="rocket">
-    Publishes the current draft (final build and upload), or an earlier version you choose, and returns the composition id and the published version. It can take up to a minute. Builds publish themselves unless you asked for a draft, so this is for a draft you kept or an earlier version you want back. It replaces the version existing embeds show, so the assistant calls it only after you agree. It needs a plan that includes publishing.
+    Publishes the current draft (final build and upload), or an earlier version you choose, and returns the composition id and the published version. It can take up to a minute. Builds publish themselves unless you asked for a draft, so this is for a draft you kept or an earlier version you want back. It replaces the version existing embeds show, so the assistant calls it only after you agree. It needs a plan that includes publishing. Whatever you customized on the draft before its first publish goes live with it.
+  </Accordion>
+  <Accordion title="unpublish_widget" icon="eye-slash">
+    Takes a published widget offline without deleting anything: its embeds and share links stop showing it to pages that load them from then on, and it goes back to being a draft. Its versions, copies, embed codes, saved customizations and the entries visitors sent are all kept, and `publish_widget` brings it back with the same embed code; the answer names the version that was live, so the assistant can bring back that very one. A page that has already loaded the widget keeps showing it until it reloads: this recalls nothing that is already on a screen. It is refused, with the reason, while a running A/B test or a live or paused workflow uses the widget, because those would show a page that is not there; pause or stop them first. A build or a revision that finishes afterwards publishes the widget again, unless it was started as a draft. It uses no credits and needs the publish permission, and calling it on a widget that is already a draft changes nothing.
   </Accordion>
   <Accordion title="list_widget_versions" icon="clock-rotate-left">
     The versions a widget has been through, newest first, with a short title for each when it has one, whether it was ever published and which one is live now. The assistant uses the numbers to bring an earlier version back with `publish_widget`. It shows up to 20 at a time and can ask for older ones. It does not show what a version contains.
@@ -141,10 +145,10 @@ In a client that can draw them, the suggestions appear as a list you tick and th
 
 <AccordionGroup>
   <Accordion title="get_widget_customization_options" icon="sliders">
-    Every content field, list and design control of a published widget, with its current value and limits. The assistant reads this before changing anything. A draft that was never published has no options yet.
+    Every content field, list and design control of a widget, with its current value and limits. The assistant reads this before changing anything. It works on a published widget and on a draft (a widget that was built and never published, or taken offline again), where it shows the values saved on the draft; a widget whose first build is still running has no options yet. The assistant names the widget by its id, or one published copy by its composition id, never both.
   </Accordion>
   <Accordion title="update_widget_customization" icon="palette">
-    Changes what a published widget shows or how it looks: texts, images from your media library, list items, colors, fonts and sizes. It applies at once, embeds show the change, and it uses no credits. Only options the widget offers are accepted, values are checked against its limits, and a list the assistant sends replaces the whole list while anything left out stays as it is.
+    Changes what a widget shows or how it looks: texts, images from your media library, list items, colors, fonts and sizes. On a published widget it applies at once and embeds show the change. On a draft the change is saved on the draft, shows in its preview and goes live with the widget when it is published: the first publish copies the saved values into the copy it creates, and never over values a copy already holds. It uses no credits. Only options the widget offers are accepted, values are checked against its limits, and a list the assistant sends replaces the whole list while anything left out stays as it is.
   </Accordion>
   <Accordion title="get_embed_code" icon="code">
     Plain HTML, an iframe, or a React, Vue, Svelte or Angular component, at a fixed size or fully responsive, plus a share link. If embeds are not being served right now because of your account's state, the result says so.
@@ -317,6 +321,7 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | `rename_widget` | no | no (it only changes the name) | no |
 | `delete_widget` | no | yes (it removes the widget for good) | no |
 | `publish_widget` | no | yes (it replaces what embeds show) | yes (it makes the widget publicly reachable) |
+| `unpublish_widget` | no | yes (it takes the widget offline: embeds stop showing it; nothing is deleted and `publish_widget` brings it back) | yes (it changes what embeds on the public internet show) |
 | `save_to_media_library` | no | no | yes (it fetches the links you give) |
 | `manage_media_library` | no | no (it changes a file's name or folder and returns what each was; the file's address does not change) | no |
 | `delete_media_file` | no | yes (it removes the file for good) | no |
