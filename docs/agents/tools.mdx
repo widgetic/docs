@@ -32,7 +32,7 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `get_widget_data` | Counts those entries, or tallies them per option; shows the entries themselves only when you ask | `widgetic.read` | 0 |
 | `rename_widget` | Gives a widget a different name | `widgetic.write` | 0 |
 | `delete_widget` | Permanently deletes a widget, after you confirm its title | `widgetic.delete` | 0 |
-| `save_to_media_library` | Saves images, videos or PDFs you provide to your media library | `widgetic.write` | 0 |
+| `save_to_media_library` | Saves images, videos, PDFs or data files (CSV, JSON, Excel) you provide to your media library | `widgetic.write` | 0 |
 | `list_media_library` | Lists the files in your media library | `widgetic.read` | 0 |
 | `list_workflows` | Lists your workflows, a few at a time, with their state | `widgetic.read` | 0 |
 | `get_workflow_options` | Lists which of your published widgets a workflow can use, and what a visitor can do on each | `widgetic.read` | 0 |
@@ -94,7 +94,7 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
 
 <AccordionGroup>
   <Accordion title="Files you attach" icon="paperclip">
-    Up to 5 files per call: images, videos, PDF documents, CSV files (read for their columns and rows) and Markdown or text files (`.md`, `.txt`), whose words are read as your own brief, spec or copy. Other kinds, such as Excel spreadsheets, are refused. A file reaches Widgetic only through a file service Widgetic trusts (ChatGPT's, for example), never from an address typed into the chat; where your assistant cannot hand a file over that way, paste the text of a document into your description.
+    Up to 5 files per call: images, videos, PDF documents, data files (CSV, JSON or Excel `.xlsx`, each read for its columns and rows) and Markdown or text files (`.md`, `.txt`), whose words are read as your own brief, spec or copy. A widget loads a JSON file from its address; it cannot load a workbook, so for an Excel file the builder is given its first rows (a long sheet is better sent as CSV). Other kinds, such as the old `.xls` Excel format, are refused. A file reaches Widgetic only through a file service Widgetic trusts (ChatGPT's, for example), never from an address typed into the chat; where your assistant cannot hand a file over that way, paste the text of a document into your description.
   </Accordion>
   <Accordion title="Figma links" icon="link">
     Paste up to 3 links to a frame or a selection in Figma ("Copy link to selection"), and the widget is built to match that design. Widgetic reads each design with your own connected Figma account: connect Figma once from the [Design page](https://widgetic.com/design). If you have not connected it yet, the assistant tells you to open that page, choose Connect Figma and send the link again; nothing is charged until the design can be read. A link to a file your account cannot open, or to a FigJam board or a Slides or Make file, is refused with the reason. Links written inside your description are read as well, and a design named twice is read once.
@@ -208,7 +208,7 @@ A workflow chains published widgets on one embed: a visitor sees the first, and 
 
 <AccordionGroup>
   <Accordion title="save_to_media_library" icon="upload">
-    Saves images (PNG, JPEG, WebP, GIF, HEIC), videos (MP4, WebM, MOV) or PDFs you attached or linked. Links must be HTTPS and are not followed through redirects; files up to 250 MB each. They go into the folder you name (default "Assets") and count against your storage allowance. Files that cannot be saved are listed with the reason; the others are still saved.
+    Saves images (PNG, JPEG, WebP, GIF, HEIC), videos (MP4, WebM, MOV), PDFs or data files (CSV, JSON, Excel `.xlsx`) you attached or linked. Links must be HTTPS and are not followed through redirects; files up to 250 MB each, JSON and Excel files up to 10 MB. A JSON or Excel file is read before it is saved and kept only if it holds a table: an Excel file is read from its first sheet (the values it stores, never a formula), and because a widget cannot load a workbook the builder is given its rows. They go into the folder you name (default "Assets") and count against your storage allowance. Files that cannot be saved are listed with the reason; the others are still saved.
   </Accordion>
   <Accordion title="list_media_library" icon="images">
     Browses what is already saved, as a carousel of thumbnails you can filter by folder, kind or name, and gives the file ids a widget can use.
@@ -256,7 +256,7 @@ An A/B test splits visitors between two to four of your published widgets on one
 
 ## Translations
 
-A translation makes one of your widgets available in several languages on one embed: each language is its own copy, and visitors see the copy that matches their browser's language while the translation is active. You make a translation, add more languages if you need them, and activate it when you are ready.
+A translation makes one of your widgets available in several languages on one embed: each language is its own copy, and visitors see the copy that matches their browser's language while the translation is active. You make a translation, add more languages if you need them, and activate it when you are ready. A translation is made by a language model: the widget's text, and the text inside its design, is sent to it to be translated, and the assistant is asked to tell you so before it starts one.
 
 <Note>
   The translation tools work in the workspace you are signed in to on widgetic.com, your own or a team's, and every answer says which. The assistant cannot pick another one: switch workspace on widgetic.com first. Translations are included in the Teams plan and in a partner agreement; on another plan the tools say so in one plain sentence. None of them uses credits. One call translates up to five languages; a translation holds at most twenty languages in all, the original included. Nothing is shown to visitors until `set_translation_state` activates the translation. Activating needs a connection approved with the publish permission. The widget must be one you made yourself.
@@ -273,10 +273,10 @@ A translation makes one of your widgets available in several languages on one em
     One translation: its state, the original language, and for each language whether its copy is ready, still being translated or failed, with the widget of each copy; the languages being added right now; and the embed code, which shows each visitor their language only while the translation is active. It only reads.
   </Accordion>
   <Accordion title="create_translation" icon="globe">
-    Translates one of your widgets into other languages: it makes a copy of the widget for each language you name and groups them as one translation. Give the language the widget is written in now and one to five languages to translate into; the original is kept as it is. The call waits for under a minute and then answers even if some languages are still being translated; check them with `get_translation`, and add more later with `add_translation_languages`. The new translation is ready but not shown to visitors until `set_translation_state` activates it. It uses no credits.
+    Translates one of your widgets into other languages: it makes a copy of the widget for each language you name and groups them as one translation. Give the language the widget is written in now and one to five languages to translate into; the original is kept as it is. The widget's text is sent to a language model to be translated, so the assistant should tell you that before it calls. The call waits for under a minute and then answers even if some languages are still being translated; check them with `get_translation`, and add more later with `add_translation_languages`. The new translation is ready but not shown to visitors until `set_translation_state` activates it. It uses no credits.
   </Accordion>
   <Accordion title="add_translation_languages" icon="plus">
-    Adds one to five more languages to a translation you already made, or tries again for a language that failed or was left unfinished. A language that is already there and ready is skipped. A translation holds at most twenty languages in all. The call waits for under a minute and then answers even if some languages are still being translated; check them with `get_translation`. Visitors get a new language only while the translation is active. It uses no credits.
+    Adds one to five more languages to a translation you already made, or tries again for a language that failed or was left unfinished. The widget's text is sent to a language model to be translated, so the assistant should tell you that before it calls. A language that is already there and ready is skipped. A translation holds at most twenty languages in all. The call waits for under a minute and then answers even if some languages are still being translated; check them with `get_translation`. Visitors get a new language only while the translation is active. It uses no credits.
   </Accordion>
   <Accordion title="set_translation_state" icon="toggle-on">
     `activate` makes the embed show each visitor the language of their browser; `pause` takes it away again. A translation can be activated once it is ready, or when it is paused; not while it is still being made. Nothing is deleted and each action can be undone. Asking for the state a translation is already in changes nothing. Activating needs a connection approved with the publish permission. It uses no credits.

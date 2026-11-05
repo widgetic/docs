@@ -82,10 +82,10 @@ The full list of tools is in the [tools reference](/docs/agents/tools).
     `delete_widget` removes a widget for good, with all its versions and published copies; embeds already placed on websites stop working, and it cannot be undone. The assistant has to pass the exact title you confirmed, and a widget that is still being built cannot be deleted. Going back to an earlier version never deletes anything: `list_widget_versions` and `publish_widget` do that.
   </Accordion>
   <Accordion title="Files you attach or link">
-    Images (PNG, JPEG, WebP, GIF, HEIC), videos (MP4, WebM, MOV) and PDFs can be saved to your media library from attached files or HTTPS links, up to 250 MB each. Audio, spreadsheets and SVG images cannot be saved.
+    Images (PNG, JPEG, WebP, GIF, HEIC), videos (MP4, WebM, MOV), PDFs and data files (CSV, JSON, Excel `.xlsx`) can be saved to your media library from attached files or HTTPS links, up to 250 MB each (JSON and Excel files up to 10 MB). A JSON or Excel file is read before it is saved and kept only if it holds a table; an Excel file is read from its first sheet, as the values it stores. Audio, the old `.xls` Excel format and SVG images cannot be saved.
   </Accordion>
   <Accordion title="Designs and documents to build from">
-    Besides a description, a build can start from up to 5 attached files (images, videos, PDFs, CSV files, and Markdown or text files) and up to 3 Figma links. Figma links are read with your own connected Figma account, which you connect once from the [Design page](https://widgetic.com/design). See [what a build can start from](/docs/agents/tools#what-a-build-can-start-from).
+    Besides a description, a build can start from up to 5 attached files (images, videos, PDFs, data files such as CSV, JSON or Excel, and Markdown or text files) and up to 3 Figma links. Figma links are read with your own connected Figma account, which you connect once from the [Design page](https://widgetic.com/design). See [what a build can start from](/docs/agents/tools#what-a-build-can-start-from).
   </Accordion>
   <Accordion title="Your prompts are screened">
     Requests to create or revise a widget are checked with a content moderation service before they are acted on, and so are the words you use to ask which widgets to build. Those words are also sent to a language model, which writes the suggestions. See the [privacy policy](https://widgetic.com/privacy) for what is sent and why.
