@@ -23,17 +23,20 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `show_widget` | Shows a widget as a card: progress, then the live preview | `widgetic.read` | 0 |
 | `list_widgets` | Lists your widgets, drafts or published, a few at a time | `widgetic.read` | 0 |
 | `publish_widget` | Makes the current draft, or an earlier version, live | `widgetic.publish` | 0 |
+| `unpublish_widget` | Takes a published widget offline without deleting anything; it goes back to a draft and `publish_widget` brings it back | `widgetic.publish` | 0 |
 | `list_widget_versions` | Lists the versions a widget has been through and which one is live | `widgetic.read` | 0 |
-| `get_widget_customization_options` | Lists what you can change on a published widget without rebuilding | `widgetic.read` | 0 |
-| `update_widget_customization` | Changes texts, images, list items, colors, fonts or sizes at once | `widgetic.write` | 0 |
+| `get_widget_customization_options` | Lists what you can change on a widget, a draft or a published one, without rebuilding | `widgetic.read` | 0 |
+| `update_widget_customization` | Changes texts, images, list items, colors, fonts or sizes: at once on a published widget, saved on a draft until it is published | `widgetic.write` | 0 |
 | `get_embed_code` | Returns the code or link to put a published widget on a website | `widgetic.read` | 0 |
 | `duplicate_composition` | Makes a second embeddable copy of a published widget | `widgetic.write` | 0 |
 | `list_widget_data` | Shows whether a published widget keeps what visitors send in (votes, RSVPs, form entries), and how much | `widgetic.read` | 0 |
 | `get_widget_data` | Counts those entries, or tallies them per option; shows the entries themselves only when you ask | `widgetic.read` | 0 |
 | `rename_widget` | Gives a widget a different name | `widgetic.write` | 0 |
 | `delete_widget` | Permanently deletes a widget, after you confirm its title | `widgetic.delete` | 0 |
-| `save_to_media_library` | Saves images, videos, PDFs or data files (CSV, JSON, Excel) you provide to your media library | `widgetic.write` | 0 |
-| `list_media_library` | Lists the files in your media library | `widgetic.read` | 0 |
+| `save_to_media_library` | Saves images (SVG too), videos, audio, PDFs or data files (CSV, JSON, Excel) you provide to your media library | `widgetic.write` | 0 |
+| `list_media_library` | Lists the files in your media library, and which widgets each was given to | `widgetic.read` | 0 |
+| `manage_media_library` | Renames files in your media library or moves them to another folder, up to 20 at a time; widgets already built keep working | `widgetic.write` | 0 |
+| `delete_media_file` | Permanently deletes one file from your media library, after you confirm its name; a file that widgets use is refused unless you say you still want it gone | `widgetic.delete` | 0 |
 | `list_workflows` | Lists your workflows, a few at a time, with their state | `widgetic.read` | 0 |
 | `get_workflow_options` | Lists which of your published widgets a workflow can use, and what a visitor can do on each | `widgetic.read` | 0 |
 | `get_workflow` | Shows one workflow as a script: its start, steps and moves, its state and, once published, its embed code | `widgetic.read` | 0 |
@@ -69,10 +72,10 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
 
 <AccordionGroup>
   <Accordion title="create_widget" icon="wand-magic-sparkles">
-    Starts a new widget from a description: a quiz, countdown, gallery, timeline, FAQ, chart, calculator, list, carousel or similar. It returns at once with a widget id; the build usually takes a few minutes, and the finished widget is published unless you asked for a draft. Each call starts a separate widget and uses 1 credit, charged up front. A call that repeats the title of a widget started in the last two minutes returns that widget and charges nothing, so a retry after a failure or timeout does not build twice. If you are unsure, check your widgets before creating again. When the description needs it (a vote, a rating, a comment, an RSVP or a sign-up), the widget it builds keeps what visitors send, and you can read it with `list_widget_data` and `get_widget_data`.
+    Starts a new widget from a description: a quiz, countdown, gallery, timeline, FAQ, chart, calculator, list, carousel or similar. It returns at once with a widget id; the build usually takes a few minutes, and the finished widget is published unless you asked for a draft. Each call starts a separate widget and uses 1 credit, charged up front. A call that repeats the title of a widget started in the last two minutes returns that widget and charges nothing, so a retry after a failure or timeout does not build twice. If you are unsure, check your widgets before creating again. When the description needs it (a vote, a rating, a comment, an RSVP or a sign-up), the widget it builds keeps what visitors send, and you can read it with `list_widget_data` and `get_widget_data`. The widget goes to your default project unless you name one (see [Where a new widget goes](#where-a-new-widget-goes)).
   </Accordion>
   <Accordion title="replicate_widget" icon="clone">
-    Starts a new widget from a temporary Widgetic capture link (`wgc_…` from the Widgetic Chrome extension), plus any adjustments you ask for. The widget it builds keeps no visitor entries. The capture is resolved inside Widgetic and never fetched over the network; expired or revoked links are refused before any build starts. Each call starts a separate widget and uses 1 credit, charged up front, with the same two-minute retry protection as `create_widget`. Like `create_widget`, it publishes the finished widget unless you asked for a draft.
+    Starts a new widget from a temporary Widgetic capture link (`wgc_…` from the Widgetic Chrome extension), plus any adjustments you ask for. The widget it builds keeps no visitor entries. The capture is resolved inside Widgetic and never fetched over the network; expired or revoked links are refused before any build starts. Each call starts a separate widget and uses 1 credit, charged up front, with the same two-minute retry protection as `create_widget`. Like `create_widget`, it publishes the finished widget unless you asked for a draft, and it goes to the workspace and the project the same way (see [Where a new widget goes](#where-a-new-widget-goes)).
   </Accordion>
   <Accordion title="get_widget" icon="gauge">
     The current state of one widget: still being built and how far along, draft ready, failed or cancelled, the link to its preview, and whether it is published and being served. For a published widget it also lists its copies (compositions) with their ids. While a build runs, the assistant checks it every 5 to 10 seconds.
@@ -87,6 +90,19 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
     Cancels a build that is still queued or generating. A build already under way may still finish and leave a draft, and credits already charged are not refunded. It does nothing to a draft that is ready or a widget that is published.
   </Accordion>
 </AccordionGroup>
+
+## Where a new widget goes
+
+`create_widget`, `replicate_widget` and `create_widget_batch` make the widget in the workspace you are signed in to on widgetic.com, your own or a team's: the same one the [workflow](#workflows), A/B test and translation tools use. The assistant cannot pick another one: switch workspace on widgetic.com first. If you tell the assistant which workspace you mean, it checks that you are signed in to it and starts nothing, and uses no credit, if you are not.
+
+In your own workspace nothing is different: the widget goes to your default project, or to the project you name. In a team:
+
+- Your role in the team has to allow making widgets there. If it does not, or if the team cannot be read just then, the call is refused before any credit is used, and the assistant says why.
+- The widget goes to the team's default project, or to the project you name: a project of the team with that name is used, and a new one is made when there is none and your role lets you make projects. A name that cannot be used never stops the build: the widget goes to the default project and the assistant says so.
+- The team's Brand Kit applies to the widget, and the credit is always your own; the team's plan is read to see whether it allows the build.
+- The answer says which team and which project the widget went to.
+
+A widget that already exists stays where it is: nothing here moves one between workspaces. The tools reach the widgets you made yourself, not those of your teammates.
 
 ## What a build can start from
 
@@ -114,7 +130,7 @@ In a client that can draw them, the suggestions appear as a list you tick and th
   <Accordion title="create_widget_batch" icon="layer-group">
     Starts the widgets you chose, up to 25 in one call, each as its own widget with its own canvas, the way `create_widget` starts one: 1 credit for each widget, charged when its build starts, and published when it finishes unless you asked for drafts (a workflow needs published widgets). The assistant tells you how many widgets and credits that is and waits for your yes first, and it passes the total you agreed to, so nothing is started if the widgets would cost more. The call returns at once with one entry per widget; the builds usually finish within a few minutes, and the assistant follows each one until it is ready. A title that repeats a widget started in the last two minutes is returned as it is and charged nothing, so a retry after a lost answer starts only what is missing; after those two minutes a repeat is charged again, so if you are unsure, check your widgets before starting the batch again. If one widget cannot be started, the ones before it keep building and stay charged, and the rest are not started and not charged. A batch can be started once a minute. Each widget can use up to 5 images from your media library; for attached files or Figma links, the assistant starts that widget with `create_widget` instead.
 
-    Two things you can ask for with the batch. **A project:** the widgets are filed in one project of yours with the name you give (a project you already have with that name is used, otherwise a new one is made, in your personal workspace); a name that cannot be used never stops the batch, the widgets then go to your default project and the assistant says so. **A workflow:** with a name for it, Widgetic saves a draft workflow that chains the widgets in the order you gave once every one of them is built and published, even if the conversation has closed by then. It is only a draft, made once, in the workspace you asked in: you publish it yourself, after trying it, and a widget that failed leaves it waiting (for up to three days) until you have it rebuilt. The name chains every widget of the batch, so the assistant passes it only when you chose exactly the widgets of one suggested workflow; for any other choice (two workflows, or a workflow beside other widgets) it starts the widgets without it and, once they are built and published, saves each workflow you chose with `draft_workflow_from_widgets`. If the draft is not made, `draft_workflow_from_widgets` makes it from the finished widgets.
+    Two things you can ask for with the batch. **A project:** the widgets are filed in one project of yours with the name you give (a project you already have with that name is used, otherwise a new one is made, in the workspace you are signed in to, with the rules of [Where a new widget goes](#where-a-new-widget-goes)); a name that cannot be used never stops the batch, the widgets then go to your default project and the assistant says so. **A workflow:** with a name for it, Widgetic saves a draft workflow that chains the widgets in the order you gave once every one of them is built and published, even if the conversation has closed by then. It is only a draft, made once, in the workspace you asked in: you publish it yourself, after trying it, and a widget that failed leaves it waiting (for up to three days) until you have it rebuilt. The name chains every widget of the batch, so the assistant passes it only when you chose exactly the widgets of one suggested workflow; for any other choice (two workflows, or a workflow beside other widgets) it starts the widgets without it and, once they are built and published, saves each workflow you chose with `draft_workflow_from_widgets`. If the draft is not made, `draft_workflow_from_widgets` makes it from the finished widgets.
   </Accordion>
   <Accordion title="cancel_widget_batch" icon="ban">
     Stops the builds of several widgets at once, for when you change your mind about a batch: the assistant passes the widgets the batch returned. A build still waiting to start is stopped and its credit is returned. A build already being written is stopped too, but its credit is returned only if the model had not begun to write, and it can still finish as a draft, so the assistant tells you which is which. Each widget gets its own answer (cancelled, nothing was running, or not one of your widgets) and one never stops the others. If a draft workflow was waiting for those widgets, it is cancelled too. It uses no credits.
@@ -128,7 +144,10 @@ In a client that can draw them, the suggestions appear as a list you tick and th
     All your widgets, only drafts that were never published, only published ones, or those whose name contains some words. It shows up to 8 at a time as a carousel and the assistant can ask for the next page.
   </Accordion>
   <Accordion title="publish_widget" icon="rocket">
-    Publishes the current draft (final build and upload), or an earlier version you choose, and returns the composition id and the published version. It can take up to a minute. Builds publish themselves unless you asked for a draft, so this is for a draft you kept or an earlier version you want back. It replaces the version existing embeds show, so the assistant calls it only after you agree. It needs a plan that includes publishing.
+    Publishes the current draft (final build and upload), or an earlier version you choose, and returns the composition id and the published version. It can take up to a minute. Builds publish themselves unless you asked for a draft, so this is for a draft you kept or an earlier version you want back. It replaces the version existing embeds show, so the assistant calls it only after you agree. It needs a plan that includes publishing. Whatever you customized on the draft before its first publish goes live with it.
+  </Accordion>
+  <Accordion title="unpublish_widget" icon="eye-slash">
+    Takes a published widget offline without deleting anything: its embeds and share links stop showing it to pages that load them from then on, and it goes back to being a draft. Its versions, copies, embed codes, saved customizations and the entries visitors sent are all kept, and `publish_widget` brings it back with the same embed code; the answer names the version that was live, so the assistant can bring back that very one. A page that has already loaded the widget keeps showing it until it reloads: this recalls nothing that is already on a screen. It is refused, with the reason, while a running A/B test or a live or paused workflow uses the widget, because those would show a page that is not there; pause or stop them first. A build or a revision that finishes afterwards publishes the widget again, unless it was started as a draft. It uses no credits and needs the publish permission, and calling it on a widget that is already a draft changes nothing.
   </Accordion>
   <Accordion title="list_widget_versions" icon="clock-rotate-left">
     The versions a widget has been through, newest first, with a short title for each when it has one, whether it was ever published and which one is live now. The assistant uses the numbers to bring an earlier version back with `publish_widget`. It shows up to 20 at a time and can ask for older ones. It does not show what a version contains.
@@ -139,10 +158,10 @@ In a client that can draw them, the suggestions appear as a list you tick and th
 
 <AccordionGroup>
   <Accordion title="get_widget_customization_options" icon="sliders">
-    Every content field, list and design control of a published widget, with its current value and limits. The assistant reads this before changing anything. A draft that was never published has no options yet.
+    Every content field, list and design control of a widget, with its current value and limits. The assistant reads this before changing anything. It works on a published widget and on a draft (a widget that was built and never published, or taken offline again), where it shows the values saved on the draft; a widget whose first build is still running has no options yet. The assistant names the widget by its id, or one published copy by its composition id, never both.
   </Accordion>
   <Accordion title="update_widget_customization" icon="palette">
-    Changes what a published widget shows or how it looks: texts, images from your media library, list items, colors, fonts and sizes. It applies at once, embeds show the change, and it uses no credits. Only options the widget offers are accepted, values are checked against its limits, and a list the assistant sends replaces the whole list while anything left out stays as it is.
+    Changes what a widget shows or how it looks: texts, images from your media library, list items, colors, fonts and sizes. On a published widget it applies at once and embeds show the change. On a draft the change is saved on the draft, shows in its preview and goes live with the widget when it is published: the first publish copies the saved values into the copy it creates, and never over values a copy already holds. It uses no credits. Only options the widget offers are accepted, values are checked against its limits, and a list the assistant sends replaces the whole list while anything left out stays as it is.
   </Accordion>
   <Accordion title="get_embed_code" icon="code">
     Plain HTML, an iframe, or a React, Vue, Svelte or Angular component, at a fixed size or fully responsive, plus a share link. If embeds are not being served right now because of your account's state, the result says so.
@@ -208,16 +227,22 @@ A workflow chains published widgets on one embed: a visitor sees the first, and 
 
 <AccordionGroup>
   <Accordion title="save_to_media_library" icon="upload">
-    Saves images (PNG, JPEG, WebP, GIF, HEIC), videos (MP4, WebM, MOV), PDFs or data files (CSV, JSON, Excel `.xlsx`) you attached or linked. Links must be HTTPS and are not followed through redirects; files up to 250 MB each, JSON and Excel files up to 10 MB. A JSON or Excel file is read before it is saved and kept only if it holds a table: an Excel file is read from its first sheet (the values it stores, never a formula), and because a widget cannot load a workbook the builder is given its rows. They go into the folder you name (default "Assets") and count against your storage allowance. Files that cannot be saved are listed with the reason; the others are still saved.
+    Saves images (PNG, JPEG, WebP, GIF, HEIC, SVG), videos (MP4, WebM, MOV), audio (MP3, WAV, OGG, M4A), PDFs or data files (CSV, JSON, Excel `.xlsx`) you attached or linked. Links must be HTTPS and are not followed through redirects; files up to 250 MB each, an SVG up to 2 MB, JSON and Excel files up to 10 MB. An SVG is rewritten from a list of safe elements before it is stored, so scripts and other active content are removed. A JSON or Excel file is read before it is saved and kept only if it holds a table: an Excel file is read from its first sheet (the values it stores, never a formula), and because a widget cannot load a workbook the builder is given its rows. They go into the folder you name (default "Assets") and count against your storage allowance. Files that cannot be saved are listed with the reason; the others are still saved.
   </Accordion>
   <Accordion title="list_media_library" icon="images">
-    Browses what is already saved, as a carousel of thumbnails you can filter by folder, kind or name, and gives the file ids a widget can use.
+    Browses what is already saved, as a carousel of thumbnails you can filter by folder, kind or name, and gives the file ids a widget can use. A file that widgets were given says which (how many, and the most recent few by name). Widgetic has recorded that only since it began keeping track, so a file without it may still be in use.
+  </Accordion>
+  <Accordion title="manage_media_library" icon="folder-open">
+    Renames files in your media library, moves them to another folder, or both: up to 20 changes in one call, each naming a file by the id `list_media_library` gave. A name keeps the file's extension, so the assistant sends it without one, and a folder is made by naming it. Only the name and the folder change: the file's address does not, so widgets that already use the file keep showing it. Each change stands alone: one that cannot be made (no such file, an empty name) is listed with its reason and the others are still made. The result shows each file as it is now and as it was, so a change can be put back, and a request that changes nothing writes nothing. It works on your own files only and uses no credits.
+  </Accordion>
+  <Accordion title="delete_media_file" icon="trash-can">
+    Permanently deletes one file from your media library and gives its space back to your storage allowance. It cannot be undone, and the assistant has to pass the exact file name as you confirmed it. A widget that loads the file from its address stops showing it, so Widgetic first looks for the widgets that use it (the record of builds and customizations, and the values saved in your widgets and Brand Kit): a file that is used is refused, with the widgets' names, and so is a file whose use could not be checked in full, unless you say you still want it deleted. Widgetic cannot read the code of a widget built before it kept that record, so "no widgets found" never means that none uses the file. It works on your own files only and uses no credits.
   </Accordion>
 </AccordionGroup>
 
 ## Brand Kit
 
-Your Brand Kit is the look every new widget starts from: a palette, a font for each of title, subtitle, body and caption, a corner radius, and a few style notes of your own. It belongs to your account and is the same wherever you set it (the Brand Kit page on widgetic.com, the API, the CLI or these tools). These tools read and change **your own** Brand Kit, the one widgets built through this connection use; a team's kit is changed on widgetic.com. Font files and icons are added on widgetic.com too.
+Your Brand Kit is the look every new widget starts from: a palette, a font for each of title, subtitle, body and caption, a corner radius, and a few style notes of your own. It belongs to your account and is the same wherever you set it (the Brand Kit page on widgetic.com, the API, the CLI or these tools). These tools read and change **your own** Brand Kit, the one a widget made in your own workspace starts from. A widget made in a team starts from the team's kit, which these tools never read or change: that is done on widgetic.com. Font files and icons are added on widgetic.com too.
 
 <AccordionGroup>
   <Accordion title="get_brand_kit" icon="palette">
@@ -309,7 +334,10 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | `rename_widget` | no | no (it only changes the name) | no |
 | `delete_widget` | no | yes (it removes the widget for good) | no |
 | `publish_widget` | no | yes (it replaces what embeds show) | yes (it makes the widget publicly reachable) |
+| `unpublish_widget` | no | yes (it takes the widget offline: embeds stop showing it; nothing is deleted and `publish_widget` brings it back) | yes (it changes what embeds on the public internet show) |
 | `save_to_media_library` | no | no | yes (it fetches the links you give) |
+| `manage_media_library` | no | no (it changes a file's name or folder and returns what each was; the file's address does not change) | no |
+| `delete_media_file` | no | yes (it removes the file for good) | no |
 | `list_workflows`, `get_workflow_options`, `get_workflow`, `test_workflow` | yes | no | no |
 | `update_brand_kit` | no | no (it changes your saved colors, fonts, corner radius and style notes; what each was is returned, no widget is rebuilt and nothing leaves your account) | no |
 | `draft_workflow_from_widgets` | no | no (it adds a draft workflow and changes nothing that exists; what visitors see is not touched) | no |
