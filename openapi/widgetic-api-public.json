@@ -6109,6 +6109,7 @@
         ],
         "operationId": "validateToken",
         "summary": "Validate current authentication token",
+        "description": "Describes the credential the request was made with: how it signs in (`tokenType`), what it may do (`scopes`) and the\naccount it belongs to (`userId`). A credential that belongs to the platform itself, and not to a customer's account, is\nheld to no scope: it is answered with `tokenType` `service_key`, `scopes` `[\"*:*\"]` and no `userId`.\n",
         "x-access-level": "user",
         "x-visibility": "public",
         "security": [
@@ -25995,6 +25996,357 @@
           "svg": "Example svg"
         }
       },
+      "WidgetPlanTask": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "kind",
+          "status"
+        ],
+        "description": "One step of the plan the person is shown.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "`t1`, `t2`, ... Stable for the life of the plan."
+          },
+          "label": {
+            "type": "string",
+            "description": "The step, in the language the person wrote in. At most 90 characters."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "read",
+              "layout",
+              "content",
+              "style",
+              "library",
+              "adapter",
+              "motion",
+              "behavior",
+              "polish",
+              "check",
+              "other"
+            ],
+            "description": "What the step is about, so a client can pick an icon."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_progress",
+              "done",
+              "failed"
+            ],
+            "description": "Where the step stands. At most one step is `in_progress`."
+          }
+        },
+        "example": {
+          "id": "Example id",
+          "label": "Example label",
+          "kind": "Example kind",
+          "status": "Example status"
+        }
+      },
+      "WidgetPlan": {
+        "type": "object",
+        "required": [
+          "title",
+          "tasks",
+          "decisions",
+          "completed",
+          "activeIndex"
+        ],
+        "description": "The plan shown before and during a build, in `metadata.plan` of the generation's operation. It is published when it is made and again each time what a client would draw changes (a handful of updates per build). `metadata.plan` becomes `null` when the build is called off (the request was declined), and a client then hides the plan it showed.",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "One line for the whole plan (\"Building a countdown with confetti\")."
+          },
+          "tasks": {
+            "type": "array",
+            "maxItems": 7,
+            "items": {
+              "$ref": "#/components/schemas/WidgetPlanTask"
+            }
+          },
+          "decisions": {
+            "type": "object",
+            "required": [
+              "libraries",
+              "adapters",
+              "look",
+              "motion",
+              "improvements",
+              "notes"
+            ],
+            "description": "What the plan decided, for the client to show as it likes (chips, a list, a summary).",
+            "properties": {
+              "libraries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "label",
+                    "reason"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "A stable id of the library (`gsap`, `three`, `chart`, ...)."
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "reason": {
+                      "type": "string",
+                      "description": "Why the widget needs it, or an empty string."
+                    }
+                  }
+                }
+              },
+              "adapters": {
+                "type": "array",
+                "description": "The adapters the adapter stage attached on this turn. Empty while that stage is not applied.",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "label"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "look": {
+                "type": "string",
+                "description": "What the widget should look like, from what the person provided (words, pictures, a copied page, a Figma frame). May be empty."
+              },
+              "motion": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "The animations to apply. At most 3."
+              },
+              "improvements": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Improvements that do not change what was asked. At most 3."
+              },
+              "notes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Anything else particular to this widget. At most 3."
+              },
+              "responsive": {
+                "type": "object",
+                "nullable": true,
+                "description": "How the widget behaves on mobile, tablet and desktop (layout reflow, stacking, sizing). Always present on a first build; null on edits unless the model supplies it.",
+                "required": [
+                  "mobile",
+                  "tablet",
+                  "desktop"
+                ],
+                "properties": {
+                  "mobile": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "tablet": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "desktop": {
+                    "type": "string",
+                    "maxLength": 120
+                  }
+                }
+              }
+            }
+          },
+          "completed": {
+            "type": "integer",
+            "description": "How many steps are `done`."
+          },
+          "activeIndex": {
+            "type": "integer",
+            "nullable": true,
+            "description": "The index in `tasks` of the step in progress, or null when none is."
+          }
+        },
+        "example": {
+          "title": "Example title",
+          "tasks": [
+            "Example WidgetPlanTask"
+          ],
+          "decisions": {},
+          "completed": 42,
+          "activeIndex": 42
+        }
+      },
+      "WidgetClarificationOption": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "recommended"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "`q1o1`, `q1o2`, ... Stable within the card."
+          },
+          "label": {
+            "type": "string",
+            "description": "The option text, at most 60 characters, including the parenthesised recommendation word on the recommended option (for example `Three plans (Recommended)`)."
+          },
+          "recommended": {
+            "type": "boolean",
+            "description": "True for the one option the assistant recommends. It is always the first option when set. The server composes the recommendation word into `label`; clients may still draw a badge."
+          }
+        },
+        "example": {
+          "id": "Example id",
+          "label": "Example label",
+          "recommended": true
+        }
+      },
+      "WidgetClarificationQuestion": {
+        "type": "object",
+        "required": [
+          "id",
+          "question",
+          "options",
+          "recommendedWord",
+          "allowOther"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "`q1`, `q2`, ..."
+          },
+          "question": {
+            "type": "string"
+          },
+          "recommendedWord": {
+            "type": "string",
+            "maxLength": 24,
+            "description": "The localized word placed in parentheses on the recommended option's label (default `Recommended`)."
+          },
+          "options": {
+            "type": "array",
+            "maxItems": 5,
+            "description": "Two to five options with the recommended one first; empty for a question answered in words only.",
+            "items": {
+              "$ref": "#/components/schemas/WidgetClarificationOption"
+            }
+          },
+          "allowOther": {
+            "type": "boolean",
+            "description": "Whether the person may answer in their own words (the \"Other...\" row). Always true when there are no options."
+          }
+        },
+        "example": {
+          "id": "Example id",
+          "question": "Example question",
+          "recommendedWord": "Example recommendedWord",
+          "options": [
+            "Example WidgetClarificationOption"
+          ],
+          "allowOther": true
+        }
+      },
+      "WidgetClarification": {
+        "type": "object",
+        "required": [
+          "message",
+          "questions",
+          "filesRead"
+        ],
+        "description": "The card of questions the assistant puts to the person before building, in `metadata.clarification` of an operation that completed with `metadata.outcome` `needs_answers`. Nothing was built and the credit was returned. The same words are saved in the chat as a plain-text assistant message.",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "The sentence that introduces the card."
+          },
+          "questions": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "$ref": "#/components/schemas/WidgetClarificationQuestion"
+            }
+          },
+          "filesRead": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The paths of the widget's files the questions were judged against, for a \"Read N files\" row."
+          }
+        },
+        "example": {
+          "message": "Example message",
+          "questions": [
+            "Example WidgetClarificationQuestion"
+          ],
+          "filesRead": []
+        }
+      },
+      "WidgetNextStep": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "kind",
+          "recommended"
+        ],
+        "description": "One suggested next improvement, in `metadata.nextSteps` of a completed generation. The label is a complete request: sending it as the next message is the whole action. The first suggestion is always the recommended one; the chips saved under the reply carry no flag, so a client applies the same rule after a reload.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "`n1`, `n2`, ..."
+          },
+          "label": {
+            "type": "string",
+            "description": "The request, at most 80 characters."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "content",
+              "style",
+              "layout",
+              "behavior",
+              "animation",
+              "data",
+              "other"
+            ]
+          },
+          "recommended": {
+            "type": "boolean",
+            "description": "True for the first suggestion and false for the others."
+          }
+        },
+        "example": {
+          "id": "Example id",
+          "label": "Example label",
+          "kind": "Example kind",
+          "recommended": true
+        }
+      },
       "ErrorResponse": {
         "type": "object",
         "required": [
@@ -27697,7 +28049,40 @@
               "metadata": {
                 "type": "object",
                 "additionalProperties": true,
-                "description": "What the operation tells about its work. A finished composition duplication names the new composition in `newCompositionId`, and lists any problem with its database in `warnings` (absent when there is none).\n"
+                "description": "What the operation tells about its work. A finished composition duplication names the new composition in `newCompositionId`, and lists any problem with its database in `warnings` (absent when there is none). A code generation whose request declared `clientCapabilities` also tells what that client asked to show: `plan` while it builds, `outcome` `needs_answers` with the card in `clarification` when it asked before building, and `nextSteps` once it is done. A key whose part the client did not declare is never present.\n",
+                "properties": {
+                  "plan": {
+                    "nullable": true,
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/WidgetPlan"
+                      }
+                    ],
+                    "description": "The plan of a code generation, published when it is made and again each time a step changes (`pending`, `in_progress`, `done`, `failed`). `null` when the build was called off, so the client hides the plan it showed.\n"
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "enum": [
+                      "needs_answers"
+                    ],
+                    "description": "`needs_answers` on a code generation that completed by asking questions: nothing was built, the credit was returned, and the card is in `clarification`. Absent on every other outcome.\n"
+                  },
+                  "clarification": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/WidgetClarification"
+                      }
+                    ],
+                    "description": "The card of questions, present with `outcome` `needs_answers`."
+                  },
+                  "nextSteps": {
+                    "type": "array",
+                    "description": "Suggested next improvements of a completed code generation, the recommended one first. Absent when none were made in time or the build was not kept.\n",
+                    "items": {
+                      "$ref": "#/components/schemas/WidgetNextStep"
+                    }
+                  }
+                }
               },
               "error": {
                 "type": "string",
