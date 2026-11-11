@@ -16,7 +16,7 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `get_profile` | Tells which Widgetic account the connection acts for | `widgetic.read` | 0 |
 | `get_account_usage` | Reports your credits, storage, widget counts and whether you can publish | `widgetic.read` | 0 |
 | `create_widget` | Starts building a new widget from a description | `widgetic.write` | 1 |
-| `replicate_widget` | Starts building a new widget from a Widgetic capture link | `widgetic.write` | 1 |
+| `replicate_widget` | Offers a stored copy of a Widgetic capture link (`wgc_…`); does not start a build | `widgetic.write` | 0 |
 | `get_widget` | Reports a widget's state: building, ready, failed, published | `widgetic.read` | 0 |
 | `revise_widget` | Starts a new build of an existing widget from your feedback | `widgetic.write` | 1 |
 | `cancel_widget_creation` | Cancels a build that has not finished | `widgetic.write` | 0 |
@@ -75,7 +75,7 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
     Starts a new widget from a description: a quiz, countdown, gallery, timeline, FAQ, chart, calculator, list, carousel or similar. It returns at once with a widget id; the build usually takes a few minutes, and the finished widget is published unless you asked for a draft. Each call starts a separate widget and uses 1 credit, charged up front. A call that repeats the title of a widget started in the last two minutes returns that widget and charges nothing, so a retry after a failure or timeout does not build twice. If you are unsure, check your widgets before creating again. When the description needs it (a vote, a rating, a comment, an RSVP or a sign-up), the widget it builds keeps what visitors send, and you can read it with `list_widget_data` and `get_widget_data`. The widget goes to your default project unless you name one (see [Where a new widget goes](#where-a-new-widget-goes)).
   </Accordion>
   <Accordion title="replicate_widget" icon="clone">
-    Starts a new widget from a temporary Widgetic capture link (`wgc_…` from the Widgetic Chrome extension), plus any adjustments you ask for. The widget it builds keeps no visitor entries. The capture is resolved inside Widgetic and never fetched over the network; expired or revoked links are refused before any build starts. Each call starts a separate widget and uses 1 credit, charged up front, with the same two-minute retry protection as `create_widget`. Like `create_widget`, it publishes the finished widget unless you asked for a draft, and it goes to the workspace and the project the same way (see [Where a new widget goes](#where-a-new-widget-goes)).
+    Offers a stored copy of a Widgetic capture link (`wgc_…` from the Widgetic browser extension). Pass the link exactly as pasted; Widgetic resolves it inside the service and never fetches the page. The copy is the replica: nothing is built, no model runs and no credits are used. Expired or revoked links are refused. A change you ask for in the chat is not applied: the copy is offered as it was captured. Do not call `show_widget` or `get_widget` for the result. The copy keeps no visitor entries.
   </Accordion>
   <Accordion title="get_widget" icon="gauge">
     The current state of one widget: still being built and how far along, draft ready, failed or cancelled, the link to its preview, and whether it is published and being served. For a published widget it also lists its copies (compositions) with their ids. While a build runs, the assistant checks it every 5 to 10 seconds.
@@ -93,7 +93,7 @@ Permissions are the scopes you approve when you sign in; see [Authentication](/d
 
 ## Where a new widget goes
 
-`create_widget`, `replicate_widget` and `create_widget_batch` make the widget in the workspace you are signed in to on widgetic.com, your own or a team's: the same one the [workflow](#workflows), A/B test and translation tools use. The assistant cannot pick another one: switch workspace on widgetic.com first. If you tell the assistant which workspace you mean, it checks that you are signed in to it and starts nothing, and uses no credit, if you are not.
+`create_widget` and `create_widget_batch` make the widget in the workspace you are signed in to on widgetic.com, your own or a team's: the same one the [workflow](#workflows), A/B test and translation tools use. The assistant cannot pick another one: switch workspace on widgetic.com first. If you tell the assistant which workspace you mean, it checks that you are signed in to it and starts nothing, and uses no credit, if you are not.
 
 In your own workspace nothing is different: the widget goes to your default project, or to the project you name. In a team:
 
@@ -326,7 +326,8 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | Tool | Reads only | Can change or replace | Interacts with the outside world |
 |---|---|---|---|
 | `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library`, `suggest_widgets`, `get_brand_kit` | yes | no | no |
-| `create_widget`, `replicate_widget` | no | no (they add a widget, and a first publish replaces nothing) | yes (the finished widget is published and can be reached on the public internet; `create_widget` also takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
+| `replicate_widget` | no | no (it offers a stored copy only) | no |
+| `create_widget` | no | no (it adds a widget, and a first publish replaces nothing) | yes (the finished widget is published and can be reached on the public internet; it also takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
 | `create_widget_batch` | no | no (it adds widgets, and a first publish replaces nothing) | yes (the finished widgets are published and can be reached on the public internet; it uses images already in your media library and fetches nothing) |
 | `revise_widget` | no | yes (the finished revision is published again and replaces what embeds show; every earlier version is kept) | yes (it publishes, takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
 | `duplicate_composition` | no | no (it adds a copy) | no |

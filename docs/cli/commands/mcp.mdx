@@ -637,19 +637,19 @@ The whole description and the schemas: `widgetic schema mcp rename-widget`.
 
 Replicate a widget
 
-Use this when the user pastes a Widgetic widget link (it ends in a code that starts with wgc_), made by the Widgetic browser extension from a widget on a web page, and wants a widget like it built for them. The link names a copy Widgetic keeps for a day: pass it as written and do not open the page. It starts the build and returns at once with a widget_id; call show_widget right away so the user watches it, and poll get_widget until phase is "ready" (usually a few minutes).
+Use this when the user pastes a Widgetic widget link (it ends in a code that starts with wgc_), made by the Widgetic browser extension from an element on a web page. The link names a copy Widgetic keeps for a day: pass it as written and do not open the page. The copy is the replica. Nothing is built, no credits are used and the model does not run. Do not call `show_widget` or `get_widget` for the result. A change the user asked for is not made: the copy is offered as it was captured.
 
 - Tool: `replicate_widget` (`widgetic mcp call replicate_widget` runs it by that name)
 - Permission: `widgetic.write`
-- It changes something.
+- It changes something; safe to repeat.
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
 | `--capture-code <text>` | text | yes | The widget link the user pasted, exactly as written (it ends in a code that starts with wgc_), or just that code. Never the address of a web page. |
 | `--expected-workspace <text>` | text |  | The workspace the user means: "personal" for their own, or the team's name as get_profile shows it. If this connection works in another one, nothing is changed and the answer says where. |
-| `--instructions <text>` | text |  | Only when the user wants the copy changed, in their words, for example "make it dark" or "translate it to French". Leave it out for a faithful replica. |
-| `--project-name <text>` | text |  | Optional. A project on widgetic.com to put this widget in, for example "Spring campaign": made in the workspace this connection works in if there is none with that name, reused if there is. |
-| `--publish` | switch |  | True (the default) publishes the replica as soon as it is built, so it comes back with a composition_id the user can customize and embed. Pass false only if the user wants to keep it a draft. In this CLI it is false unless you pass --publish. |
+| `--instructions <text>` | text |  | Only when the user wants the copy changed, in their words, for example "make it dark" or "translate it to French". Leave it out for a faithful replica. (The server ignores a change today: the copy is offered as captured.) |
+| `--project-name <text>` | text |  | Optional. A project on widgetic.com to file the offered copy in, for example "Spring campaign". |
+| `--publish` | switch |  | Ignored. The copy is offered as it was captured and nothing is published. |
 | `--title <text>` | text |  | Short name for the widget, shown in the user's library, for example "Pricing table". Leave it out for a generic name. |
 | `--input <json\|@file\|->` | JSON, `@path` or `-` |  | The arguments as JSON, `@path` to a file that holds them, or `-` for standard input. The flags above override its keys. |
 
