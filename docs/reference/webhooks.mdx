@@ -1,0 +1,26 @@
+---
+title: Webhooks and events
+description: Signed calls to your server when something happens on a partner account
+---
+
+**Partner accounts only.** Widgetic does not send webhooks to ordinary user or organization keys. Self-serve developers use the REST API and dashboard; partners can receive the same facts by email, in the dashboard inbox, and as signed HTTP calls to their own server.
+
+## What you receive
+
+Each event is a `POST` with JSON body `{ id, type, createdAt, partnerId, data }` and Standard Webhooks headers (`webhook-id`, `webhook-timestamp`, `webhook-signature`). Event types include invoices, credit warnings, partner standing changes, and (webhook-only) activity on your managed users: compositions, widgets, uploads, entries and workflows.
+
+The full event table, payload shapes, retry schedule and verification steps are in [Partner notifications](/docs/partners/notifications).
+
+## Configure
+
+- **Dashboard:** notification settings for your partner account.
+- **API:** `GET/PUT /partners/{partnerId}/notifications/settings`, `POST …/webhook-secret`, `POST …/test`, delivery log and replay — see [Partners API](/docs/cli/commands/api-partners) and the OpenAPI tag `Partners`.
+
+## Verify and operate safely
+
+Read [Webhook signatures](/resources/security#webhook-signatures) and [Verify it](/docs/partners/notifications#verify-it) before you act on traffic in production:
+
+- Verify the signature on the **raw** body.
+- Reject timestamps older than five minutes.
+- Remember `webhook-id` to drop duplicates (delivery is at least once).
+- Ignore unknown `type` values with `2xx` so new events do not break your receiver.

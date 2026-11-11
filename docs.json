@@ -80,6 +80,7 @@
               "docs/api/overview",
               "docs/api/widgets",
               "docs/api/compositions",
+              "docs/api/embedding",
               "docs/api/canvases"
             ]
           },
@@ -119,6 +120,7 @@
             "pages": [
               "docs/reference/rate-limits",
               "docs/reference/idempotency",
+              "docs/reference/webhooks",
               "docs/reference/changelog"
             ]
           }
