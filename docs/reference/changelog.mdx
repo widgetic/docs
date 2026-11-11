@@ -1,0 +1,36 @@
+---
+title: 'Documentation and API changelog'
+description: 'What changed in the public API, MCP tools and developer docs.'
+---
+
+This page tracks changes that affect integrators. The [OpenAPI specification](/api-reference/introduction) is the source of truth for REST endpoints; the gateway's **tool contract** (currently **1.21.0** in these docs) is the source of truth for MCP tools.
+
+## 2026
+
+### November
+
+- **MCP `replicate_widget` (gateway contract; docs updated for current server behaviour):** offers a stored browser-extension capture (`wgc_…`) as a copy. Nothing is built, no credits are charged and `show_widget` / `get_widget` are not used for the result. The CLI package may still ship older generated pages until `@widgetic/api-contracts` is bumped and `npm run docs` is run again.
+- **OpenAPI sync:** public spec refreshed from `api-gateway-service` (`npm run sync-openapi` in this repository).
+- **MCP placement (contract 1.21.0):** `create_widget`, `replicate_widget` and `create_widget_batch` respect the workspace you are signed in to on widgetic.com (`expected_workspace` optional argument).
+
+### Earlier in 2026
+
+See the [docs-site git history](https://github.com/widgetic/docs) for partner Brand Kit routes, workflow MCP tools, A/B test and translation tools (contract 1.15.0+), media library tools, and CLI command reference generation (`widgetic cli` 0.1.7+).
+
+## How to stay current
+
+<Steps>
+  <Step title="Watch the OpenAPI file">
+    Run `npm run check-openapi-drift` in this repository after gateway releases. Sync with `npm run sync-openapi` when it fails.
+  </Step>
+  <Step title="Watch MCP tool docs">
+    Run `npm run check-agent-docs-drift` — it compares [tools](/docs/agents/tools) and [authentication](/docs/agents/authentication) with the gateway's contract snapshot and consent-page wording.
+  </Step>
+  <Step title="Watch the CLI">
+    Bump `@widgetic/api-contracts` in the CLI, run `npm run docs`, and copy refreshed pages into `docs/cli/commands/`.
+  </Step>
+</Steps>
+
+<Note>
+  Mintlify deploys `main` of the [docs repository](https://github.com/widgetic/docs). Production API behaviour can lead the published docs briefly after a gateway deploy; the drift scripts above are meant to catch that before release.
+</Note>

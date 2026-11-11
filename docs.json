@@ -95,6 +95,7 @@
           {
             "group": "CLI",
             "pages": [
+              "docs/cli/getting-started",
               "docs/cli/commands/index",
               "docs/cli/commands/api-brand-kit",
               "docs/cli/commands/api-canvases",
@@ -117,7 +118,8 @@
             "group": "Reference",
             "pages": [
               "docs/reference/rate-limits",
-              "docs/reference/idempotency"
+              "docs/reference/idempotency",
+              "docs/reference/changelog"
             ]
           }
         ]
