@@ -60,8 +60,10 @@
             "group": "Partner Integration",
             "pages": [
               "docs/partners/overview",
+              "docs/partners/connect",
               "docs/partners/account-status",
               "docs/partners/storage",
+              "docs/partners/visitor-data-database",
               "docs/partners/managed-users",
               "docs/partners/editor-sessions",
               "docs/partners/ui-components",
@@ -71,7 +73,8 @@
               "docs/partners/workflows",
               "docs/partners/credits-billing",
               "docs/partners/notifications",
-              "docs/partners/dashboard"
+              "docs/partners/dashboard",
+              "docs/partners/go-live"
             ]
           },
           {
