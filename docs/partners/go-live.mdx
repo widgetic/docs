@@ -1,0 +1,30 @@
+---
+title: Go-live checklist
+description: Tick these before your customers use widgets in production
+---
+
+Use this with the [integration guide](https://docs.superhuman.com/d/_do4kTYR8IRR/Widgetic-Partner-integration-guide_suGRjp1a) test plan (section 12). Every item maps to pages in this documentation.
+
+## Account and billing
+
+- [ ] Partner account **active** (`GET /partners/mine` → `standing: active`).
+- [ ] [Storage](/docs/partners/storage) saved and passing checks (required for activation and uploads).
+- [ ] Billing profile and tax details on file; you know your contract credits and billing cycle ([Credits & Billing](/docs/partners/credits-billing)).
+- [ ] (Optional) [Neon visitor database](/docs/partners/visitor-data-database) configured **before** any composition collects entries.
+
+## Connectivity
+
+- [ ] All [four connection checks](/docs/partners/connect) pass from your server environment.
+- [ ] Production API calls run only on your backend; browsers load embeds via CDN and public embed routes ([Embedding](/docs/api/embedding), [Security](/resources/security)).
+- [ ] Webhook URL and signing secret saved if you automate on events ([Notifications](/docs/partners/notifications), [Webhooks](/docs/reference/webhooks)).
+
+## Product
+
+- [ ] [Managed users](/docs/partners/managed-users) created for real customers (use `test-` prefix only for throwaway data; there is no separate sandbox).
+- [ ] At least one composition published and shown with embed code on your allowed domain or platform domain.
+- [ ] (Optional) [Editor sessions](/docs/partners/editor-sessions) and UI SDK pieces tested on your origin.
+- [ ] Error handling for `429`, `503`, and partner standing changes documented for your team ([Account Status](/docs/partners/account-status), [Errors](/api-reference/errors)).
+
+## Support
+
+- Contract, activation and billing: [support@widgetic.com](mailto:support@widgetic.com). Quote `error.correlationId` from API responses for technical issues.

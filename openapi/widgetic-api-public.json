@@ -16452,7 +16452,7 @@
       "put": {
         "operationId": "putBrandKit",
         "summary": "Save Brand Kit tokens",
-        "description": "Replaces the colors, fonts, spacing and notes of the kit with the ones sent. To change one thing, use PATCH.",
+        "description": "Replaces the colors, fonts, text styles, spacing and notes of the kit with the ones sent, so text styles left out of the body are removed. To change one thing, use PATCH.",
         "tags": [
           "Brand Kit"
         ],
@@ -16549,7 +16549,7 @@
       "patch": {
         "operationId": "patchBrandKit",
         "summary": "Change part of the Brand Kit",
-        "description": "Changes only what is sent: the colors, a font role, a spacing step, one corner radius (0 for square corners) or the style notes, and keeps the rest of the saved kit. An account that never saved a kit starts from Widgetic's default one. The response lists what is worth fixing in `warnings`.",
+        "description": "Changes only what is sent: the colors, a font role, the text styles, a spacing step, one corner radius (0 for square corners) or the style notes, and keeps the rest of the saved kit, text styles included. An account that never saved a kit starts from Widgetic's default one. The response lists what is worth fixing in `warnings`.",
         "tags": [
           "Brand Kit"
         ],
@@ -25493,6 +25493,46 @@
           "sizeMax": 42
         }
       },
+      "BrandTextStyle": {
+        "type": "object",
+        "required": [
+          "family",
+          "weight",
+          "size"
+        ],
+        "description": "One text style of the kit: a font family, a weight and a size in pixels, for example Inter 400 at 12px or Inter 500 at 18px. A family with a font file in the kit is an uploaded font; any other family is loaded from Google Fonts. The size is the size of the widget at full size.",
+        "properties": {
+          "family": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "weight": {
+            "type": "integer",
+            "enum": [
+              100,
+              200,
+              300,
+              400,
+              500,
+              600,
+              700,
+              800,
+              900
+            ]
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 8,
+            "maximum": 200
+          }
+        },
+        "example": {
+          "family": "Example family",
+          "weight": 42,
+          "size": 42
+        }
+      },
       "BrandSpacing": {
         "type": "object",
         "required": [
@@ -25565,7 +25605,7 @@
           "fonts",
           "spacing"
         ],
-        "description": "Colors, fonts by role, spacing and corner radii of a Brand Kit.",
+        "description": "Colors, fonts by role, text styles, spacing and corner radii of a Brand Kit.",
         "properties": {
           "colors": {
             "type": "array",
@@ -25591,6 +25631,14 @@
               }
             }
           },
+          "textStyles": {
+            "type": "array",
+            "maxItems": 12,
+            "description": "The owner's text styles (family, weight and size). When there are some, they are what every widget made with the kit is told about type and the fonts by role are not used; with none, the fonts by role apply. A font file that is deleted takes the text styles made from it with it. Left out when the kit has none.",
+            "items": {
+              "$ref": "#/components/schemas/BrandTextStyle"
+            }
+          },
           "spacing": {
             "$ref": "#/components/schemas/BrandSpacing"
           },
@@ -25605,6 +25653,9 @@
             "Example BrandColor"
           ],
           "fonts": {},
+          "textStyles": [
+            "Example BrandTextStyle"
+          ],
           "spacing": null,
           "instructions": "Example instructions"
         }
@@ -25794,7 +25845,7 @@
           },
           "warnings": {
             "type": "array",
-            "description": "Things worth fixing in the saved colors, such as a text color that is hard to read on the background. The kit is saved either way.",
+            "description": "Things worth fixing in the saved kit, such as a text color that is hard to read on the background, or fonts by role that are not used because the kit has text styles. The kit is saved either way.",
             "items": {
               "type": "string"
             }
@@ -25867,6 +25918,14 @@
               "caption": {
                 "$ref": "#/components/schemas/BrandFont"
               }
+            }
+          },
+          "textStyles": {
+            "type": "array",
+            "maxItems": 12,
+            "description": "The whole list of text styles (it replaces the saved list). An empty list removes them, and the fonts by role apply again. Left out, the saved text styles stay as they are.",
+            "items": {
+              "$ref": "#/components/schemas/BrandTextStyle"
             }
           },
           "spacing": {
@@ -26079,7 +26138,8 @@
               "look",
               "motion",
               "improvements",
-              "notes"
+              "notes",
+              "elements"
             ],
             "description": "What the plan decided, for the client to show as it likes (chips, a list, a summary).",
             "properties": {
@@ -26174,6 +26234,13 @@
                     "maxLength": 120
                   }
                 }
+              },
+              "elements": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "What a Convert-to-Widget sketch shows: one short phrase per drawn element, in layout order. Empty when the request has no sketch. At most 12."
               }
             }
           },
@@ -28049,7 +28116,7 @@
               "metadata": {
                 "type": "object",
                 "additionalProperties": true,
-                "description": "What the operation tells about its work. A finished composition duplication names the new composition in `newCompositionId`, and lists any problem with its database in `warnings` (absent when there is none). A code generation whose request declared `clientCapabilities` also tells what that client asked to show: `plan` while it builds, `outcome` `needs_answers` with the card in `clarification` when it asked before building, and `nextSteps` once it is done. A key whose part the client did not declare is never present.\n",
+                "description": "What the operation tells about its work. A finished composition duplication names the new composition in `newCompositionId`, and lists any problem with its database in `warnings` (absent when there is none). A code generation whose request declared `clientCapabilities` also tells what that client asked to show: `plan` while it builds, `outcome` `needs_answers` with the card in `clarification` when it asked before building, and `nextSteps` once it is done. A key whose part the client did not declare is never present. During code generation, `stage` is a short status line. While the model streams code, `streamTail` holds the last portion of generated source (replaced periodically, cleared when streaming ends). While the model streams reasoning before code, `thinkingTail` holds the last portion of reasoning text (same cadence; cleared when code streaming starts or the run ends). Clients may read `thinkingTail` or `thinking_tail`.\n",
                 "properties": {
                   "plan": {
                     "nullable": true,

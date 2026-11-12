@@ -1,0 +1,53 @@
+---
+title: 'Visitor data in your Neon database'
+description: 'Optional Neon database for visitor entries in partner widgets'
+---
+
+By default, entries visitors send to your widgets (votes, ratings, form fields) are stored in Widgetic's database. Partners can optionally point Widgetic at a **Neon** database they control instead. Your own **storage bucket** (required) is separate: this page is only about visitor entry tables.
+
+<Warning>
+  Set this **before** customers collect data. Widgetic never moves data between databases. Adding a Neon destination is refused while any composition already holds data in Widgetic's database (`PARTNER_DATABASE_HOLDS_DATA`).
+</Warning>
+
+## What you send
+
+`PUT /partners/{partnerId}/data-database` with `{ "connectionString": "postgresql://..." }` and a key with **full access**. The string is shown once in Neon under **Connect**; Widgetic stores it encrypted and never returns the password. Only Neon endpoints (`ep-….neon.tech`) are accepted.
+
+```bash
+# After the variables from Connect (docs/partners/connect)
+read -rs NEON_CONNECTION_STRING && export NEON_CONNECTION_STRING
+jq -n --arg connectionString "$NEON_CONNECTION_STRING" '{connectionString: $connectionString}' |
+curl -sS -X PUT "$WIDGETIC_API/partners/$WIDGETIC_PARTNER_ID/data-database" \
+  -H "Authorization: Bearer $WIDGETIC_API_KEY" \
+  -H "Content-Type: application/json" \
+  --data @-
+```
+
+Widgetic verifies the role can create schemas, write and read a row, then drops the test schema. Failure answers **422** `PARTNER_DATABASE_UNVERIFIED` with `error.details.reason` (for example `ACCESS_DENIED`).
+
+## Operate
+
+| Call | Purpose |
+|------|---------|
+| `GET .../data-database` | Host, database, role, verification times (no password). **404** while Widgetic holds data. |
+| `POST .../data-database/verify` | Re-run the proof; updates `verifiedAt` or `lastVerificationError`. |
+| `DELETE .../data-database` | Remove the destination (refused while compositions hold data there). |
+
+Each composition's tables live in schema `comp_<compositionId>`. When your database is unreachable, visitor entries answer **503** `ENTRY_DATABASE_UNAVAILABLE` (there is no silent fallback to Widgetic's database). Reset the Neon role password and send a new string when credentials change.
+
+CLI equivalents: `widgetic api partners set-partner-data-database`, `get-partner-data-database`, `verify-partner-data-database`, `remove-partner-data-database` ([Partners commands](/docs/cli/commands/api-partners)).
+
+## What stays with Widgetic
+
+Composition metadata, table declarations, webhook `entry.created` events (ids and `context`, not field values), and analytics. Widgetic servers open your database only to serve entry reads and writes for your compositions.
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Storage" icon="bucket" href="/docs/partners/storage">
+    Required S3-compatible bucket for uploads
+  </Card>
+  <Card title="Compositions" icon="layer-group" href="/docs/api/compositions">
+    `databaseSchema` and reading entries
+  </Card>
+</CardGroup>

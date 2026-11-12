@@ -1,0 +1,89 @@
+---
+title: 'CLI getting started'
+description: 'Install the widgetic CLI, sign in, run REST and MCP commands from scripts and CI.'
+---
+
+The [`@widgetic/cli`](https://www.npmjs.com/package/@widgetic/cli) package (current release **0.1.8**) is one binary with two namespaces:
+
+- `widgetic api <group> <command>` — every public REST operation (159 today).
+- `widgetic mcp <command>` — every MCP build tool (48 today, tool contract **1.22.0** on the live server; generated CLI pages may still say **1.21.0** until the CLI is rebuilt from `api-contracts`).
+
+Every command is generated from Widgetic's contracts, supports `--json` and `--dry-run`, and shares the same [exit codes](/docs/cli/commands/index#exit-codes) as the reference index.
+
+## Install
+
+Needs **Node 22.12** or later.
+
+```bash
+npm install -g @widgetic/cli
+widgetic --version
+```
+
+In CI, pin the version you tested:
+
+```bash
+npm install -g @widgetic/cli@0.1.8
+```
+
+## Sign in
+
+Create an API key in the dashboard under **Settings → API keys**, then:
+
+```bash
+widgetic auth login    # reads the key without echoing it, checks it, saves it
+widgetic auth status
+widgetic doctor        # CLI, key, REST API and MCP server
+```
+
+Use `--profile NAME` or `WIDGETIC_PROFILE` when you keep several keys. `widgetic auth logout` removes one profile.
+
+## First calls
+
+```bash
+# REST: list widgets
+widgetic api widgets get-widgets --json
+
+# MCP: start a build (draft unless you pass --publish)
+widgetic mcp create-widget \
+  --title "Launch countdown" \
+  --brief "A countdown to 14 March 2027" \
+  --wait
+
+# By contract operation id / tool name
+widgetic api call getWidgets
+widgetic mcp call get_profile
+```
+
+`widgetic` with no subcommand prints the menu, first steps and examples. `widgetic api --help` and `widgetic mcp --help` list groups; `widgetic schema api …` and `widgetic schema mcp …` print JSON Schema for one command.
+
+Build tools (`create-widget`, `revise-widget`, …) return at once unless you pass `--wait` (polls up to 15 minutes). They send `publish: false` unless you pass `--publish`, so the CLI keeps drafts by default.
+
+## CI patterns
+
+```bash
+export WIDGETIC_API_KEY=wgt_usr_…   # or use widgetic auth login in a setup step
+widgetic doctor --json              # exit 1 when a check fails
+widgetic api widgets get-widgets --json --timeout 120
+```
+
+- Use `--yes` for destructive REST or MCP calls where there is no terminal.
+- `--dry-run` prints the request (key redacted) and sends nothing — useful in pipelines.
+- Honour exit codes: `3` means auth; `6` means rate limit or unavailable; `7` means run `widgetic update`.
+
+## Command reference
+
+The full list, with every flag, is generated from the same contracts as the binary:
+
+- [Command index](/docs/cli/commands/index) — groups, exit codes, shared flags.
+- [widgetic api …](/docs/cli/commands/api-widgets) and sibling group pages.
+- [widgetic mcp …](/docs/cli/commands/mcp) — all 48 MCP tools.
+
+Regenerate these pages after a contract bump: in the CLI repository run `npm run docs`, then copy `docs/commands/*.mdx` into this site. Until then, the [changelog](/docs/reference/changelog) notes any intentional gap between the CLI-generated pages and the live MCP contract.
+
+## Update
+
+```bash
+widgetic update    # checks npm and installs @widgetic/cli@latest after confirmation
+```
+
+See also the [MCP overview](/docs/agents/overview) for assistant setup (distinct from the CLI, same tools and keys).

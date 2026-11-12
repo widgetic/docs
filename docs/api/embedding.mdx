@@ -1,0 +1,75 @@
+---
+title: Embedding widgets
+description: Put a published composition on your website with the embed script, control domains and listen for events
+---
+
+This page is for **self-serve developers** and partners who show a **published composition** on a website. To put Widgetic's editors in your product, see [Canvas Embedding](/docs/partners/canvas-embedding).
+
+## Embed code
+
+After you publish a composition, the dashboard (or `get_embed_code` in MCP) gives you a tag and script. The supported way is the CDN script plus a `<widgetic>` element:
+
+```html
+<script src="https://cdn.widgetic.com/sdks/browser/embed-sdk.js?v=6"></script>
+<widgetic
+  composition-id="COMPOSITION_ID"
+  resize="fill-width"
+  width="800"
+  height="450"
+  autoscale="on"
+  adaptive="480"
+  embed-target="site"
+></widgetic>
+```
+
+One script tag can serve every widget on the page. If you cannot load third-party scripts, use the frame:
+
+```html
+<iframe
+  src="https://api.widgetic.com/embed/compositions/COMPOSITION_ID/frame"
+  width="800"
+  height="450"
+  frameborder="0"
+  allowfullscreen
+></iframe>
+```
+
+The full attribute list, workflow embeds, and the npm package `@widgetic/embed-sdk` are in [SDKs — Embed script](/resources/sdks#embed-script).
+
+## Allowed domains
+
+By default, a published widget can appear on any website. You can limit it:
+
+1. **Dashboard:** workspace **Settings → Allowed domains** (team workspaces: admins and owners only).
+2. **API:** `GET/POST/PUT/DELETE /users/{id}/workspace/domains` — see [Domain validation](/resources/security#domain-validation) and the matching `widgetic api users …` commands.
+
+`localhost`, Widgetic's own sites and (for partners) your **platform domain** are always allowed. A page on another site gets `403 DOMAIN_NOT_ALLOWED`; the embed script draws nothing and sets `data-widgetic-refused="DOMAIN_NOT_ALLOWED"`.
+
+Partners can also set `allowedDomains` on the partner account; those domains are merged into the list of the account that administers the partner.
+
+## Events from the embed
+
+The `<widgetic>` tag fires bubbling DOM events (same names as inside the iframe), including:
+
+| Event | When |
+|-------|------|
+| `widgetic:ready` | The composition is shown |
+| `widgetic:error` | Lookup failed (`detail.code` is lower case, e.g. `domain_not_allowed`) |
+| `widgetic:submitted` | A visitor submitted something the widget keeps |
+| `widgetic:resize` | The box changed size |
+| `widgetic:data` | Visitor data changed |
+| `widgetic:interaction` | An in-widget action |
+| `widgetic:adaptive` | Window crossed the `adaptive` breakpoint |
+
+Workflow embeds also fire `widgetic:workflow-step`. Send page events into a workflow with `sendWorkflowEvent` from `@widgetic/embed-sdk` or `widgetic:workflow-event` on the tag — see [SDKs — Workflows](/resources/sdks#show-a-path-of-compositions-in-one-place).
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Compositions API" icon="layer-group" href="/docs/api/compositions">
+    Create and publish compositions your embed points at
+  </Card>
+  <Card title="Security" icon="shield" href="/resources/security">
+    Domains, keys in the browser and webhook signatures
+  </Card>
+</CardGroup>

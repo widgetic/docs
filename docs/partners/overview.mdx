@@ -116,6 +116,9 @@ You pay Widgetic by invoice, and Widgetic issues each invoice by itself: one for
   <Step title="Make Your Partner API Key">
     Contact our sales team to become a partner, and tell them the website where you will integrate Widgetic, such as `acme.com`. Widgetic sets up your partner account and records that website as your platform domain, so it and all of its subdomains can always show your widgets (see [Security](/resources/security#your-platform-is-always-allowed)). The account stays inactive until it is activated (see below). You then sign in and make your own `wgt_prt_` API key under Workspace settings → API keys. The secret is shown once, so store it when you make it. See [Security](/resources/security) for rotating and deleting keys.
   </Step>
+  <Step title="Run the Four Connection Checks">
+    With your partner id and key, run the [four checks](/docs/partners/connect) from your server before you write integration code.
+  </Step>
   <Step title="Set Up Your Storage">
     Save a bucket of your own on any S3-compatible service with `PUT /partners/{partnerId}/storage`. It is checked before it is saved, and every editor session and every upload with your key needs it. See [Storage](/docs/partners/storage).
   </Step>

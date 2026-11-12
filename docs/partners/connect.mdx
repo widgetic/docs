@@ -1,0 +1,45 @@
+---
+title: Connect and check the API
+description: The four checks every partner runs before writing integration code
+---
+
+Run these four checks from a server shell after you have a partner API key and the partner id Widgetic sent you. They prove the network, the key, your contract and your account standing. The integration guide has the full curl commands and sample answers; this page is the checklist the marketing site and go-live list refer to.
+
+## Set your environment
+
+Read the key without echoing it, set your partner id, and point at production:
+
+```bash
+read -rs WIDGETIC_API_KEY && export WIDGETIC_API_KEY
+export WIDGETIC_PARTNER_ID="<uuid Widgetic sent you>"
+export WIDGETIC_API="https://api.widgetic.com/v1"
+```
+
+## The four checks
+
+| # | Call | Key needed? | Proves |
+|---|------|-------------|--------|
+| 1 | `GET https://api.widgetic.com/health` | No | The service answers (`status: ok`) |
+| 2 | `GET /tokens/validate` | Yes | Your key is valid; keep `data.userId` for credit calls |
+| 3 | `GET /partners/{partnerId}/contract` then `GET /compositions?size=1` with headers | Yes | Your contract exists; read `ratelimit-*` headers (partner keys: 1,000,000 calls per 15 minutes) |
+| 4 | `GET /partners/mine` | Yes | Standing (`active`, `inactive`, `suspended`, `payment_arrears`) and `platformDomain` |
+
+Check 3 fails with **404** when Widgetic has not recorded your contract yet, and with **403** when the key does not administer this partner id.
+
+## Rules every call follows
+
+- `Authorization: Bearer` on every `/v1` call.
+- JSON in and out: `{ success, data }` or `{ success: false, error: { code, ... } }`.
+- `Idempotency-Key` on writes (see [Idempotency](/docs/reference/idempotency)).
+- Call from your **server**, not a browser: production CORS blocks `/v1` from your site, and a key in the browser can be stolen. Browsers use public embed routes without a key ([Embedding](/docs/api/embedding)).
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Storage" icon="database" href="/docs/partners/storage">
+    Required before activation
+  </Card>
+  <Card title="Go live" icon="flag-checkered" href="/docs/partners/go-live">
+    Checklist before customers use widgets
+  </Card>
+</CardGroup>
