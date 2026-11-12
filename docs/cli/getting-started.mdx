@@ -3,10 +3,10 @@ title: 'CLI getting started'
 description: 'Install the widgetic CLI, sign in, run REST and MCP commands from scripts and CI.'
 ---
 
-The [`@widgetic/cli`](https://www.npmjs.com/package/@widgetic/cli) package (current release **0.1.8**) is one binary with two namespaces:
+The [`@widgetic/cli`](https://www.npmjs.com/package/@widgetic/cli) package (current release **0.1.10**) is one binary with two namespaces:
 
 - `widgetic api <group> <command>` — every public REST operation (159 today).
-- `widgetic mcp <command>` — every MCP build tool (48 today, tool contract **1.22.0** on the live server; generated CLI pages may still say **1.21.0** until the CLI is rebuilt from `api-contracts`).
+- `widgetic mcp <command>` — every MCP build tool (56 today, tool contract **1.23.0** on the live server).
 
 Every command is generated from Widgetic's contracts, supports `--json` and `--dry-run`, and shares the same [exit codes](/docs/cli/commands/index#exit-codes) as the reference index.
 
@@ -22,7 +22,7 @@ widgetic --version
 In CI, pin the version you tested:
 
 ```bash
-npm install -g @widgetic/cli@0.1.8
+npm install -g @widgetic/cli@0.1.10
 ```
 
 ## Sign in
@@ -76,7 +76,7 @@ The full list, with every flag, is generated from the same contracts as the bina
 
 - [Command index](/docs/cli/commands/index) — groups, exit codes, shared flags.
 - [widgetic api …](/docs/cli/commands/api-widgets) and sibling group pages.
-- [widgetic mcp …](/docs/cli/commands/mcp) — all 48 MCP tools.
+- [widgetic mcp …](/docs/cli/commands/mcp) — all 56 MCP tools.
 
 Regenerate these pages after a contract bump: in the CLI repository run `npm run docs`, then copy `docs/commands/*.mdx` into this site. Until then, the [changelog](/docs/reference/changelog) notes any intentional gap between the CLI-generated pages and the live MCP contract.
 

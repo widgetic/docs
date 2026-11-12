@@ -3,15 +3,17 @@ title: 'Documentation and API changelog'
 description: 'What changed in the public API, MCP tools and developer docs.'
 ---
 
-This page tracks changes that affect integrators. The [OpenAPI specification](/api-reference/introduction) is the source of truth for REST endpoints; the gateway's **tool contract** (currently **1.22.0** on the live MCP server) is the source of truth for MCP tools.
+This page tracks changes that affect integrators. The [OpenAPI specification](/api-reference/introduction) is the source of truth for REST endpoints; the gateway's **tool contract** (currently **1.23.0** on the live MCP server) is the source of truth for MCP tools.
 
 ## 2026
 
 ### November
 
-- **Tool contract 1.22.0:** live MCP server and `check-agent-docs-drift` use gateway snapshot **1.22.0** (48 tools). CLI **0.1.8** pages under `docs/cli/commands/mcp*` may still label **1.21.0** until contracts are bumped and `npm run docs` is run in the CLI repo.
-- **MCP `replicate_widget` (gateway contract; docs updated for current server behaviour):** offers a stored browser-extension capture (`wgc_…`) as a copy. Nothing is built, no credits are charged and `show_widget` / `get_widget` are not used for the result. The CLI package may still ship older generated pages until `@widgetic/api-contracts` is bumped and `npm run docs` is run again.
-- **OpenAPI sync:** public spec refreshed from `api-gateway-service` (`npm run sync-openapi` in this repository).
+- **Tool contract 1.23.0 (56 tools):** eight new tools. `get_embed_settings`, `save_embed_settings` and `apply_embed_code` show how a copy of a widget is embedded, save those settings, or copy the settings of a pasted Widgetic embed code onto it. `add_content_from_files` puts files from the media library on a widget's content list and shows a plan first. `get_workflow_guide` reads Widgetic's patterns for building a workflow. `get_translation_automation`, `save_translation_automation` and `refresh_translation` show and change Always translate and update one translation now from its original. They are on the [tools page](/docs/agents/tools) and, as `widgetic mcp <command>`, in the [CLI reference](/docs/cli/commands/mcp). `check-agent-docs-drift` compares the pages with gateway snapshot **1.23.0**.
+- **CLI 0.1.10:** `widgetic mcp` has 56 commands (tool contract 1.23.0), and the [CLI reference](/docs/cli/commands/index) is the one this version generates.
+- **Tool contract 1.22.0:** gateway snapshot **1.22.0** (48 tools), the one before 1.23.0.
+- **MCP `replicate_widget` (gateway contract; docs updated for current server behaviour):** offers a stored browser-extension capture (`wgc_…`) as a copy. Nothing is built, no credits are charged and `show_widget` / `get_widget` are not used for the result.
+- **OpenAPI sync:** public spec refreshed from `api-gateway-service` (`npm run sync-openapi` in this repository). The Brand Kit routes now say that `PUT /brand-kit` replaces the text styles and `PATCH /brand-kit` keeps them.
 - **MCP placement (contract 1.21.0):** `create_widget`, `replicate_widget` and `create_widget_batch` respect the workspace you are signed in to on widgetic.com (`expected_workspace` optional argument).
 
 ### Earlier in 2026
