@@ -27,7 +27,11 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `list_widget_versions` | Lists the versions a widget has been through and which one is live | `widgetic.read` | 0 |
 | `get_widget_customization_options` | Lists what you can change on a widget, a draft or a published one, without rebuilding | `widgetic.read` | 0 |
 | `update_widget_customization` | Changes texts, images, list items, colors, fonts or sizes: at once on a published widget, saved on a draft until it is published | `widgetic.write` | 0 |
+| `add_content_from_files` | Puts files from your media library on a widget's content list: files with matching names (`video1`, `image1`) become one item; shows the plan first | `widgetic.write` | 0 |
 | `get_embed_code` | Returns the code or link to put a published widget on a website | `widgetic.read` | 0 |
+| `get_embed_settings` | Shows how a published widget is embedded (overlay, size, triggers, devices) and whether the values are the copy's own, the widget's defaults or not set yet | `widgetic.read` | 0 |
+| `save_embed_settings` | Saves how a copy of a widget is embedded; the settings also become the starting point of the widget's other copies | `widgetic.write` | 0 |
+| `apply_embed_code` | Copies the embed settings of a Widgetic embed code you paste onto another copy; only a genuine Widgetic code is accepted | `widgetic.write` | 0 |
 | `duplicate_composition` | Makes a second embeddable copy of a published widget | `widgetic.write` | 0 |
 | `list_widget_data` | Shows whether a published widget keeps what visitors send in (votes, RSVPs, form entries), and how much | `widgetic.read` | 0 |
 | `get_widget_data` | Counts those entries, or tallies them per option; shows the entries themselves only when you ask | `widgetic.read` | 0 |
@@ -39,6 +43,7 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `delete_media_file` | Permanently deletes one file from your media library, after you confirm its name; a file that widgets use is refused unless you say you still want it gone | `widgetic.delete` | 0 |
 | `list_workflows` | Lists your workflows, a few at a time, with their state | `widgetic.read` | 0 |
 | `get_workflow_options` | Lists which of your published widgets a workflow can use, and what a visitor can do on each | `widgetic.read` | 0 |
+| `get_workflow_guide` | Reads Widgetic's patterns for building a workflow (lead capture, quiz, product launch) before the assistant drafts one | `widgetic.read` | 0 |
 | `get_workflow` | Shows one workflow as a script: its start, steps and moves, its state and, once published, its embed code | `widgetic.read` | 0 |
 | `save_workflow` | Creates a workflow or saves a change to its draft; nothing a visitor sees changes | `widgetic.write` | 0 |
 | `test_workflow` | Plays made-up visitor events through a workflow and says where each one ends up; nothing is saved | `widgetic.read` | 0 |
@@ -56,11 +61,14 @@ Your assistant chooses between the tools from their descriptions, so you rarely 
 | `save_ab_test` | Creates a draft A/B test or changes a draft; nothing a visitor sees changes | `widgetic.write` | 0 |
 | `set_ab_test_state` | Starts, pauses or stops an A/B test | `widgetic.write` | 0 |
 | `list_translations` | Lists your translations in the workspace you are signed in to, a few at a time | `widgetic.read` | 0 |
-| `get_translation_options` | Lists the languages available and how many a translation may hold | `widgetic.read` | 0 |
-| `get_translation` | Shows one translation: each language's state and the embed code | `widgetic.read` | 0 |
+| `get_translation_options` | Lists the languages available, how many a translation may hold and the languages you chose last time | `widgetic.read` | 0 |
+| `get_translation` | Shows one translation: each language's state, whether it was made by hand or by Always translate, whether it is up to date, and the embed code | `widgetic.read` | 0 |
 | `create_translation` | Translates one of your widgets into up to five languages; nothing a visitor sees yet | `widgetic.write` | 0 |
 | `add_translation_languages` | Adds up to five more languages to a translation | `widgetic.write` | 0 |
 | `set_translation_state` | Activates or pauses a translation | `widgetic.write` | 0 |
+| `get_translation_automation` | Shows whether Always translate is on for the workspace, its languages, how translating the older widgets is going, and the languages you chose last | `widgetic.read` | 0 |
+| `save_translation_automation` | Turns Always translate on or off, sets its languages (up to 20) and, when you ask, translates the widgets that have no translation yet | `widgetic.write` | 0 |
+| `refresh_translation` | Updates one translation now from its original; edits made by hand in its copies are lost | `widgetic.write` | 0 |
 
 Permissions are the scopes you approve when you sign in; see [Authentication](/docs/agents/authentication#permissions).
 
@@ -163,8 +171,31 @@ In a client that can draw them, the suggestions appear as a list you tick and th
   <Accordion title="update_widget_customization" icon="palette">
     Changes what a widget shows or how it looks: texts, images from your media library, list items, colors, fonts and sizes. On a published widget it applies at once and embeds show the change. On a draft the change is saved on the draft, shows in its preview and goes live with the widget when it is published: the first publish copies the saved values into the copy it creates, and never over values a copy already holds. It uses no credits. Only options the widget offers are accepted, values are checked against its limits, and a list the assistant sends replaces the whole list while anything left out stays as it is.
   </Accordion>
+  <Accordion title="add_content_from_files" icon="file-import">
+    Puts files from your media library on a widget's content list: images, videos and data files beside each item. Files are matched by their name without the extension, so `video1.mp4` and `image1.jpg` become one item, and a file the widget has no field for stays in the library only. Without `apply` the assistant gets the plan and shows it to you; with `apply` it writes the content list and the answer says which items changed. Files must already be in your library (`save_to_media_library`). Nothing is renamed or deleted, and it uses no credits.
+  </Accordion>
   <Accordion title="get_embed_code" icon="code">
     Plain HTML, an iframe, or a React, Vue, Svelte or Angular component, at a fixed size or fully responsive, plus a share link. If embeds are not being served right now because of your account's state, the result says so.
+  </Accordion>
+</AccordionGroup>
+
+## Embed settings
+
+Each copy of a widget (composition) has the settings of the Embed tab on widgetic.com: its display target (Site, Overlay or Mixed), where an overlay sits, what makes an overlay appear (the visitor leaving the page, or the page loading), a limit on how many times it shows within a number of hours, whether it shows on mobile and on desktop, and its size. A copy that has no settings of its own starts from the widget's defaults: the settings you saved last on any copy of the same widget. So the next embed of the same widget begins where the last one ended, and a copy that already has its own settings keeps them.
+
+<Note>
+  Embed settings are saved on the copy the assistant names and nothing else changes: the widget's content, its embed code and the copies that already have their own settings stay as they are. None of these tools uses credits.
+</Note>
+
+<AccordionGroup>
+  <Accordion title="get_embed_settings" icon="gear">
+    The embed settings of one copy of a published widget, as the Embed tab shows them, and where they come from: saved on this copy, taken from the widget's defaults, or not set yet. It only reads.
+  </Accordion>
+  <Accordion title="save_embed_settings" icon="sliders">
+    Saves the embed settings of one copy. The assistant sends the whole set the way `get_embed_settings` returned it; a setting that does not exist or has a value of the wrong kind is refused and named in the answer, and the rest is saved. The saved settings also become the widget's defaults, which a copy without settings of its own starts from. Saving the same settings again changes nothing.
+  </Accordion>
+  <Accordion title="apply_embed_code" icon="paste">
+    You copy the embed code of one widget and paste it in the chat of another copy: the assistant gives that copy the embed settings of the code you pasted. Only a genuine Widgetic embed code is accepted (the script from `cdn.widgetic.com`, or an `https` frame on `widgetic.com`); settings written by hand are refused, and nothing is fetched. The copy keeps its own embed code and id, and anything in the pasted code that is not an embed setting is left out and listed in the answer.
   </Accordion>
 </AccordionGroup>
 
@@ -202,6 +233,9 @@ A workflow chains published widgets on one embed: a visitor sees the first, and 
   </Accordion>
   <Accordion title="get_workflow_options" icon="list-check">
     Which of your published widgets a workflow can use: the id to use as a step, the tables visitors can add entries to (with the columns a rule may read) and the actions the widget reports, such as a click. A move can wait only for what is listed here. Private columns such as an email or a phone number are never listed. It only reads.
+  </Accordion>
+  <Accordion title="get_workflow_guide" icon="book-open">
+    Widgetic's own patterns for workflows: capturing leads, a quiz that sends each visitor on to a different widget, a product launch, a follow-up after a click, and how to name and branch steps. The assistant reads the ones that fit what you asked for (a topic or a few words ranks them; with none it gets the most common ones) before it suggests widgets or drafts a script. It reads a fixed guide, calls no language model and uses no credits.
   </Accordion>
   <Accordion title="get_workflow" icon="eye">
     One workflow as a script, in exactly the shape `save_workflow` takes: the start step, the steps and the moves between them, with the rules that choose the next step. It also gives the state, the revision, any problems and the names of the widgets. For a published workflow it returns the embed code and the snippet for events your page sends, and, when asked, how many visitors reached each step in the last 30 days. A draft drawn in the editor that a script cannot express is reported as unreadable, with the reasons. It only reads.
@@ -287,21 +321,32 @@ A translation makes one of your widgets available in several languages on one em
   The translation tools work in the workspace you are signed in to on widgetic.com, your own or a team's, and every answer says which. The assistant cannot pick another one: switch workspace on widgetic.com first. Translations are included in the Teams plan and in a partner agreement; on another plan the tools say so in one plain sentence. None of them uses credits. One call translates up to five languages; a translation holds at most twenty languages in all, the original included. Nothing is shown to visitors until `set_translation_state` activates the translation. Activating needs a connection approved with the publish permission. The widget must be one you made yourself.
 </Note>
 
+**Always translate** is a setting of the workspace, not of one translation: turn it on once, choose up to 20 languages, and every new widget is translated into them without anyone asking; ask for the widgets you already have to be translated as well and the ones with no translation yet follow. From then on, a change to an original updates all its translations, and edits made by hand in a translated copy are replaced. Any member of the workspace may turn it on. Even with it off, the assistant can offer the languages you chose last time.
+
 <AccordionGroup>
   <Accordion title="list_translations" icon="language">
     Your translations in the workspace you are signed in to, newest first, up to 20 at a time: the name, the state (making, ready, active, paused or unfinished), the original language, the languages it holds and the widget it was made from. You can filter by state, search the name, and ask for the next page with the cursor. It only reads.
   </Accordion>
   <Accordion title="get_translation_options" icon="list-check">
-    Which languages a widget can be translated into (code, English and native name, region and whether it is one most translations start with) and the limits: how many languages one call translates and how many a translation holds in all. It takes no input and only reads.
+    Which languages a widget can be translated into (code, English and native name, region and whether it is one most translations start with) and the limits: how many languages one call translates and how many a translation holds in all. It also gives the languages you chose last time in the workspace, and whether Always translate is on and in which languages. It takes no input and only reads.
   </Accordion>
   <Accordion title="get_translation" icon="eye">
-    One translation: its state, the original language, and for each language whether its copy is ready, still being translated or failed, with the widget of each copy; the languages being added right now; and the embed code, which shows each visitor their language only while the translation is active. It only reads.
+    One translation: its state, the original language, and for each language whether its copy is ready, still being translated or failed, with the widget of each copy; the languages being added right now; and the embed code, which shows each visitor their language only while the translation is active. It also says whether the translation was made by hand or by Always translate, whether it is up to date, being updated or failed to update, and when it was last updated from its original. It only reads.
   </Accordion>
   <Accordion title="create_translation" icon="globe">
     Translates one of your widgets into other languages: it makes a copy of the widget for each language you name and groups them as one translation. Give the language the widget is written in now and one to five languages to translate into; the original is kept as it is. The widget's text is sent to a language model to be translated, so the assistant should tell you that before it calls. The call waits for under a minute and then answers even if some languages are still being translated; check them with `get_translation`, and add more later with `add_translation_languages`. The new translation is ready but not shown to visitors until `set_translation_state` activates it. It uses no credits.
   </Accordion>
   <Accordion title="add_translation_languages" icon="plus">
     Adds one to five more languages to a translation you already made, or tries again for a language that failed or was left unfinished. The widget's text is sent to a language model to be translated, so the assistant should tell you that before it calls. A language that is already there and ready is skipped. A translation holds at most twenty languages in all. The call waits for under a minute and then answers even if some languages are still being translated; check them with `get_translation`. Visitors get a new language only while the translation is active. It uses no credits.
+  </Accordion>
+  <Accordion title="get_translation_automation" icon="gear">
+    Whether Always translate is on for the workspace, the language the widgets are written in and the languages they are translated into, how translating the widgets that had no translation is going (waiting, running, finished, cancelled or failed, with how many are done), how many widgets still have none, and the languages you chose last time (the language the widgets are written in included). It only reads.
+  </Accordion>
+  <Accordion title="save_translation_automation" icon="gears">
+    Turns Always translate on or off for the workspace, sets its languages and, when you ask, also translates the widgets that have no translation yet. While it is on, every new widget is translated into those languages, and every change to an original updates all its translations: edits made by hand in a translated copy are replaced. Any member of the workspace may turn it on. It takes at most 20 languages, and not the language the widgets are written in; that language is set with `original_language` (a code from `get_translation_options`). The widget's text is sent to a language model to be translated, so the assistant tells you before it calls. It uses no credits, and the same call again changes nothing.
+  </Accordion>
+  <Accordion title="refresh_translation" icon="arrows-rotate">
+    Updates one translation now from its original, as Update now does on widgetic.com: every language copy is translated again and edits made by hand are lost. The answer says the update was queued; `get_translation` shows when it is done. The widget's text is sent to a language model to be translated, so the assistant tells you before it calls. It uses no credits.
   </Accordion>
   <Accordion title="set_translation_state" icon="toggle-on">
     `activate` makes the embed show each visitor the language of their browser; `pause` takes it away again. A translation can be activated once it is ready, or when it is paused; not while it is still being made. Nothing is deleted and each action can be undone. Asking for the state a translation is already in changes nothing. Activating needs a connection approved with the publish permission. It uses no credits.
@@ -325,7 +370,7 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 
 | Tool | Reads only | Can change or replace | Interacts with the outside world |
 |---|---|---|---|
-| `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `list_media_library`, `suggest_widgets`, `get_brand_kit` | yes | no | no |
+| `get_profile`, `get_account_usage`, `get_widget`, `show_widget`, `list_widgets`, `list_widget_versions`, `list_widget_data`, `get_widget_data`, `get_widget_customization_options`, `get_embed_code`, `get_embed_settings`, `list_media_library`, `suggest_widgets`, `get_brand_kit` | yes | no | no |
 | `create_widget` | no | no (it adds a widget, and a first publish replaces nothing) | yes (the finished widget is published and can be reached on the public internet; it also takes the files you attach and reads the Figma designs you link, with your connected Figma account) |
 | `replicate_widget` | no | no (it adds no widget and replaces nothing) | no (it only looks up a copy held in Widgetic's own store; nothing is published and no address is opened) |
 | `create_widget_batch` | no | no (it adds widgets, and a first publish replaces nothing) | yes (the finished widgets are published and can be reached on the public internet; it uses images already in your media library and fetches nothing) |
@@ -339,14 +384,18 @@ Each tool declares, for assistants that show a confirmation before acting, wheth
 | `save_to_media_library` | no | no | yes (it fetches the links you give) |
 | `manage_media_library` | no | no (it changes a file's name or folder and returns what each was; the file's address does not change) | no |
 | `delete_media_file` | no | yes (it removes the file for good) | no |
-| `list_workflows`, `get_workflow_options`, `get_workflow`, `test_workflow` | yes | no | no |
+| `list_workflows`, `get_workflow_options`, `get_workflow_guide`, `get_workflow`, `test_workflow` | yes | no | no |
 | `update_brand_kit` | no | no (it changes your saved colors, fonts, corner radius and style notes; what each was is returned, no widget is rebuilt and nothing leaves your account) | no |
 | `draft_workflow_from_widgets` | no | no (it adds a draft workflow and changes nothing that exists; what visitors see is not touched) | no |
 | `save_workflow` | no | yes (it replaces the draft; what visitors see is not touched, and a change made elsewhere since the revision the assistant read is never overwritten) | no |
 | `publish_workflow` | no | yes (it replaces the version visitors get; every earlier version is kept) | yes (it makes the workflow what embeds on the public internet show) |
 | `set_workflow_state` | no | yes (it changes what visitors get; nothing is deleted and each change can be undone) | yes (it changes what embeds on the public internet show) |
-| `list_ab_tests`, `get_ab_test_options`, `get_ab_test`, `list_translations`, `get_translation_options`, `get_translation` | yes | no | no |
+| `list_ab_tests`, `get_ab_test_options`, `get_ab_test`, `list_translations`, `get_translation_options`, `get_translation`, `get_translation_automation` | yes | no | no |
 | `save_ab_test` | no | yes (it replaces the draft; what visitors see is not touched) | no |
 | `set_ab_test_state` | no | yes (it changes what visitors get on pages that carry the test's embed code; stopping cannot be undone) | yes (it changes what embeds on the public internet show) |
 | `create_translation`, `add_translation_languages` | no | no (they add language copies; what visitors see is not touched until the translation is activated) | no |
 | `set_translation_state` | no | yes (it changes what visitors get on pages that carry the translation's embed code; nothing is deleted and each action can be undone) | yes (it changes what embeds on the public internet show) |
+| `save_translation_automation` | no | yes (while Always translate is on, a change to an original replaces the edits made by hand in its translated copies; nothing is deleted) | no |
+| `refresh_translation` | no | yes (it replaces the edits made by hand in the translation's language copies) | no |
+| `save_embed_settings`, `apply_embed_code` | no | no (they replace the embed settings of one copy, which can be changed again; the widget and its embed code are untouched) | no |
+| `add_content_from_files` | no | no (it adds files to the content list, and only a plan unless `apply` is true; no file is renamed or deleted) | no |

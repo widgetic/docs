@@ -48,7 +48,7 @@ That address is the whole setup: every supported assistant uses the same one.
     A finished build is published for you, unless your plan does not include publishing, you approved the connection without the permission to publish, or you asked to keep it as a draft. `publish_widget` makes a kept draft live, or brings an earlier version back. It is only called after you agree, because it replaces what existing embeds show.
   </Step>
   <Step title="Customize and embed">
-    `update_widget_customization` changes the texts, images, colors, fonts and sizes of a published widget without rebuilding it. `get_embed_code` returns the code and a share link.
+    `update_widget_customization` changes the texts, images, colors, fonts and sizes of a published widget without rebuilding it, and `add_content_from_files` fills its content list from files in your media library. `get_embed_code` returns the code and a share link, and `save_embed_settings` and `apply_embed_code` set how it is embedded (see [Embed settings](/docs/agents/tools#embed-settings)).
   </Step>
 </Steps>
 
@@ -56,7 +56,7 @@ For a page or a workflow made of several widgets, ask which widgets the assistan
 
 With published widgets you can also ask for a **workflow**: widgets chained on one embed, so that a visitor who sends a form sees the thank-you card next, in the same place. The assistant writes it for you, tries it with made-up visitors, and publishes it only after you have seen it tried. See [Workflows](/docs/agents/tools#workflows).
 
-On plans that include them, you can **A/B test** two to four published widgets on one embed and read which reaches a goal, or **translate** a widget into several languages on one embed. Both work in the workspace you are signed in to on widgetic.com (Teams, or a partner agreement). See [A/B tests](/docs/agents/tools#ab-tests) and [Translations](/docs/agents/tools#translations).
+On plans that include them, you can **A/B test** two to four published widgets on one embed and read which reaches a goal, or **translate** a widget into several languages on one embed. Both work in the workspace you are signed in to on widgetic.com (Teams, or a partner agreement). Turn on **Always translate** and every new widget in the workspace is translated into the languages you chose, and kept up to date when its original changes. See [A/B tests](/docs/agents/tools#ab-tests) and [Translations](/docs/agents/tools#translations).
 
 The full list of tools is in the [tools reference](/docs/agents/tools).
 
