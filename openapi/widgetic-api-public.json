@@ -25574,17 +25574,17 @@
           "radiusS": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 64
+            "maximum": 40
           },
           "radiusM": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 64
+            "maximum": 40
           },
           "radiusL": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 64
+            "maximum": 40
           }
         },
         "example": {
@@ -25960,24 +25960,24 @@
               "radiusS": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 64
+                "maximum": 40
               },
               "radiusM": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 64
+                "maximum": 40
               },
               "radiusL": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 64
+                "maximum": 40
               }
             }
           },
           "cornerRadius": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 64,
+            "maximum": 40,
             "description": "One corner radius in pixels for the whole kit; the small, medium and large radii are made from it. 0 gives square corners. A radius step sent in `spacing` wins over the one made from this value."
           },
           "instructions": {

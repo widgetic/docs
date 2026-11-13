@@ -110,7 +110,7 @@ The answer is the kit as it is now. What each part does when you send it:
 - **`colors` replaces the whole palette.** To add a color, read the kit, add it to the list and send the list. An empty list goes back to Widgetic's default palette.
 - **`fonts` changes the roles you name** and leaves the others. Send the whole font for a role (`family`, `source` and, if you like, `weight`).
 - **`cornerRadius` is one number.** See [Corner Radius](#corner-radius).
-- **`spacing` changes the steps you name**: `xs`, `s`, `m`, `l` and `xl` (0 to 128 px) and the three radii `radiusS`, `radiusM` and `radiusL` (0 to 64 px). A radius step you send in `spacing` wins over the one made from `cornerRadius`.
+- **`spacing` changes the steps you name**: `xs`, `s`, `m`, `l` and `xl` (0 to 128 px) and the three radii `radiusS`, `radiusM` and `radiusL` (0 to 40 px). A radius step you send in `spacing` wins over the one made from `cornerRadius`.
 - **`instructions`** are your style notes; an empty string removes them.
 - **`expectedVersion`** refuses the change with `409` (`brand_kit_version_conflict`) when the kit was saved again since you read that version.
 
@@ -194,7 +194,7 @@ Notes are only about how a widget looks. They add no element to a widget and nev
 | `0` | 0 | 0 | 0 (square corners everywhere) |
 | `12` | 8 | 12 | 15 (Widgetic's own look) |
 | `20` | 13 | 20 | 25 |
-| `64` | 43 | 64 | 64 (the most a kit may hold) |
+| `40` | 27 | 40 | 40 (the most a kit may hold) |
 
 Pass `spacing.radiusS`, `spacing.radiusM` or `spacing.radiusL` as well when you want one of the three to differ from what the number makes.
 
@@ -232,7 +232,7 @@ This removes your colors, fonts, notes, uploaded font files and icons, and the a
 | Uploaded font files in a kit | 12, each up to 3 MB |
 | Icons in a kit | 100, each up to 32 KB, with a name of up to 48 characters |
 | Style notes | 500 characters |
-| Corner radius | 0 to 64 px |
+| Corner radius | 0 to 40 px |
 
 ## Errors
 
@@ -240,7 +240,7 @@ The answer is the [usual error body](/api-reference/errors); the `code` tells wh
 
 | Status | `code` | What happened |
 |--------|--------|---------------|
-| `400` | `validation_error` | The request is not valid: a color that is not `#rrggbb`, a color value or role used twice, a corner radius over 64, notes over 500 characters, an empty `PATCH`, or a role that names an uploaded font with no file. `details.issues` lists them |
+| `400` | `validation_error` | The request is not valid: a color that is not `#rrggbb`, a color value or role used twice, a corner radius over 40, notes over 500 characters, an empty `PATCH`, or a role that names an uploaded font with no file. `details.issues` lists them |
 | `401` | | No key, or a key that is not valid |
 | `403` | `not_allowed_to_edit` | The key may not change this team's kit. Looking at it is still allowed |
 | `403` | `not_a_member` | The person the key acts as is not an active member of the team named in `organizationId`, or the key was made for another team |

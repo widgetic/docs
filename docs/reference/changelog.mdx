@@ -3,13 +3,16 @@ title: 'Documentation and API changelog'
 description: 'What changed in the public API, MCP tools and developer docs.'
 ---
 
-This page tracks changes that affect integrators. The [OpenAPI specification](/api-reference/introduction) is the source of truth for REST endpoints; the gateway's **tool contract** (currently **1.23.0** on the live MCP server) is the source of truth for MCP tools.
+This page tracks changes that affect integrators. The [OpenAPI specification](/api-reference/introduction) is the source of truth for REST endpoints; the gateway's **tool contract** (currently **1.24.0** on the live MCP server) is the source of truth for MCP tools.
 
 ## 2026
 
 ### November
 
-- **Tool contract 1.23.0 (56 tools):** eight new tools. `get_embed_settings`, `save_embed_settings` and `apply_embed_code` show how a copy of a widget is embedded, save those settings, or copy the settings of a pasted Widgetic embed code onto it. `add_content_from_files` puts files from the media library on a widget's content list and shows a plan first. `get_workflow_guide` reads Widgetic's patterns for building a workflow. `get_translation_automation`, `save_translation_automation` and `refresh_translation` show and change Always translate and update one translation now from its original. They are on the [tools page](/docs/agents/tools) and, as `widgetic mcp <command>`, in the [CLI reference](/docs/cli/commands/mcp). `check-agent-docs-drift` compares the pages with gateway snapshot **1.23.0**.
+- **Tool contract 1.24.0 (56 tools):** the corner radius of a Brand Kit is at most **40** on every route since gateway 1.11.135 (12 November). `update_brand_kit` takes a `corner_radius` of 0 to 40, and `cornerRadius` and the three radius steps `radiusS`, `radiusM` and `radiusL` of the [Brand Kit routes](/docs/partners/brand-kit) take 0 to 40; the tool, the routes and the OpenAPI description all said 64 before. No tool is added or removed. `check-agent-docs-drift` compares the pages with gateway snapshot **1.24.0**.
+- **CLI 0.1.11:** `widgetic mcp update-brand-kit --corner-radius` takes 0 to 40, and the CLI refuses a larger number before it calls the server. It is generated from tool contract 1.24.0 (56 commands), and the [CLI reference](/docs/cli/commands/index) is the one this version generates.
+- **OpenAPI sync:** the public spec was refreshed again from `api-gateway-service` for the new limit: `maximum` is 40, where it was 64, on `cornerRadius` and on the three radius steps of the Brand Kit routes.
+- **Tool contract 1.23.0 (56 tools):** eight new tools. `get_embed_settings`, `save_embed_settings` and `apply_embed_code` show how a copy of a widget is embedded, save those settings, or copy the settings of a pasted Widgetic embed code onto it. `add_content_from_files` puts files from the media library on a widget's content list and shows a plan first. `get_workflow_guide` reads Widgetic's patterns for building a workflow. `get_translation_automation`, `save_translation_automation` and `refresh_translation` show and change Always translate and update one translation now from its original. They are on the [tools page](/docs/agents/tools) and, as `widgetic mcp <command>`, in the [CLI reference](/docs/cli/commands/mcp).
 - **CLI 0.1.10:** `widgetic mcp` has 56 commands (tool contract 1.23.0), and the [CLI reference](/docs/cli/commands/index) is the one this version generates.
 - **Tool contract 1.22.0:** gateway snapshot **1.22.0** (48 tools), the one before 1.23.0.
 - **MCP `replicate_widget` (gateway contract; docs updated for current server behaviour):** offers a stored browser-extension capture (`wgc_…`) as a copy. Nothing is built, no credits are charged and `show_widget` / `get_widget` are not used for the result.
