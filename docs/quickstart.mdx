@@ -1,9 +1,84 @@
 ---
 title: Quickstart
-description: Get started with the Widgetic API in minutes
+description: Start with your AI agent, or make your first Widgetic API call in minutes
 ---
 
-This guide will help you make your first API call to Widgetic in just a few minutes.
+There are two ways to start: give a prompt to your AI agent and let it set Widgetic up, or make your first API call yourself.
+
+## Start with your AI agent
+
+Copy a prompt into Claude Code, Cursor, Codex, VS Code or any coding agent. It sets Widgetic up and checks that it works, so you do not install or configure anything by hand. Choose how your agent reaches Widgetic:
+
+<Tabs>
+  <Tab title="MCP server">
+    The agent connects to the Widgetic MCP server. You sign in to Widgetic in the browser, so there is no API key to copy. Best for building widgets in a conversation.
+
+    <Prompt
+      description="Adds the Widgetic MCP server to your client, waits while you sign in in the browser (no API key), then checks the connection with `get_profile`."
+      icon="plug"
+    >
+      Connect the Widgetic MCP server to this assistant.
+
+      The server is remote (Streamable HTTP) at `https://mcp.widgetic.com` and signs in with OAuth in the browser, so do not ask me for an API key.
+
+      1. Work out which client you are running in and add the server under the name `widgetic`, keeping the servers that are already configured:
+         * Claude Code: run `claude mcp add --transport http widgetic https://mcp.widgetic.com`
+         * Codex: add a `[mcp_servers.widgetic]` table with `url = "https://mcp.widgetic.com"` to `~/.codex/config.toml`, then run `codex mcp login widgetic`
+         * Cursor: add a `widgetic` entry with `"url": "https://mcp.widgetic.com"` to `mcpServers` in `.cursor/mcp.json`
+         * VS Code: add a `widgetic` entry with `"type": "http"` and `"url": "https://mcp.widgetic.com"` to `servers` in `.vscode/mcp.json`
+         * Any other client: tell me where it asks for an MCP server address, give me the address, and stop.
+      2. Tell me what to click or run to finish the sign-in (a browser window opens, I sign in to Widgetic and choose Allow), then wait until I say it is done.
+      3. Call the `get_profile` tool and tell me which account and workspace are connected. If the connection is refused because the plan does not include API access, say so and stop.
+    </Prompt>
+
+    To do the same by hand, see [Connect your assistant](/docs/agents/connect).
+  </Tab>
+
+  <Tab title="Command line">
+    The agent installs the `widgetic` command line. Best for scripts, CI and agents that run shell commands. It needs Node 22.12 or later and an API key from **Settings** > **API Keys** in the [dashboard](https://app.widgetic.com).
+
+    <Prompt
+      description="Installs `@widgetic/cli`, adds a short Widgetic section to `AGENTS.md`, and checks the setup with `widgetic doctor`. The API key stays in your own terminal."
+      icon="terminal"
+    >
+      Set up the Widgetic command line in this project.
+
+      1. Run `node --version`. The CLI needs Node 22.12 or newer: if mine is older, tell me and stop.
+      2. Run `npm install -g @widgetic/cli`, then `widgetic --version`.
+      3. Add the note below to AGENTS.md. Create the file if it is missing, and skip this step if it already has a Widgetic section.
+      4. Run `widgetic doctor`. If its API key line is not ok, tell me to make a key under Settings > API Keys in the dashboard and run `widgetic auth login` in my own terminal (it asks for the key without showing it), or to start you with `WIDGETIC_API_KEY` set, and wait until I say it is done. Never ask me to paste the key into the chat, put it in a command argument, or write it to a file in this project.
+      5. Run `widgetic doctor` again and tell me what it reports, including the workspace.
+
+      The note for AGENTS.md:
+
+      ```markdown
+      ## Widgetic
+
+      - Run `widgetic --help` first. Before you run a command you do not know, read `widgetic schema api GROUP COMMAND` or `widgetic schema mcp COMMAND`.
+      - Add `--json` when you parse the output, and `--dry-run` before anything that changes the Widgetic account.
+      - `widgetic mcp` builds and edits widgets and needs an API key made with full access. `widgetic api` is the REST API.
+      - A build stays a draft unless you pass `--publish`. Publishing replaces what embeds show, so ask first.
+      - Before you create or change anything, say which workspace `widgetic doctor` reports.
+      - Never put an API key in a command argument, in this repository or in the chat: it comes from `WIDGETIC_API_KEY` or `widgetic auth login`.
+      ```
+    </Prompt>
+
+    To do the same by hand, see [CLI getting started](/docs/cli/getting-started).
+  </Tab>
+</Tabs>
+
+Then ask for something real:
+
+<Prompt
+  description="Builds a countdown as a draft, shows the preview, then publishes it and returns the React embed code once you approve. Uses 1 credit."
+  icon="wand-magic-sparkles"
+>
+  Use Widgetic to build a countdown to 14 March 2027 titled "Launch countdown". Keep it as a draft and show me the preview. When I say it looks right, publish it and give me the React embed code.
+</Prompt>
+
+Change the words to the widget you need. Building a widget uses 1 credit, and the agent publishes only after you say so.
+
+Prefer to call the REST API yourself? Continue below.
 
 ## Prerequisites
 
