@@ -45,16 +45,17 @@ Copy a prompt into Claude Code, Cursor, Codex, VS Code or any coding agent. It s
 
       1. Run `node --version`. The CLI needs Node 22.12 or newer: if mine is older, tell me and stop.
       2. Run `npm install -g @widgetic/cli`, then `widgetic --version`.
-      3. Add the note below to AGENTS.md. Create the file if it is missing, and skip this step if it already has a Widgetic section.
-      4. Run `widgetic doctor`. If its API key line is not ok, tell me to make a key under Settings > API Keys in the dashboard and run `widgetic auth login` in my own terminal (it asks for the key without showing it), or to start you with `WIDGETIC_API_KEY` set, and wait until I say it is done. Never ask me to paste the key into the chat, put it in a command argument, or write it to a file in this project.
-      5. Run `widgetic doctor` again and tell me what it reports, including the workspace.
+      3. Run `widgetic docs` and read what it prints: it is the guide for AI agents, and it matches the version you just installed.
+      4. Add the note below to AGENTS.md. Create the file if it is missing, and skip this step if it already has a Widgetic section.
+      5. Run `widgetic doctor`. If its API key line is not ok, tell me to make a key under Settings > API Keys in the dashboard and run `widgetic auth login` in my own terminal (it asks for the key without showing it), or to start you with `WIDGETIC_API_KEY` set, and wait until I say it is done. Never ask me to paste the key into the chat, put it in a command argument, or write it to a file in this project.
+      6. Run `widgetic doctor` again and tell me what it reports, including the workspace.
 
       The note for AGENTS.md:
 
       ```markdown
       ## Widgetic
 
-      - Run `widgetic --help` first. Before you run a command you do not know, read `widgetic schema api GROUP COMMAND` or `widgetic schema mcp COMMAND`.
+      - Before you run `widgetic`, run `widgetic docs` and read what it prints. `widgetic docs index` lists every command, and `widgetic schema api GROUP COMMAND` or `widgetic schema mcp COMMAND` shows the flags of one.
       - Add `--json` when you parse the output, and `--dry-run` before anything that changes the Widgetic account.
       - `widgetic mcp` builds and edits widgets and needs an API key made with full access. `widgetic api` is the REST API.
       - A build stays a draft unless you pass `--publish`. Publishing replaces what embeds show, so ask first.
