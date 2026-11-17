@@ -6247,7 +6247,7 @@
       "get": {
         "operationId": "getPartnerCreditBalance",
         "summary": "Get partner credit balance",
-        "description": "Returns the credits the partner has, and how much of that is reserved by operations that are still running.\nA partner has ONE account for its credits: the account of the person who administers it, the same account\nits API key acts as. There is nothing else to create or to fund. What its customers' editor sessions and its\nown API calls spend comes out of that account, and the credits a paid invoice carries are added to it, so\nthis is the same balance `getUserCreditBalance` reads for that person.\n\nA partner with no administrator has no account to hold credits, and reads a balance of 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
+        "description": "Returns the credits the partner has, and how much of that is reserved by operations that are still running.\nA partner has ONE account for its credits: the account of the person who administers it, the same account\nits API key acts as. There is nothing else to create or to fund. What its customers' editor sessions and its\nown API calls spend comes out of that account, and the credits a paid invoice carries are added to it, so\nthis is that person's whole balance (the credits of every workspace of the account together), where\n`getUserCreditBalance` reads the one workspace the request acts in.\n\nA partner with no administrator has no account to hold credits, and reads a balance of 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
           "Partners"
         ],
@@ -6318,7 +6318,7 @@
       "get": {
         "operationId": "getPartnerCreditTransactions",
         "summary": "Get partner credit transaction history",
-        "description": "Lists what happened to the partner's credits, newest first: the entries of the credit ledger of the account of\nthe person who administers it, the one account a partner has for its credits. Every operation that spends\ncredits is a `debit` entry, and the credits an invoice carried arrive as `credit` entries when the invoice is\npaid, so this is also how the partner's usage is read. It is the same ledger `getUserCreditTransactions`\nreads for that person.\n\nA partner with no administrator has no account, and an empty ledger.\n\nThe page is always bounded: `limit` defaults to 20 and is capped at 100, `offset` defaults to 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
+        "description": "Lists what happened to the partner's credits, newest first: the entries of the credit ledger of the account of\nthe person who administers it, the one account a partner has for its credits. Every operation that spends\ncredits is a `debit` entry, and the credits an invoice carried arrive as `credit` entries when the invoice is\npaid, so this is also how the partner's usage is read. It is that person's whole ledger (the entries of every\nworkspace of the account together), where `getUserCreditTransactions` reads the one workspace the request acts\nin.\n\nA partner with no administrator has no account, and an empty ledger.\n\nThe page is always bounded: `limit` defaults to 20 and is capped at 100, `offset` defaults to 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
           "Partners"
         ],
@@ -12143,7 +12143,7 @@
       "get": {
         "operationId": "getUserCreditBalance",
         "summary": "Get an account's credit balance",
-        "description": "Returns the credits an account holds: the balance, and how much of it is reserved by operations that\nare still running.\n\nAn account reads its own balance; with a partner's API key, that is the account of the person who\nadministers the partner. Widgetic administrators can read any account's. An account that has never held\ncredits reads a balance of 0. `getPartnerCreditBalance` reads this same balance by partner id.\n",
+        "description": "Returns the credits an account holds in the workspace the request acts in: the balance, and how much of\nit is reserved by operations that are still running. A credential that belongs to a team acts in that\nteam, a person signed in on widgetic.com acts in the workspace they last switched to, and any other\ncredential acts in the person's own workspace.\n\nAn account reads its own balance; with a partner's API key, that is the account of the person who\nadministers the partner. Widgetic administrators can read any account's, and read all of it (the credits\nof every workspace of that account together). An account that has never held credits reads a balance of\n0. `getPartnerCreditBalance` reads that account's whole balance by partner id.\n",
         "tags": [
           "Credits"
         ],
@@ -12206,6 +12206,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The workspace the request acts in could not be determined, so no balance is given (a balance of the wrong workspace would be worse than none). Retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -12214,7 +12224,7 @@
       "get": {
         "operationId": "getUserCreditTransactions",
         "summary": "List an account's credit ledger",
-        "description": "Lists the entries of an account's credit ledger, newest first. This is also how an account's usage is\nread: every operation that spends credits is a `debit` entry, so summing the `debit` entries over a\nperiod gives the credits consumed in it, and the other types give what was added.\n\nAn account reads its own ledger; with a partner's API key, that is the account of the person who\nadministers the partner. Widgetic administrators can read any account's. `getPartnerCreditTransactions`\nreads this same ledger by partner id.\n\nThe page is always bounded: `limit` defaults to 100 and is capped at 500, `offset` defaults to 0.\n",
+        "description": "Lists the entries of an account's credit ledger in the workspace the request acts in, newest first: the\nentries a team's allowance and spending wrote when it is a team's workspace, the rest when it is the\nperson's own. A credential that belongs to a team acts in that team, a person signed in on widgetic.com\nacts in the workspace they last switched to, and any other credential acts in the person's own workspace.\nThis is also how an account's usage is read: every operation that spends credits is a `debit` entry, so\nsumming the `debit` entries over a period gives the credits consumed in it in that workspace, and the\nother types give what was added to it.\n\nAn account reads its own ledger; with a partner's API key, that is the account of the person who\nadministers the partner. Widgetic administrators can read any account's, and read all of it (the entries\nof every workspace of that account together). `getPartnerCreditTransactions` reads the whole ledger of\nthat account by partner id.\n\nThe page is always bounded: `limit` defaults to 100 and is capped at 500, `offset` defaults to 0.\n",
         "tags": [
           "Credits"
         ],
@@ -12308,6 +12318,16 @@
           },
           "403": {
             "description": "The ledger belongs to another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The workspace the request acts in could not be determined, so no ledger is given (the ledger of the wrong workspace would be worse than none). Retry.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21352,6 +21372,11 @@
               "field"
             ],
             "description": "Where in the product the partner uses the file, or null when unknown"
+          },
+          "library_folder_path": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Media Library folder the file belongs to when it is part of the brand kit (for example `Brand kit/Fonts/Inter` or `Brand kit/Logos`), or null for every other file"
           }
         },
         "example": {
@@ -21368,7 +21393,8 @@
           "widget_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "conversation_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "managed_user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "purpose": "Example purpose"
+          "purpose": "Example purpose",
+          "library_folder_path": "Example library_folder_path"
         }
       },
       "UploadLimits": {
@@ -24338,7 +24364,7 @@
       },
       "AccountCreditBalance": {
         "type": "object",
-        "description": "The credits an account holds. Credits are held per user, so the same balance applies in a personal workspace and in an organization the user belongs to.\n",
+        "description": "The credits an account holds in one workspace. A workspace's credits are its own: a team's allowance can be spent in that team only, and a person's own credits in their personal workspace only, so the same person reads a different balance in each workspace they belong to, and a team nobody subscribed holds none.\n",
         "properties": {
           "id": {
             "type": "string",
@@ -24350,7 +24376,7 @@
           },
           "balance": {
             "type": "number",
-            "description": "Credits the account holds"
+            "description": "Credits the account holds in the workspace the request acts in"
           },
           "reservedBalance": {
             "type": "number",
@@ -25866,6 +25892,31 @@
           "warnings": []
         }
       },
+      "BrandKitViewResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Always `true` on a success.",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/BrandKitView"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "example": {
+          "success": true,
+          "data": null,
+          "meta": null
+        }
+      },
       "PutBrandKitRequest": {
         "type": "object",
         "required": [
@@ -26756,6 +26807,58 @@
           "domain": "example.com"
         }
       },
+      "ResponseMeta": {
+        "type": "object",
+        "description": "Extra information about the answer: where a page sits in a list, the cursor of the next page, or warnings about a call that succeeded with a caveat.",
+        "additionalProperties": true,
+        "properties": {
+          "page": {
+            "type": "integer",
+            "description": "The page that was read, counting from 1.",
+            "example": 1
+          },
+          "size": {
+            "type": "integer",
+            "description": "How many items one page holds.",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "description": "How many items the whole list has.",
+            "example": 135
+          },
+          "limit": {
+            "type": "integer",
+            "description": "The same as `size`.",
+            "example": 20
+          },
+          "offset": {
+            "type": "integer",
+            "description": "How many items come before this page.",
+            "example": 0
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "example": true
+          },
+          "hasPreviousPage": {
+            "type": "boolean",
+            "example": false
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass this as `cursor` to read the next page of a list that is read by cursor. `null` on the last page."
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Things the call did not do, though it succeeded (for example a table that could not be created just now)."
+          }
+        }
+      },
       "Widget": {
         "type": "object",
         "description": "Represents a widget in the system.",
@@ -26863,6 +26966,18 @@
             "description": "Latest Git commit SHA of the widget's code repository.",
             "example": "a1b2c3d4e5f6g7h8i9j0"
           },
+          "hasUnpublishedChanges": {
+            "type": "boolean",
+            "description": "True when the widget was published at least once and the latest saved commit differs from the published commit. Never-published drafts are false.",
+            "example": false
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "ISO timestamp of the last publish, or null when the widget was never published.",
+            "example": "2025-09-16T08:12:45.000Z"
+          },
           "organizationId": {
             "type": "string",
             "format": "uuid",
@@ -26915,6 +27030,8 @@
           "databaseId": "widget_3fa85f64_5717_4562_b3fc_2c963f66afa6",
           "version": 1,
           "lastCommitSha": "a1b2c3d4e5f6g7h8i9j0",
+          "hasUnpublishedChanges": false,
+          "publishedAt": "2025-09-16T08:12:45.000Z",
           "organizationId": "5e2d3f4a-1b6c-4a1f-8b9c-3c2d4e5f6a7b",
           "projectFolder": "marketing/q4-launch",
           "workspaceType": "personal",
@@ -29018,78 +29135,6 @@
           },
           "meta": {
             "$ref": "#/components/schemas/ResponseMeta"
-          }
-        }
-      },
-      "BrandKitViewResponse": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "Always `true` on a success.",
-            "example": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/BrandKitView"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/ResponseMeta"
-          }
-        }
-      },
-      "ResponseMeta": {
-        "type": "object",
-        "description": "Extra information about the answer: where a page sits in a list, the cursor of the next page, or warnings about a call that succeeded with a caveat.",
-        "additionalProperties": true,
-        "properties": {
-          "page": {
-            "type": "integer",
-            "description": "The page that was read, counting from 1.",
-            "example": 1
-          },
-          "size": {
-            "type": "integer",
-            "description": "How many items one page holds.",
-            "example": 20
-          },
-          "total": {
-            "type": "integer",
-            "description": "How many items the whole list has.",
-            "example": 135
-          },
-          "limit": {
-            "type": "integer",
-            "description": "The same as `size`.",
-            "example": 20
-          },
-          "offset": {
-            "type": "integer",
-            "description": "How many items come before this page.",
-            "example": 0
-          },
-          "hasNextPage": {
-            "type": "boolean",
-            "example": true
-          },
-          "hasPreviousPage": {
-            "type": "boolean",
-            "example": false
-          },
-          "nextCursor": {
-            "type": "string",
-            "nullable": true,
-            "description": "Pass this as `cursor` to read the next page of a list that is read by cursor. `null` on the last page."
-          },
-          "warnings": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Things the call did not do, though it succeeded (for example a table that could not be created just now)."
           }
         }
       },

@@ -64,7 +64,7 @@ curl -sS -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
 The values above are an illustration, not real figures. Credits reserved for an operation that is still running cannot be spent, so what a new operation can use is `balance - reservedBalance`. An account that has never held credits reads a balance of 0.
 
 <Note>
-  `GET /partners/{partnerId}/credits/balance` and `GET /partners/{partnerId}/credits/transactions` read this same account and answer with the same figures, so use whichever is handier. In the TypeScript SDK (`@widgetic/api-sdk-ts`) the two account credit calls are `CreditsApi.getUserCreditBalance` and `CreditsApi.getUserCreditTransactions`.
+  `GET /partners/{partnerId}/credits/balance` and `GET /partners/{partnerId}/credits/transactions` read this same account: its whole balance and ledger, the credits of every workspace of the account together. The account calls read one workspace, the one the request acts in, and a key that is not a team's acts in the person's own workspace. So the two answer with the same figures while the account holds credits in its own workspace only. In the TypeScript SDK (`@widgetic/api-sdk-ts`) the two account credit calls are `CreditsApi.getUserCreditBalance` and `CreditsApi.getUserCreditTransactions`.
 </Note>
 
 ## Credits on Your Account
