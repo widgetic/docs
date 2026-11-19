@@ -15,6 +15,8 @@ API keys are the recommended authentication method for server-side applications.
 Authorization: Bearer wgt_usr_your_api_key_here
 ```
 
+Every key works in one workspace, the one it was made for. The dashboard makes the key in the workspace you have open, and `POST /users/{id}/keys` takes an optional `organizationId` (a workspace you belong to; left out, it is the workspace you are signed in to). The key does not follow the workspace you have open afterwards, and `GET /tokens/validate` says which workspace it works in (`data.workspace`: its `id` and `name`, or `null` for a key made before keys were tied to a workspace, which works in your default workspace).
+
 ### Editor Sessions (For Customer Browsers)
 
 To run Widgetic's editors inside your own page for one of your customers, mint a short-lived [editor session](/docs/partners/editor-sessions) on your server and pass that session token to the browser.
@@ -29,8 +31,8 @@ Your API key prefix determines your role and what endpoints you can access:
 
 | Key Prefix | Role | Access Level | Use Case |
 |------------|------|--------------|----------|
-| `wgt_usr_` | User | `user` | Personal account access |
-| `wdg_org_` | Organization | `user` | Organization-wide access |
+| `wgt_usr_` | User | `user` | A person's key: it acts as that person, in the workspace it was made for |
+| `wdg_org_` | Organization | `user` | A workspace's own key, in that workspace |
 | `wgt_prt_` | Partner | `partner` | White-label integrations |
 | `wgt_adm_` | Admin | `admin` | Internal administration |
 
@@ -135,8 +137,9 @@ Response:
   </Accordion>
   
   <Accordion title="Use Appropriate Key Types">
-    - Use `wgt_usr_` keys for personal development
-    - Use `wdg_org_` keys for organization-wide applications
+    - Use `wgt_usr_` keys for development: they act as you, in the workspace they were made for
+    - Use `wdg_org_` keys for applications of a whole workspace
+    - Make one key for each workspace you work in
     - Use `wgt_prt_` keys for partner integrations
   </Accordion>
   

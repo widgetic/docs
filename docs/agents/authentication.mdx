@@ -3,12 +3,13 @@ title: Authentication
 description: How an AI assistant signs in to Widgetic, which permissions it can hold, and how to revoke its access
 ---
 
-An assistant can connect to `https://mcp.widgetic.com` in two ways. Both act as your Widgetic account, and both need a plan that includes API access.
+An assistant can connect to `https://mcp.widgetic.com` in two ways. Both work in one workspace, the one the connection is made for, and both need a workspace on a paid plan: a workspace still in its free trial cannot connect an assistant or make a key yet.
 
 | | Sign in with Widgetic (OAuth) | API key |
 |---|---|---|
 | Best for | ChatGPT, Codex, Cursor, Claude Code, VS Code | Clients that cannot open a browser, scripts |
-| You do | Approve the connection once on a Widgetic page | Create a key and put it in the client's settings |
+| You do | Approve the connection once on a Widgetic page, and choose the workspace | Create a key in the workspace and put it in the client's settings |
+| Works in | The workspace you chose | The workspace the key was made for |
 | Permissions | Exactly the ones you approve | All of them |
 | Ends when | You remove it, or Widgetic ends it for you | You delete or rotate the key |
 
@@ -21,12 +22,14 @@ The assistant starts the sign-in for you. You are taken to a Widgetic page, you 
     Your client registers itself with Widgetic automatically and opens your browser.
   </Step>
   <Step title="You review the request">
-    The page names the application and lists each permission in plain words. Nothing is granted until you choose **Allow**; **Cancel** refuses the request.
+    The page names the application, lists each permission in plain words and asks which of your workspaces the assistant may work in. A workspace that cannot connect (it is in its free trial, or has no plan) is listed with the reason. Nothing is granted until you choose **Allow**; **Cancel** refuses the request.
   </Step>
   <Step title="The assistant is connected">
     The client receives a short-lived access token and a way to renew it, and keeps itself signed in. You are not asked again until you remove the connection.
   </Step>
 </Steps>
+
+The connection works in the workspace you chose and does not follow the workspace you have open on widgetic.com later. To work in another workspace, connect again and choose it: you can have one connection for each of your workspaces.
 
 <Warning>
   Only approve a request you started. Check that the page is on `widgetic.com` and that the application name is the one you are connecting.
@@ -51,13 +54,13 @@ Each tool needs one of the first four; the [tools reference](/docs/agents/tools)
 
 ## API keys
 
-Create a key under **Settings** > **API Keys** in your [Widgetic dashboard](https://app.widgetic.com), then send it on every request:
+Open the workspace you want the key for, create a key under **Settings** > **API Keys** in your [Widgetic dashboard](https://app.widgetic.com), then send it on every request. The key works in that workspace and in no other, whichever workspace you have open afterwards; a person with several workspaces makes a key in each of them.
 
 ```bash
 Authorization: Bearer wgt_usr_your_api_key_here
 ```
 
-Personal keys (`wgt_usr_`) and organization keys (`wdg_org_`) work, as long as the key was made with full access. You can [limit a key](/docs/authentication#limit-what-a-key-can-do) to some of what your account may do (Read only, Content or Custom), and the Widgetic MCP server refuses a key limited that way, because it hands an assistant every tool your account has. A key that works carries all four permissions, and there is no way to narrow it, so prefer signing in with Widgetic wherever the client supports it. Keep keys out of shared files and public repositories; see [Authentication](/docs/authentication) for key handling in general.
+User keys (`wgt_usr_`) and organization keys (`wdg_org_`) work, as long as the key was made with full access. You can [limit a key](/docs/authentication#limit-what-a-key-can-do) to some of what your account may do (Read only, Content or Custom), and the Widgetic MCP server refuses a key limited that way, because it hands an assistant every tool your account has. A key that works carries all four permissions, and there is no way to narrow it, so prefer signing in with Widgetic wherever the client supports it. Keep keys out of shared files and public repositories; see [Authentication](/docs/authentication) for key handling in general.
 
 ## Revoking access
 
@@ -78,16 +81,16 @@ Widgetic disconnects every connected assistant when you:
 
 - change your password,
 - delete your account, or
-- are removed from a team seat and nothing else, such as a plan of your own or a seat in another team, still gives you API access.
+- are removed from a workspace: the connections made for that workspace end, and the ones made for your other workspaces stay.
 
-If your plan ends, connections are not removed but every request is refused until the account has API access again.
+If a workspace's plan ends, its connections are not removed, but every tool is refused in that workspace, except `get_profile` and the ones that follow or cancel a build that was already started, until the workspace has a plan again.
 
 ## Errors
 
 | Status | Meaning | What to do |
 |---|---|---|
 | `401 Unauthorized` | No credentials, or they are invalid or expired. The response names where the sign-in details are published (`WWW-Authenticate` with `resource_metadata`) | Sign in again, or check the API key |
-| `403 forbidden` | Your plan does not include API access (the message says so), the key was made with a limit (the message says the endpoint needs a key made with full access), or the credential may not use the Widgetic MCP endpoint | Change plan, ask your team owner, or make a key with full access |
+| `403 forbidden` | The workspace's plan does not include API access or is still a free trial (the message says so), the key was made with a limit (the message says the endpoint needs a key made with full access), or the credential may not use the Widgetic MCP endpoint | Choose a plan for the workspace, ask its owner, or make a key with full access |
 | A tool result that says `Widgetic needs your permission for this` | The connection was approved without a permission this one tool needs. The request itself succeeds (it is not an HTTP error): the result is marked as an error and carries a `WWW-Authenticate` challenge in its `_meta`, with `error="insufficient_scope"` and the missing permission in `scope`. That is how ChatGPT knows to show its connect screen again | Connect again and approve every permission |
 | `403 access_denied` | Widgetic is not available in this assistant right now | Use another client, or try again later |
 | `405 Method Not Allowed` | The server answers `POST` only | Send requests with `POST` |

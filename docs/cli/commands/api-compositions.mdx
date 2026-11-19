@@ -334,6 +334,7 @@ Get Composition
 | `--id <uuid>` | uuid | yes | Composition ID |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
+| `--if-none-match <text>` | text |  | When it contains the composition's current content version (as quoted integer, e.g. `"3"`), and nothing else on the row changed that the version does not cover, the answer is 304 with an ETag and no body. |
 
 The whole description and the schemas: `widgetic schema api compositions get-composition-by-id`.
 

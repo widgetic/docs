@@ -55,6 +55,7 @@ Create an API key
 | `--idempotency-key <text>` | text |  | Names this one request, so a repeat of it is carried out once. The CLI makes a key when this is left out and sends the same one on every try; give your own (a UUID is ideal) to repeat the call by hand later. |
 | `--name <text>` | text |  | A name for the key, to tell it from the account's other keys |
 | `--expires-at <date-time>` | date-time |  | When the key stops working, as a date and time in the future with a zone. Omit it for a key that does not expire |
+| `--organization-id <uuid>` | uuid |  | The workspace the key is for, one the account is a member of. Omit it for the workspace the person is signed in to. |
 | `--preset <text>` | one of `read_only`, `content`, `full_access` |  | A ready-made list of scopes. `read_only` looks at everything the account holds and changes nothing. `content` builds and manages widgets and compositions and runs the AI, and touches no billing, no people and no partners… |
 | `--scopes <values...>` | one of `content:read`, `content:write`, `generate`, `partner:read`, `partner:write`, `billing:read`, `billing:write`, `account:read`, `account:write` |  | What the key may do, when a preset is not enough. Naming a write scope includes its read scope, and a list that holds every scope is a key with full access. Send either `scopes` or `preset`, not both |
 | `--data <json\|@file\|->` | JSON, `@path` or `-` |  | The whole request document as JSON, `@path` to a file that holds it, or `-` for standard input. The flags above override its keys. |
