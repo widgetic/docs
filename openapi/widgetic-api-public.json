@@ -5817,7 +5817,7 @@
           "Uploads"
         ],
         "summary": "List the account's uploads",
-        "description": "The files the account has uploaded, newest first. Deleted files are not listed. Returns at most `limit` files and has no further pages: a client that needs more narrows the list instead, for example to one managed user's files with `managedUserId` or `managedUserExternalId`. The files that visitors sent through a widget's upload adapter (`source` is `widget-visitor-upload`) are not part of this list, so that a popular widget does not push the account's own files out of it; naming one widget with `widgetId` lists what visitors sent to that widget as well.\n",
+        "description": "The files of the workspace the caller works in, newest first: a team's shared files (every member's, and those of members who have since left) when the caller works in a team, and the account's own files otherwise. A person signed in on widgetic.com who works in their own workspace sees only the files they uploaded there, not the ones they uploaded inside a team (those are in the team's workspace). An API key lists every file of the account. Deleted files are not listed. Returns at most `limit` files and has no further pages: a client that needs more narrows the list instead, for example to one managed user's files with `managedUserId` or `managedUserExternalId`. The files that visitors sent through a widget's upload adapter (`source` is `widget-visitor-upload`) are not part of this list, so that a popular widget does not push the account's own files out of it; naming one widget with `widgetId` lists what visitors sent to that widget as well.\n",
         "security": [
           {
             "apiKeyAuth": []
@@ -6023,7 +6023,7 @@
           "Uploads"
         ],
         "summary": "Delete an upload",
-        "description": "Removes the stored file and the upload row. A file in Widgetic's own storage gives back the space it took from\nyour storage allowance; a file in your own bucket is removed from your bucket. Deleting an upload that is\nalready gone succeeds the same way as the first delete. An upload that belongs to another account is not found.\nIf the storage cannot be reached the call fails and nothing is marked deleted, so it can be repeated.\n",
+        "description": "Removes the stored file and the upload row. A file in Widgetic's own storage gives back the space it took from\nthe storage allowance it was charged to (the team's shared space for a file uploaded in a team workspace); a file in\nyour own bucket is removed from your bucket. Deleting an upload that is already gone succeeds the same way as the\nfirst delete. A file you uploaded can always be deleted by you. A file in a team's workspace can also be deleted by\nthe owner and by every active member of that team, whoever uploaded it (the files of a workspace are the whole\nteam's). An upload that belongs to another account, or to a team you are not a member of, is not found.\nIf the storage cannot be reached the call fails and nothing is marked deleted, so it can be repeated.\n",
         "security": [
           {
             "apiKeyAuth": []
@@ -12980,6 +12980,15 @@
             "description": "Composition ID"
           },
           {
+            "in": "header",
+            "name": "If-None-Match",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "When it contains the composition's current content version (as quoted integer, e.g. `\"3\"`), and nothing else on the row changed that the version does not cover, the answer is 304 with an ETag and no body. Express's weak body-hash validators never match a numeric content version."
+          },
+          {
             "$ref": "#/components/parameters/ManagedUserScopeId"
           },
           {
@@ -12994,6 +13003,17 @@
                 "schema": {
                   "$ref": "#/components/schemas/CompositionResponse"
                 }
+              }
+            }
+          },
+          "304": {
+            "description": "The content version named in If-None-Match is still current",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The content version the caller matched"
               }
             }
           },
@@ -25314,6 +25334,48 @@
             "format": "date-time",
             "description": "Timestamp when the canvas was last updated",
             "example": "2023-01-02T00:00:00Z"
+          },
+          "activeOperation": {
+            "type": "object",
+            "description": "The build that is running on the canvas's primary widget right now, so an editor that opens the canvas while it runs (an agent started it) can follow it. Present only on `getCanvas`, only while the build has not ended, and only for a caller who may see that operation (the account that started it; an editor session only for its own managed user). Absent otherwise. Read the operation itself with `getOperation`.\n",
+            "required": [
+              "id",
+              "type",
+              "status",
+              "progress",
+              "widgetId"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The operation to follow (`getOperation`, or the operations stream)."
+              },
+              "type": {
+                "type": "string",
+                "description": "What the operation does; `code-generate` for the build of a widget.",
+                "example": "code-generate"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "running"
+                ],
+                "description": "Where the build stands. A build that has ended is never listed."
+              },
+              "progress": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "How far the build has got, in percent."
+              },
+              "widgetId": {
+                "type": "string",
+                "format": "uuid",
+                "description": "The widget the build works on, the canvas's primary widget."
+              }
+            }
           }
         },
         "example": {
@@ -25328,7 +25390,8 @@
           "primaryWidgetId": "123e4567-e89b-12d3-a456-426614174099",
           "managedUserId": "123e4567-e89b-12d3-a456-426614174077",
           "createdAt": "2023-01-01T00:00:00Z",
-          "updatedAt": "2023-01-02T00:00:00Z"
+          "updatedAt": "2023-01-02T00:00:00Z",
+          "activeOperation": {}
         }
       },
       "CreateCanvasRequest": {
@@ -26349,7 +26412,8 @@
           "question",
           "options",
           "recommendedWord",
-          "allowOther"
+          "allowOther",
+          "allowMultiple"
         ],
         "properties": {
           "id": {
@@ -26375,6 +26439,10 @@
           "allowOther": {
             "type": "boolean",
             "description": "Whether the person may answer in their own words (the \"Other...\" row). Always true when there are no options."
+          },
+          "allowMultiple": {
+            "type": "boolean",
+            "description": "Whether the person may choose more than one option. The assistant sets it for each question on its own: false (one answer) unless the answer can hold several things at once (which sections, which platforms), so a card may mix both kinds. Always false when there are fewer than two options. Several choices go back in one `answer`, one per line."
           }
         },
         "example": {
@@ -26384,7 +26452,8 @@
           "options": [
             "Example WidgetClarificationOption"
           ],
-          "allowOther": true
+          "allowOther": true,
+          "allowMultiple": true
         }
       },
       "WidgetClarification": {
@@ -26428,10 +26497,11 @@
         "required": [
           "id",
           "label",
+          "title",
           "kind",
           "recommended"
         ],
-        "description": "One suggested next improvement, in `metadata.nextSteps` of a completed generation. The label is a complete request: sending it as the next message is the whole action. The first suggestion is always the recommended one; the chips saved under the reply carry no flag, so a client applies the same rule after a reload.",
+        "description": "One suggested next improvement, in `metadata.nextSteps` of a completed generation. The label is a complete request: sending it as the next message is the whole action. The title is the same request in at most five words, for a small pill that shows the label in full when the pointer rests on it. The first suggestion is always the recommended one; the chips saved under the reply carry the label and the title but no flag, so a client applies the same rule after a reload.",
         "properties": {
           "id": {
             "type": "string",
@@ -26440,6 +26510,11 @@
           "label": {
             "type": "string",
             "description": "The request, at most 80 characters."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "The same request in at most five words and 40 characters, in the person's language (\"Add a confetti burst\"). Never empty: when the model gave none, the server cuts one from the label."
           },
           "kind": {
             "type": "string",
@@ -26461,8 +26536,89 @@
         "example": {
           "id": "Example id",
           "label": "Example label",
+          "title": "Example title",
           "kind": "Example kind",
           "recommended": true
+        }
+      },
+      "WidgetCodeChange": {
+        "type": "object",
+        "required": [
+          "path",
+          "status",
+          "additions",
+          "deletions",
+          "patch"
+        ],
+        "description": "One file a build changed, in `metadata.codeChanges.files`. The change is in `patch` as unified hunks (the format of GitLab's own commit diff, without the file header): each hunk starts with `@@ -oldStart,oldCount +newStart,newCount @@` (a count of one is left out; a file that is new starts at `-0,0`) and its lines start with a space (unchanged, for context), `-` (taken out) or `+` (put in). A client that draws it reads the hunk until the next `@@` line and does not depend on the counts, because a cut patch ends in the middle of a hunk.",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The path in the repository, for example `src/routes/+page.svelte`."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "added",
+              "modified"
+            ],
+            "description": "`added` for a file that did not exist before the build, `modified` for one that did."
+          },
+          "additions": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Lines put in, counted over the whole file even when `patch` was cut."
+          },
+          "deletions": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Lines taken out, counted over the whole file even when `patch` was cut."
+          },
+          "patch": {
+            "type": "string",
+            "description": "The change as unified hunks, with three unchanged lines of context around every change. Empty when it did not fit (then `truncated` is true)."
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Present and true when `patch` was cut short or left out (a size bound, or a line so long it was cut). The counts stay the true ones."
+          }
+        },
+        "example": {
+          "path": "Example path",
+          "status": "Example status",
+          "additions": 42,
+          "deletions": 42,
+          "patch": "Example patch",
+          "truncated": true
+        }
+      },
+      "WidgetCodeChanges": {
+        "type": "object",
+        "required": [
+          "files",
+          "omittedFiles"
+        ],
+        "description": "What a completed build changed, in `metadata.codeChanges` of its operation, for a client that declared `clientCapabilities.codeChanges`. Present only for a build that was kept (a version was saved and the preview compiled) on a follow-up round of a conversation (the first message replaces what the repository held, so there is nothing to compare), and only when something a person could see changed (a change of line endings alone is none). The size is bounded: a few files, and a few tens of thousands of characters in all.",
+        "properties": {
+          "files": {
+            "type": "array",
+            "maxItems": 8,
+            "description": "The files that changed, the code first, then data files such as JSON, then anything else.",
+            "items": {
+              "$ref": "#/components/schemas/WidgetCodeChange"
+            }
+          },
+          "omittedFiles": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many more files changed than `files` lists. 0 when every changed file is listed."
+          }
+        },
+        "example": {
+          "files": [
+            "Example WidgetCodeChange"
+          ],
+          "omittedFiles": 42
         }
       },
       "ErrorResponse": {
@@ -26934,6 +27090,12 @@
             "description": "Path to the JavaScript file for this widget.",
             "example": "/widgets/chart/main.js"
           },
+          "thumbnailSvg": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 1200,
+            "description": "A small line drawing of the widget, as an SVG on a 32 x 32 canvas (a few flat shapes only, drawn in currentColor, no script, style, text, link or image). Show it as a mask, 32 pixels wide, in the middle of the standard grey tile, in the darker grey. Null until one is drawn."
+          },
           "canvasId": {
             "type": "string",
             "format": "uuid",
@@ -27025,6 +27187,7 @@
           "createdAt": "2025-09-15T10:23:00.000Z",
           "updatedAt": "2025-09-16T08:12:45.000Z",
           "jsPath": "/widgets/chart/main.js",
+          "thumbnailSvg": "Example thumbnailSvg",
           "canvasId": "9f0c6b54-3e8f-4a2a-8b7d-1c5c6d9e0a1b",
           "repoId": "user/chart-widget",
           "databaseId": "widget_3fa85f64_5717_4562_b3fc_2c963f66afa6",
@@ -28233,7 +28396,7 @@
               "metadata": {
                 "type": "object",
                 "additionalProperties": true,
-                "description": "What the operation tells about its work. A finished composition duplication names the new composition in `newCompositionId`, and lists any problem with its database in `warnings` (absent when there is none). A code generation whose request declared `clientCapabilities` also tells what that client asked to show: `plan` while it builds, `outcome` `needs_answers` with the card in `clarification` when it asked before building, and `nextSteps` once it is done. A key whose part the client did not declare is never present. During code generation, `stage` is a short status line. While the model streams code, `streamTail` holds the last portion of generated source (replaced periodically, cleared when streaming ends). While the model streams reasoning before code, `thinkingTail` holds the last portion of reasoning text (same cadence; cleared when code streaming starts or the run ends). Clients may read `thinkingTail` or `thinking_tail`.\n",
+                "description": "What the operation tells about its work. A finished composition duplication names the new composition in `newCompositionId`, and lists any problem with its database in `warnings` (absent when there is none). A code generation whose request declared `clientCapabilities` also tells what that client asked to show: `plan` while it builds, `outcome` `needs_answers` with the card in `clarification` when it asked before building, `nextSteps` once it is done, and `codeChanges` (what the build changed in the files) with it. A key whose part the client did not declare is never present. During code generation, `stage` is a short status line. While the model streams code, `streamTail` holds the last portion of generated source (replaced periodically, cleared when streaming ends). While the model streams reasoning before code, `thinkingTail` holds the last portion of reasoning text (same cadence; cleared when code streaming starts or the run ends). Clients may read `thinkingTail` or `thinking_tail`.\n",
                 "properties": {
                   "plan": {
                     "nullable": true,
@@ -28265,6 +28428,21 @@
                     "items": {
                       "$ref": "#/components/schemas/WidgetNextStep"
                     }
+                  },
+                  "codeChanges": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/WidgetCodeChanges"
+                      }
+                    ],
+                    "description": "What a completed code generation changed in the widget's files, per file as unified hunks, for a client that declared `clientCapabilities.codeChanges`. Absent when the build was not kept, when it was the first message of a conversation (it replaces what the repository held, so there is nothing to compare), or when nothing a person could see changed.\n"
+                  },
+                  "startedBy": {
+                    "type": "string",
+                    "enum": [
+                      "agent"
+                    ],
+                    "description": "`agent` on a code generation that an agent began (the Widgetic assistant, or an MCP client through `create_widget`, `replicate_widget` or `revise_widget`): nobody pressed a button for it, so an editor that shows the widget can say who is building and offer to take over. Absent on a generation the person began in the editor.\n"
                   }
                 }
               },
