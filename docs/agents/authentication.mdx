@@ -60,7 +60,7 @@ Open the workspace you want the key for, create a key under **Settings** > **API
 Authorization: Bearer wdg_org_your_api_key_here
 ```
 
-A workspace key (`wdg_org_`) works, as long as it was made with full access. A personal key (`wgt_usr_`) from before workspace keys no longer works: it is refused, and you need a workspace key. You can [limit a key](/docs/authentication#limit-what-a-key-can-do) to some of what your workspace may do (Read only, Content or Custom), and the Widgetic MCP server refuses a key limited that way, because it hands an assistant every tool your workspace has. A workspace key acts as the workspace's owner: the widgets it makes, and the credits it spends, are theirs, in that workspace. A key that works carries all four permissions, and there is no way to narrow it, so prefer signing in with Widgetic wherever the client supports it. Keep keys out of shared files and public repositories; see [Authentication](/docs/authentication) for key handling in general.
+A workspace key (`wdg_org_`) works, as long as it was made with full access. A personal key (`wgt_usr_`) from before workspace keys no longer works and has been deleted: you need a workspace key. You can [limit a key](/docs/authentication#limit-what-a-key-can-do) to some of what your workspace may do (Read only, Content or Custom), and the Widgetic MCP server refuses a key limited that way, because it hands an assistant every tool your workspace has. A workspace key acts as the workspace's owner: the widgets it makes, and the credits it spends, are theirs, in that workspace. A key that works carries all four permissions, and there is no way to narrow it, so prefer signing in with Widgetic wherever the client supports it. Keep keys out of shared files and public repositories; see [Authentication](/docs/authentication) for key handling in general.
 
 ## Revoking access
 
@@ -83,7 +83,20 @@ Widgetic disconnects every connected assistant when you:
 - delete your account, or
 - are removed from a workspace: the connections made for that workspace end, and the ones made for your other workspaces stay.
 
-If a workspace's plan ends, its connections are not removed, but every tool is refused in that workspace, except `get_profile` and the ones that follow or cancel a build that was already started, until the workspace has a plan again.
+If a workspace's plan ends, its connections are not removed, but they stop working until it has a plan again: see [When the workspace has no plan](#when-the-workspace-has-no-plan).
+
+## When the workspace has no plan
+
+A connection and a key are credentials for a paying workspace, so both follow the plan of the workspace they were made for, the same way [the REST API and the CLI do](/docs/authentication#keys-and-your-workspaces-plan).
+
+| The workspace is... | What the server does |
+|---------------------|----------------------|
+| In its free trial | Refuses every request with `403`, for a connection and for a key alike: connecting an assistant is part of the paid plans, and a key cannot be made yet. |
+| Without a plan, or paying late beyond its grace period | Keeps the connection and the key, switched off rather than deleted. The server still accepts them, so that the assistant can tell you why: every tool is refused in the plan's own words, except `get_profile` and the tools that follow or cancel a build that started while the plan was active (`get_widget`, `show_widget`, `cancel_widget_creation`). Nothing can start work. |
+| Back on a paid plan | The same connection and the same key work again within about a minute. Nothing is made again. |
+| Deleted | Its connections end with it and its keys are deleted. |
+
+Only the plan of that workspace counts. Another workspace of the same person, paid or not, neither unlocks a connection nor locks it.
 
 ## Errors
 

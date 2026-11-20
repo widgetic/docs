@@ -20,7 +20,7 @@ You make a key in the dashboard: open the workspace, then **Settings → API key
 A key can be limited to what its application needs, a build server for example: see [Limit what a key can do](#limit-what-a-key-can-do). Only a person signed in on widgetic.com can make a key (a key cannot make another key), and the workspace needs a paid plan to hold keys (the home workspace of a [partner](/docs/partners/overview#partner-api-key) needs none: it pays by the invoices of its contract).
 
 <Note>
-  A key that starts with `wgt_usr_` is a personal key from before workspace keys. Personal keys are no longer accepted: a request that carries one is refused with `401`, and the message says to make a workspace key. Make a workspace key, send that instead, and delete the old one.
+  A key that starts with `wgt_usr_` is a personal key from before workspace keys. Personal keys are retired and deleted: a request that still carries one is refused with `401`, and the message says to make a workspace key. Make a workspace key and send that instead.
 </Note>
 
 ### Editor Sessions (For Customer Browsers)
@@ -110,6 +110,26 @@ A request outside the scopes of the key is refused with `403` and the code `API_
   These scopes belong to the key and last as long as it does. To give a customer's browser limited, short-lived access to only that customer's content, mint an [editor session](/docs/partners/editor-sessions) on your server instead.
 </Note>
 
+## Keys and Your Workspace's Plan
+
+A key is a credential for a paying workspace, so it follows the plan of the workspace it was made for. One rule covers the REST API, the [CLI](/docs/cli/getting-started) and the [MCP server](/docs/agents/authentication): none of them lets a key in that another one refuses.
+
+| The workspace is... | A request made with its key gets |
+|---------------------|----------------------------------|
+| On a paid plan, or paying late inside its grace period | The answer. |
+| In its free trial | `403` `AUTHZ_PLAN_RESTRICTION`: the free trial does not include the API, the CLI or the MCP server. A key cannot be made yet either. Choose a plan to use them. |
+| Without a plan: the trial ended, the plan was cancelled, the payment failed for good, or it never had one | `403` `WORKSPACE_LOCKED`. Your work is kept for 90 days, and a plan unlocks it. |
+| On a plan whose payment is overdue beyond the grace period | `403` `AUTHZ_PLAN_RESTRICTION`: update billing to restore it. |
+| Deleted | Its keys are deleted with it, and so are the connections of AI assistants made for it. They stop working within a minute. |
+
+A key of a workspace that has lapsed is switched off, **not deleted**. Choose a plan (or update billing) and the same key works again within about a minute, with nothing to make again. Only the workspace's own plan counts: another workspace of the same person, paid or not, neither unlocks it nor locks it.
+
+A short-lived token from `POST /tokens/exchange` carries the workspace of the key that made it and follows the same rule: a token made before the plan ended is refused as soon as the plan has ended, not when it expires, and works again when the plan is back.
+
+<Note>
+  An assistant connected through the MCP server is told in another way once its workspace has no plan: the connection is accepted, and each tool answers with the plan's words instead of doing the work. Only `get_profile`, and the tools that follow or cancel a build that started while the plan was active, answer. See [When the workspace has no plan](/docs/agents/authentication#when-the-workspace-has-no-plan). The CLI exits with code `3` when the REST API refuses a key for its plan, and with `5` when an MCP tool does.
+</Note>
+
 ## Validating Tokens
 
 You can validate a token to check its status and associated permissions:
@@ -146,7 +166,7 @@ Response:
   <Accordion title="Use Appropriate Key Types">
     - Make one workspace key (`wdg_org_`) for each workspace you work in, and one for each application
     - Limit a key to what its application needs: Read only for a report, Content for a build server
-    - A personal `wgt_usr_` key from before workspace keys no longer works: make a workspace key, switch your servers over to it, then delete the old one
+    - A personal `wgt_usr_` key from before workspace keys no longer works and has been deleted: make a workspace key and switch your servers over to it
     - For a partner integration, make the key in your partner's home workspace (`wdg_org_`): it acts as your partner. A `wgt_prt_` key does the same
   </Accordion>
   
@@ -165,6 +185,8 @@ When authentication fails, you'll receive one of these responses:
 |--------|------|-------------|
 | 401 | `UNAUTHORIZED` | Missing or invalid authentication token |
 | 403 | `FORBIDDEN` | Token valid but insufficient permissions |
+| 403 | `WORKSPACE_LOCKED` | The key is valid, but its workspace has no plan. [Choose a plan](#keys-and-your-workspaces-plan) and the same key works again |
+| 403 | `AUTHZ_PLAN_RESTRICTION` | The key is valid, but its workspace's plan does not include this: it is in its free trial, or its payment is overdue |
 
 Example error response:
 ```json

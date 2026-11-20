@@ -80,6 +80,11 @@ Errors related to permissions and access control.
 | `AUTHZ_RESOURCE_ACCESS_DENIED` | You do not have permission to access this resource | Ensure you have the correct permissions for this resource |
 | `AUTHZ_ORGANIZATION_ACCESS_DENIED` | You do not have permission to access this organization | Contact the organization owner for access |
 | `AUTHZ_PLAN_RESTRICTION` | This feature is not available on your current plan | Upgrade your plan to access this feature |
+| `WORKSPACE_LOCKED` | The plan of this workspace has ended. Choose a plan to unlock it | Choose a plan for the workspace. Its work is kept for 90 days, and a key made before works again once the plan is back |
+
+#### Keys and the workspace's plan
+
+A key, a token from `POST /tokens/exchange` and an assistant's connection are credentials of one workspace, so they are refused for that workspace's plan. A workspace with no plan answers `WORKSPACE_LOCKED`, and its `details` carry the `reason`, the day it was locked (`since`) and the day its work is deleted (`deletesAt`). A workspace in its free trial, or whose payment is overdue beyond the grace period, answers `AUTHZ_PLAN_RESTRICTION` with no `details`. The key is switched off, not deleted: see [Keys and your workspace's plan](/docs/authentication#keys-and-your-workspaces-plan).
 
 #### Plan restrictions
 
