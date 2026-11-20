@@ -15,7 +15,7 @@ API keys are the recommended authentication method for server-side applications.
 Authorization: Bearer wgt_usr_your_api_key_here
 ```
 
-Every key works in one workspace, the one it was made for. The dashboard makes the key in the workspace you have open, and `POST /users/{id}/keys` takes an optional `organizationId` (a workspace you belong to; left out, it is the workspace you are signed in to). The key does not follow the workspace you have open afterwards, and `GET /tokens/validate` says which workspace it works in (`data.workspace`: its `id` and `name`, or `null` for a key made before keys were tied to a workspace, which works in your default workspace).
+Every key works in one workspace, the one it was made for. The dashboard's **API keys** page (the owner of a workspace opens it) makes a workspace key, `wdg_org_…`, in the workspace you have open, and `POST /users/{id}/keys` makes a person key, `wgt_usr_…`, and takes an optional `organizationId` (a workspace you belong to; left out, it is the workspace you are signed in to). The key does not follow the workspace you have open afterwards, and `GET /tokens/validate` says which workspace it works in (`data.workspace`: its `id` and `name`, or `null` for a key made before keys were tied to a workspace, which works in your default workspace).
 
 ### Editor Sessions (For Customer Browsers)
 
@@ -53,7 +53,7 @@ Each API endpoint specifies an `x-access-level` that determines which roles can 
 
 A key made without a limit has **full access**: it does everything its owner can, and so does every key made before limits existed. A key you put on a build server, or in a partner's backend, needs only the part of the API it uses. Limit it, and a leaked key can do no more than that.
 
-You choose the limit when you make the key, in the dashboard (Workspace settings → API keys) or with `POST /users/{id}/keys` (see [Security](/resources/security#making-rotating-and-deleting-keys)). Send a `preset` or a list of `scopes`, never both:
+You choose the limit when you make a person key, with `POST /users/{id}/keys` (see [Security](/resources/security#making-rotating-and-deleting-keys)). A workspace key made on the dashboard's API keys page has full access and cannot be limited. Send a `preset` or a list of `scopes`, never both:
 
 | Preset | What the key may do |
 |--------|---------------------|
