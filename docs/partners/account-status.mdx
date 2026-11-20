@@ -97,7 +97,7 @@ And for an unpaid invoice:
 
 `details.partnerStatus` is `suspended`, `payment_arrears` or `inactive`. `details.reason` is the reason recorded with a pause, and `details.overdueSince` is the due date of the oldest unpaid invoice. Branch on `error.code` (`PARTNER_SUSPENDED`, `PARTNER_PAYMENT_ARREARS` or `PARTNER_INACTIVE`), not on the message.
 
-**What stays open to you.** Reading everything, so that you can see what is stopped and why. And what you need to get going again: [billing, invoices, buying credits and your credits](/docs/partners/credits-billing), your contract, your [storage](/docs/partners/storage), your [notifications](/docs/partners/notifications), your API keys (a leaked key can still be revoked) and signing in and out. A generation that is already running can still be stopped, since stopping only saves credits.
+**What stays open to you.** Reading everything, so that you can see what is stopped and why. And what you need to get going again: [billing, invoices, buying credits and your credits](/docs/partners/credits-billing), your contract, your [storage](/docs/partners/storage), your [notifications](/docs/partners/notifications), your API keys, those of your home workspace included (a leaked key can still be revoked) and signing in and out. A generation that is already running can still be stopped, since stopping only saves credits.
 
 **For your customers.** Their [editor sessions](/docs/partners/editor-sessions) stop working at the next call, with `403` and the same code, and no new session can be made. What the customer reads is only:
 

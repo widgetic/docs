@@ -24,7 +24,8 @@ Self-serve developers typically use:
 | Key Prefix | Description |
 |------------|-------------|
 | `wdg_org_` | Workspace API key: made in the dashboard, acts as the workspace, in that workspace only |
-| `wgt_usr_` | Personal API key from before workspace keys: acts as one person, in the workspace it was made for. None is made now |
+
+A personal key (`wgt_usr_`) from before workspace keys is no longer accepted: a request with one is refused with `401`. Make a workspace key instead.
 
 ## Core Resources
 

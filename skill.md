@@ -63,7 +63,7 @@ With the command line the same steps are `widgetic mcp create-widget --title "La
 
 ## Call the REST API from code
 
-- The base URL is `https://api.widgetic.com/v1`. Send `Authorization: Bearer <API key>`. The prefix of a key says what it is: `wdg_org_` a workspace key (what you make in the dashboard, and works in that workspace only), `wgt_prt_` a partner key (managed users, credits, storage), `wgt_usr_` a personal key from before workspace keys.
+- The base URL is `https://api.widgetic.com/v1`. Send `Authorization: Bearer <API key>`. The prefix of a key says what it is: `wdg_org_` a workspace key (what you make in the dashboard, and works in that workspace only), `wgt_prt_` a partner key (managed users, credits, storage; a workspace key made in a partner's home workspace reaches the same). A personal key (`wgt_usr_`, from before workspace keys) is no longer accepted: it gets `401`, so make a workspace key.
 - A success is `{"success": true, "data": ...}`. An error is `{"success": false, "error": {"code": ..., "message": ...}}`.
 - A key that lacks a scope the call needs gets `403` with the code `API_KEY_SCOPE_MISSING` and `error.details.missingScopes`. The limits of a key cannot be changed, so make a new key with those scopes. The MCP server accepts only a key made with full access.
 - A call that creates something may need an `Idempotency-Key` header (the command line makes one for you). A `429` carries a `Retry-After` header: wait that long.

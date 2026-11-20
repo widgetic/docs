@@ -17,10 +17,10 @@ Authorization: Bearer wdg_org_your_api_key_here
 
 You make a key in the dashboard: open the workspace, then **Settings → API keys** (the owner of a workspace opens that page). A key you make there is a **workspace key**. It starts with `wdg_org_`, acts as that workspace and works in it only, and it does not follow the workspace you have open afterwards, so make one key for each workspace you work in. `GET /tokens/validate` says which workspace a key works in (`data.workspace`: its `id` and `name`).
 
-A key can be limited to what its application needs, a build server for example: see [Limit what a key can do](#limit-what-a-key-can-do). Only a person signed in on widgetic.com can make a key (a key cannot make another key), and the workspace needs a paid plan to hold keys.
+A key can be limited to what its application needs, a build server for example: see [Limit what a key can do](#limit-what-a-key-can-do). Only a person signed in on widgetic.com can make a key (a key cannot make another key), and the workspace needs a paid plan to hold keys (the home workspace of a [partner](/docs/partners/overview#partner-api-key) needs none: it pays by the invoices of its contract).
 
 <Note>
-  A key that starts with `wgt_usr_` is a personal key from before workspace keys. It keeps working, in the workspace it was made for, until you delete it or it expires, and no new ones are made. Make a workspace key to replace it.
+  A key that starts with `wgt_usr_` is a personal key from before workspace keys. Personal keys are no longer accepted: a request that carries one is refused with `401`, and the message says to make a workspace key. Make a workspace key, send that instead, and delete the old one.
 </Note>
 
 ### Editor Sessions (For Customer Browsers)
@@ -37,9 +37,9 @@ Your API key prefix determines your role and what endpoints you can access:
 
 | Key Prefix | Role | Access Level | Use Case |
 |------------|------|--------------|----------|
-| `wdg_org_` | Workspace | `user` | The key of a workspace, made in the dashboard: it acts as that workspace, in that workspace only |
-| `wgt_usr_` | User | `user` | A personal key from before workspace keys: it acts as that person, in the workspace it was made for, until it is deleted or expires |
-| `wgt_prt_` | Partner | `partner` | White-label integrations |
+| `wdg_org_` | Workspace | `user`; `partner` in the home workspace of a partner | The key of a workspace, made in the dashboard: it acts as that workspace, in that workspace only. In a partner's home workspace it acts as the partner |
+| `wgt_usr_` | None (retired) | None | A personal key from before workspace keys. It is no longer accepted: every request that carries one is refused with `401`. Make a workspace key instead |
+| `wgt_prt_` | Partner | `partner` | White-label integrations: the key of the account that administers a partner |
 | `wgt_adm_` | Admin | `admin` | Internal administration |
 
 ## Understanding Access Levels
@@ -83,6 +83,7 @@ When a preset is not enough, name the scopes you want:
 
 - **Writing includes reading.** Naming `content:write` gives `content:read` too, and the same goes for the other `write` scopes. A list that names every scope makes a key with full access.
 - **Scopes only narrow.** A limited key still needs what its owner needs: the role, the plan and, for a [partner](/docs/partners/account-status), an account in force.
+- **The partner scopes (`partner:read`, `partner:write`) are for a partner's home workspace.** Only there does a workspace key act as the partner, so only there does the dialog offer them; in any other workspace they would open nothing.
 - **The limit is fixed when the key is made.** To widen it, make a new key and delete the old one.
 - **A limited key cannot make itself a bigger one.** Making, changing and deleting keys, exchanging tokens, signing in and the administration routes need full access.
 - **Changing the Brand Kit needs full access**, because a change reshapes every widget the account makes from then on. A key with `account:read` may look at it. See [Brand Kit](/docs/partners/brand-kit).
@@ -145,8 +146,8 @@ Response:
   <Accordion title="Use Appropriate Key Types">
     - Make one workspace key (`wdg_org_`) for each workspace you work in, and one for each application
     - Limit a key to what its application needs: Read only for a report, Content for a build server
-    - Replace a personal `wgt_usr_` key from before workspace keys with a workspace key, then delete it
-    - Use `wgt_prt_` keys for partner integrations
+    - A personal `wgt_usr_` key from before workspace keys no longer works: make a workspace key, switch your servers over to it, then delete the old one
+    - For a partner integration, make the key in your partner's home workspace (`wdg_org_`): it acts as your partner. A `wgt_prt_` key does the same
   </Accordion>
   
   <Accordion title="Handle Token Expiration">
