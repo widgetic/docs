@@ -84,6 +84,7 @@ The answer is `201`:
     "sessionId": "9c1d6b7e-5d54-4a0e-8d52-0f3e3c0a6a11",
     "managedUserId": "3f0c9a52-8e0a-4a52-9d52-5d8a1f1b7c10",
     "managedUserExternalId": "your-platform-user-123",
+    "workspaceId": "7d1f0b6e-2c44-4a37-b0a1-6f5d1e9c2a58",
     "surfaces": ["creator", "editor", "files"],
     "allowedOrigin": "https://app.example.com",
     "maxCredits": null,
@@ -95,6 +96,7 @@ The answer is `201`:
 
 - **The token is shown once.** It starts with `wgt_ses_`, and the answer is sent with `Cache-Control: no-store`. Widgetic keeps only a fingerprint of it, so a lost token cannot be read back: make another session.
 - **`sessionId` is not a credential.** It is only the handle you use to [end the session](#end-a-session).
+- **`workspaceId` is your partner workspace.** Your customers have no workspace of their own: everything they make is filed in the workspace of your partner account, and this is its id. It is the same in every session of your account. The [Workflows screen](/docs/partners/workflows#mount-the-screen) takes it as its `workspaceId`, and a call of your own to a workspace address names it (`/v1/workspaces/{workspaceId}/workflows`). It is `null` only for an account that administers no partner.
 - Each call makes a new session. It does not take an `Idempotency-Key`, because a retry cannot be given the token back.
 - A key that is limited to some scopes needs all of `partner:write`, `content:write` and `generate` to make a session, and is refused with `403` `API_KEY_SCOPE_MISSING` without them (see [Limit what a key can do](/docs/authentication#limit-what-a-key-can-do)). A key with full access needs nothing more.
 - A session is made only while your account is in force and your [storage](/docs/partners/storage) works. A paused account is refused with `403` `PARTNER_SUSPENDED`, and an account without a storage destination with `409` `PARTNER_STORAGE_REQUIRED` (see [Every session needs your own storage](#every-session-needs-your-own-storage)).

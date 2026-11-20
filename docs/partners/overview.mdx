@@ -154,7 +154,7 @@ All partner endpoints require a `wgt_prt_` API key. Key endpoints include:
 | `POST /managed-users/{id}/presets/{key}/copy` | Give a customer a copy of one of your presets |
 | `GET /partners/{id}/workflow-presets` | List the workflows you offer as starting points |
 | `PUT /partners/{id}/workflow-presets/{key}` | Offer one of your published workflows as a starting point, or replace the one with that key |
-| `POST /workspaces/personal/workflows/from-preset` | Start a workflow for a customer (named in a header) from one of your starting points |
+| `POST /workspaces/{workspaceId}/workflows/from-preset` | Start a workflow for a customer (named in a header) from one of your starting points |
 | `GET /partners/mine` | Find the partner you administer, its status and its platform domain |
 | `GET /partners/{id}/contract` | Read your contract |
 | `PUT /partners/{id}/storage` | Set the bucket your customers' files are kept in |

@@ -19,7 +19,7 @@ You can put the screen where workflows are built in your own page, for **one cus
     When the page that holds the screen opens, your server asks Widgetic for a session for the signed-in customer, with the `workflows` surface, and returns the token. See [Make a session](#make-a-session).
   </Step>
   <Step title="Your page mounts the screen">
-    The [UI SDK](/docs/partners/ui-components) draws it in your container, with `workspaceId: 'personal'` and a `getToken` that fetches the token from your server. See [Mount the screen](#mount-the-screen).
+    The [UI SDK](/docs/partners/ui-components) draws it in your container, with the id of your partner workspace as its `workspaceId` and a `getToken` that fetches the token from your server. See [Mount the screen](#mount-the-screen).
   </Step>
   <Step title="Your customer builds and publishes">
     They chain their own compositions, play a visitor through the draft with **Test run**, and publish. Every call the screen makes carries the token, so it reaches that customer's workflows and compositions and nobody else's. See [What belongs to whom](#what-belongs-to-whom).
@@ -55,9 +55,12 @@ Give the container a height: the screen fills it and scrolls inside it.
 ```javascript
 import { mountModule } from '@widgetic/ui-sdk';
 
+// The workspaceId that every editor session of your account answers with (the same one for all your customers).
+const PARTNER_WORKSPACE_ID = '7d1f0b6e-2c44-4a37-b0a1-6f5d1e9c2a58';
+
 const workflows = await mountModule('workflows', {
   container: document.querySelector('#workflows'),
-  workspaceId: 'personal', // always 'personal' with an editor session
+  workspaceId: PARTNER_WORKSPACE_ID,
   getToken: async () => (await fetch('/widgetic-session', { method: 'POST' })).json(), // { token, expiresAt }
   workflowId: workflowOfTheAddress(), // optional: the workflow to open first. Leave it out for the list
   on: {
@@ -71,7 +74,7 @@ const workflows = await mountModule('workflows', {
 await workflows.unmount();
 ```
 
-- **`workspaceId` is `'personal'`.** An editor session can make only the workflow calls of the workspace called `personal`, which is where the customer's workflows are. Another `workspaceId`, such as the id of an organization, is refused with `403` and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`. The screen then says that something went wrong, with a **Try again** button, and does not show an empty list in its place.
+- **`workspaceId` is the id of your partner workspace.** It is where your customers' workflows are filed, and it is the `workspaceId` that the answer of every [editor session](/docs/partners/editor-sessions#make-a-session) carries, the same for all your customers. Keep it in your page's configuration, or have your endpoint send it with the token. An editor session can make only the workflow calls of that workspace: the id of any other workspace is refused with `404` and `RESOURCE_WORKSPACE_NOT_FOUND`, and a word where the id belongs (`personal`, say, which is not a workspace) with `403` and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`. The screen then says that something went wrong, with a **Try again** button, and does not show an empty list in its place.
 - **`getToken` gives the session's token.** It is called when the screen starts and again shortly before the token runs out, as in [Tokens](/docs/partners/ui-components#tokens). When the session ends, the screen tells your page with an `error` event (`SESSION_ENDED`).
 - **The options, the events and the methods are the ones in [UI Components](/docs/partners/ui-components#workflows).** `theme`, `locale` and `messages` work as for the other pieces.
 
@@ -95,7 +98,7 @@ A customer can delete a workflow in **any state**: a draft, a live workflow, a p
 
 A page whose embed still names the deleted workflow does not break. It shows the embed's first composition, as it does for a paused workflow. Your webhook is told (`workflow.deleted`, see [What you are told](#what-you-are-told)).
 
-Your server deletes with `DELETE /workspaces/personal/workflows/{workflowId}` and the customer's header (see [From your server](#from-your-server)). A workflow that is already gone answers `404` with `RESOURCE_WORKFLOW_NOT_FOUND`.
+Your server deletes with `DELETE /workspaces/{workspaceId}/workflows/{workflowId}` and the customer's header (see [From your server](#from-your-server)). A workflow that is already gone answers `404` with `RESOURCE_WORKFLOW_NOT_FOUND`.
 
 ## What belongs to whom
 
@@ -239,12 +242,12 @@ Your server makes the same two calls, with your key and the customer's header (s
 
 ```bash
 # What this customer is offered
-curl -sS "https://api.widgetic.com/v1/workspaces/personal/workflows/presets" \
+curl -sS "https://api.widgetic.com/v1/workspaces/$WIDGETIC_PARTNER_WORKSPACE_ID/workflows/presets" \
   -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
   -H "X-Managed-User-Id: $MANAGED_USER_ID"
 
 # A workflow of the customer's own, started from one of yours
-curl -sS -X POST "https://api.widgetic.com/v1/workspaces/personal/workflows/from-preset" \
+curl -sS -X POST "https://api.widgetic.com/v1/workspaces/$WIDGETIC_PARTNER_WORKSPACE_ID/workflows/from-preset" \
   -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
   -H "X-Managed-User-Id: $MANAGED_USER_ID" \
   -H "Idempotency-Key: $(uuidgen)" \
@@ -314,16 +317,16 @@ async function showMyEmbedCodeDialog(workflowId) {
 
 ## From your server
 
-Everything the screen does, your server can do with your API key, for one customer at a time: the same calls, on the same addresses, with the customer named in a header. Send `X-Managed-User-Id` (Widgetic's id for the managed user) or `X-Managed-User-External-Id` (your own `external_id`), one of the two, and the word `personal` as the workspace.
+Everything the screen does, your server can do with your API key, for one customer at a time: the same calls, on the same addresses, with the customer named in a header. Send `X-Managed-User-Id` (Widgetic's id for the managed user) or `X-Managed-User-External-Id` (your own `external_id`), one of the two, and the id of your partner workspace as the workspace (`$WIDGETIC_PARTNER_WORKSPACE_ID` below). There is no `personal` workspace: everything your customers make is filed in your partner workspace, and its id is the `workspaceId` that the answer of an [editor session](/docs/partners/editor-sessions) carries.
 
 ```bash
 # The customer's workflows
-curl -sS "https://api.widgetic.com/v1/workspaces/personal/workflows" \
+curl -sS "https://api.widgetic.com/v1/workspaces/$WIDGETIC_PARTNER_WORKSPACE_ID/workflows" \
   -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
   -H "X-Managed-User-Id: $MANAGED_USER_ID"
 
 # A new workflow for the customer, started from one of their compositions
-curl -sS -X POST "https://api.widgetic.com/v1/workspaces/personal/workflows" \
+curl -sS -X POST "https://api.widgetic.com/v1/workspaces/$WIDGETIC_PARTNER_WORKSPACE_ID/workflows" \
   -H "Authorization: Bearer $WIDGETIC_PARTNER_KEY" \
   -H "X-Managed-User-Id: $MANAGED_USER_ID" \
   -H "Idempotency-Key: $(uuidgen)" \
@@ -337,7 +340,7 @@ Your key reaches no more through the header than the screen does through a sessi
 
 - **The customer is the one in the header, and nothing else.** A body or a query that names a customer, an organization or another owner changes nothing: the workflow is filed under the customer in the header, for good.
 - **The customer's workflows only.** A workflow of another customer, one you made without a header, one of another account and one that does not exist all answer `404` with `RESOURCE_WORKFLOW_NOT_FOUND`, so you cannot tell them apart. A workflow chains the compositions filed under that customer only: another composition answers `404` with `RESOURCE_COMPOSITION_NOT_FOUND`, and a draft that holds one cannot be published.
-- **The workspace is `personal`.** Another workspace, such as the id of an organization, answers `403` with `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`, as does any call that does not take the header.
+- **The workspace is your partner workspace.** The id of another workspace answers `404` with `RESOURCE_WORKSPACE_NOT_FOUND`, and a word where the id belongs (`personal`, say) answers `403` with `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`, as does any call that does not take the header.
 - **The customer must be yours.** An id that is not one of your managed users, or is another partner's, answers `404` with `MANAGED_USER_NOT_FOUND`. An empty, repeated or malformed header is `400` with `MANAGED_USER_SCOPE_INVALID`, and only an API key may send the header (`403` with `MANAGED_USER_SCOPE_NOT_ALLOWED`).
 - **A customer you switched off** keeps its workflows, and you can still read and change them, but you cannot make, copy or start one for it: `409` with `MANAGED_USER_INACTIVE`.
 - **The limits are the same.** Up to 50 workflows for each customer, archived ones included, and no credits (see [Limits and cost](#limits-and-cost)).
@@ -365,9 +368,10 @@ The screen handles these for you and tells your page (`error` event). The ones o
 
 | Status | Code | Meaning | What to do |
 |--------|------|---------|------------|
-| 403 | `EDITOR_SESSION_ROUTE_NOT_ALLOWED` | The call is not one a session may make: a `workspaceId` that is not `personal`, or an id that is not an id | Mount the screen with `workspaceId: 'personal'` |
+| 403 | `EDITOR_SESSION_ROUTE_NOT_ALLOWED` | The call is not one a session may make: a `workspaceId` that is not an id (`personal`, for one), or a path that is not one of the workflow calls | Mount the screen with the id of your partner workspace, the `workspaceId` an editor session answers with |
 | 403 | `EDITOR_SESSION_FIELD_NOT_ALLOWED` | The request sets a field a session may not set | Not caused by the screen. Remove the field when you call the API yourself |
-| 403 | `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE` | Your key named a customer on a call that is not a workflow call of the workspace `personal` | Use `personal`, or leave the header out for a call that is not about one customer |
+| 403 | `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE` | Your key named a customer on a call that is not a workflow call of your partner workspace (or put a word where the workspace id belongs) | Use the id of your partner workspace, or leave the header out for a call that is not about one customer |
+| 404 | `RESOURCE_WORKSPACE_NOT_FOUND` | The workspace id in the path is not your partner workspace (the one an editor session answers with) | Use your partner workspace's id |
 | 404 | `RESOURCE_WORKFLOW_NOT_FOUND` | The workflow is not this customer's, or does not exist | Check which customer the session was made for |
 | 404 | `RESOURCE_COMPOSITION_NOT_FOUND` | A workflow was started from a composition that is not this customer's | File the composition under the customer (see [Filing Content Under a Managed User](/docs/partners/managed-users#filing-content-under-a-managed-user)) |
 | 404 | `RESOURCE_WORKFLOW_PRESET_NOT_FOUND` | A start named a starting point that is not offered to this customer, or that can no longer be started | Read the list again and start one of those (see [Start one](#start-one)) |
