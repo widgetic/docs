@@ -12,10 +12,16 @@ The Widgetic API uses Bearer token authentication. All requests must include an 
 API keys are the recommended authentication method for server-side applications. They provide persistent access without expiration.
 
 ```bash
-Authorization: Bearer wgt_usr_your_api_key_here
+Authorization: Bearer wdg_org_your_api_key_here
 ```
 
-Every key works in one workspace, the one it was made for. The dashboard's **API keys** page (the owner of a workspace opens it) makes a workspace key, `wdg_org_…`, in the workspace you have open, and `POST /users/{id}/keys` makes a person key, `wgt_usr_…`, and takes an optional `organizationId` (a workspace you belong to; left out, it is the workspace you are signed in to). The key does not follow the workspace you have open afterwards, and `GET /tokens/validate` says which workspace it works in (`data.workspace`: its `id` and `name`, or `null` for a key made before keys were tied to a workspace, which works in your default workspace).
+You make a key in the dashboard: open the workspace, then **Settings → API keys** (the owner of a workspace opens that page). A key you make there is a **workspace key**. It starts with `wdg_org_`, acts as that workspace and works in it only, and it does not follow the workspace you have open afterwards, so make one key for each workspace you work in. `GET /tokens/validate` says which workspace a key works in (`data.workspace`: its `id` and `name`).
+
+A key can be limited to what its application needs, a build server for example: see [Limit what a key can do](#limit-what-a-key-can-do). Only a person signed in on widgetic.com can make a key (a key cannot make another key), and the workspace needs a paid plan to hold keys.
+
+<Note>
+  A key that starts with `wgt_usr_` is a personal key from before workspace keys. It keeps working, in the workspace it was made for, until you delete it or it expires, and no new ones are made. Make a workspace key to replace it.
+</Note>
 
 ### Editor Sessions (For Customer Browsers)
 
@@ -31,8 +37,8 @@ Your API key prefix determines your role and what endpoints you can access:
 
 | Key Prefix | Role | Access Level | Use Case |
 |------------|------|--------------|----------|
-| `wgt_usr_` | User | `user` | A person's key: it acts as that person, in the workspace it was made for |
-| `wdg_org_` | Organization | `user` | A workspace's own key, in that workspace |
+| `wdg_org_` | Workspace | `user` | The key of a workspace, made in the dashboard: it acts as that workspace, in that workspace only |
+| `wgt_usr_` | User | `user` | A personal key from before workspace keys: it acts as that person, in the workspace it was made for, until it is deleted or expires |
 | `wgt_prt_` | Partner | `partner` | White-label integrations |
 | `wgt_adm_` | Admin | `admin` | Internal administration |
 
@@ -53,13 +59,13 @@ Each API endpoint specifies an `x-access-level` that determines which roles can 
 
 A key made without a limit has **full access**: it does everything its owner can, and so does every key made before limits existed. A key you put on a build server, or in a partner's backend, needs only the part of the API it uses. Limit it, and a leaked key can do no more than that.
 
-You choose the limit when you make a person key, with `POST /users/{id}/keys` (see [Security](/resources/security#making-rotating-and-deleting-keys)). A workspace key made on the dashboard's API keys page has full access and cannot be limited. Send a `preset` or a list of `scopes`, never both:
+You choose the limit when you make the key, in the dialog on **Settings → API keys**: Full access, Content, Read only or Custom, where you tick what the key may do. The names below are the ones the dialog shows. A partner account that makes its keys with `POST /users/{id}/keys` (see [Security](/resources/security#making-rotating-and-deleting-keys)) sends them as a `preset` or a list of `scopes`, never both:
 
 | Preset | What the key may do |
 |--------|---------------------|
-| `read_only` | Looks at everything the account holds and changes nothing. It holds `content:read`, `partner:read`, `billing:read` and `account:read`. |
+| `read_only` | Looks at everything its owner holds and changes nothing. It holds `content:read`, `partner:read`, `billing:read` and `account:read`. |
 | `content` | Builds and manages widgets and compositions, and runs the AI. It holds `content:read`, `content:write` and `generate`, and touches no billing, no people and no partners. |
-| `full_access` | Everything the account owner may do. A key made with neither a preset nor scopes is this. |
+| `full_access` | Everything its owner may do. A key made with neither a preset nor scopes is this. |
 
 When a preset is not enough, name the scopes you want:
 
@@ -137,9 +143,9 @@ Response:
   </Accordion>
   
   <Accordion title="Use Appropriate Key Types">
-    - Use `wgt_usr_` keys for development: they act as you, in the workspace they were made for
-    - Use `wdg_org_` keys for applications of a whole workspace
-    - Make one key for each workspace you work in
+    - Make one workspace key (`wdg_org_`) for each workspace you work in, and one for each application
+    - Limit a key to what its application needs: Read only for a report, Content for a build server
+    - Replace a personal `wgt_usr_` key from before workspace keys with a workspace key, then delete it
     - Use `wgt_prt_` keys for partner integrations
   </Accordion>
   

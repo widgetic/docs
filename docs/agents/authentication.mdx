@@ -57,10 +57,10 @@ Each tool needs one of the first four; the [tools reference](/docs/agents/tools)
 Open the workspace you want the key for, create a key under **Settings** > **API Keys** in your [Widgetic dashboard](https://app.widgetic.com), then send it on every request. The key works in that workspace and in no other, whichever workspace you have open afterwards; a person with several workspaces makes a key in each of them.
 
 ```bash
-Authorization: Bearer wgt_usr_your_api_key_here
+Authorization: Bearer wdg_org_your_api_key_here
 ```
 
-User keys (`wgt_usr_`) and organization keys (`wdg_org_`) work, as long as the key was made with full access. You can [limit a key](/docs/authentication#limit-what-a-key-can-do) to some of what your account may do (Read only, Content or Custom), and the Widgetic MCP server refuses a key limited that way, because it hands an assistant every tool your account has. A key that works carries all four permissions, and there is no way to narrow it, so prefer signing in with Widgetic wherever the client supports it. Keep keys out of shared files and public repositories; see [Authentication](/docs/authentication) for key handling in general.
+A workspace key (`wdg_org_`) works, as long as it was made with full access, and so does a personal key (`wgt_usr_`) from before workspace keys. You can [limit a key](/docs/authentication#limit-what-a-key-can-do) to some of what your workspace may do (Read only, Content or Custom), and the Widgetic MCP server refuses a key limited that way, because it hands an assistant every tool your workspace has. A workspace key acts as the workspace's owner: the widgets it makes, and the credits it spends, are theirs, in that workspace. A key that works carries all four permissions, and there is no way to narrow it, so prefer signing in with Widgetic wherever the client supports it. Keep keys out of shared files and public repositories; see [Authentication](/docs/authentication) for key handling in general.
 
 ## Revoking access
 

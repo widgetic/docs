@@ -27,28 +27,34 @@ This guide covers security best practices when integrating with the Widgetic API
 
 | Prefix | Security Level | Use Case |
 |--------|----------------|----------|
-| `wgt_usr_` | User | Server-side use as one person, in the workspace the key was made for |
-| `wdg_org_` | Organization | Shared server-side use of a workspace |
+| `wdg_org_` | Workspace | Server-side use of a workspace: it acts as the workspace, in that workspace only. This is the key you make in the dashboard |
+| `wgt_usr_` | User | A personal key from before workspace keys: it acts as one person, in the workspace it was made for, and keeps working until it is deleted or expires. No new ones are made |
 | `wgt_prt_` | Partner | White-label integrations |
 
 ### Making, Rotating and Deleting Keys
 
-You make and manage your own keys. In the dashboard, open Workspace settings → API keys. With the API, use the key calls below. `{id}` is your own account id, which `GET /tokens/validate` returns as `data.userId`. Your plan must include API access.
+You make and manage your keys in the dashboard: open the workspace, then Settings → API keys (the owner of a workspace opens it). There you make a key (a name, an optional expiry and what the key may do), rename it, switch it off, delete it and read what it was used for. The workspace's plan must include API access. A key works in the workspace it was made for and in no other, whichever workspace you have open afterwards.
 
-- `GET /users/{id}/keys` lists your keys, with what each is limited to (`preset` and `scopes`).
-- `POST /users/{id}/keys` makes one (send an `Idempotency-Key`). A key works in one workspace, the one it was made for: send `organizationId` to name a workspace you belong to, or leave it out for the workspace you are signed in to. **Only a person signed in on widgetic.com can make a key**: a request made with an API key or an SDK token is refused with `403`, so a leaked key cannot make a second one that outlives its revocation. The dashboard's API keys page makes a workspace key (`wdg_org_…`) in the workspace you have open, with full access. The secret is in the answer once, in `key`, and cannot be shown again. Send a `preset` (`read_only`, `content` or `full_access`) or a list of `scopes` to limit what the key can do, and neither for a key with full access. See [Limit what a key can do](/docs/authentication#limit-what-a-key-can-do).
-- `PUT /users/{id}/keys/{keyId}` renames a key or switches it off with `isActive: false`. Switching a key back on needs a person signed in too. `DELETE /users/{id}/keys/{keyId}` deletes it.
+- **Only a person signed in on widgetic.com can make a key.** A request made with an API key or an SDK token is refused with `403`, so a leaked key cannot make a second one that outlives its revocation. Switching a key back on needs a person signed in too.
+- The secret is shown once, when the key is made, and cannot be shown again.
+- Choose what the key may do when you make it: Full access, Content, Read only or Custom. See [Limit what a key can do](/docs/authentication#limit-what-a-key-can-do).
+
+A partner account, and the personal keys a customer made before workspace keys, can also be managed with the API. `{id}` is the account's own id, which `GET /tokens/validate` returns as `data.userId`.
+
+- `GET /users/{id}/keys` lists the keys of the account, with what each is limited to (`preset` and `scopes`).
+- `POST /users/{id}/keys` makes a key for a partner account (send an `Idempotency-Key`). The secret is in the answer once, in `key`, and cannot be shown again. Send a `preset` (`read_only`, `content` or `full_access`) or a list of `scopes` to limit what the key can do, and neither for a key with full access. A customer's account is refused with `403` and the code `PERSONAL_API_KEY_RETIRED`: make a workspace key in the dashboard instead.
+- `PUT /users/{id}/keys/{keyId}` renames a key or switches it off with `isActive: false`. `DELETE /users/{id}/keys/{keyId}` deletes it.
 - `GET /users/{id}/api-keys/{keyId}/logs` shows what a key was used for.
 
 To rotate a key, make the new one in the dashboard, switch your servers over, then delete the old one. A key that is switched off or deleted is refused at once by the server that took the request, and within a minute by the others. The limit of a key cannot be changed once it is made: to widen or narrow it, rotate the key the same way.
 
 <Warning>
-  A key cannot make another key, so a leaked key cannot be used to get back in after you revoke it. If a key leaks, delete it (in the dashboard, or with another key) and make a new one in the dashboard.
+  A key cannot make another key, so a leaked key cannot be used to get back in after you revoke it. If a key leaks, delete it in the dashboard and make a new one there.
 </Warning>
 
 ## Client-Side Authentication
 
-A browser must never hold an API key (`wgt_usr_`, `wdg_org_`, or `wgt_prt_`). Keep your API key on your server and have your backend make API calls on behalf of your application, or—when mounting Widgetic's editors in your page for one of your customers—mint a short-lived [editor session](/docs/partners/editor-sessions) on your server:
+A browser must never hold an API key (`wdg_org_`, `wgt_prt_`, or a personal `wgt_usr_`). Keep your API key on your server and have your backend make API calls on behalf of your application, or—when mounting Widgetic's editors in your page for one of your customers—mint a short-lived [editor session](/docs/partners/editor-sessions) on your server:
 
 ```typescript
 import { Configuration, ManagedUsersApi } from '@widgetic/api-sdk-ts';
@@ -73,7 +79,7 @@ app.post('/api/widgetic-editor-session', async (req, res) => {
 ```
 
 <Warning>
-  Never send a partner key (`wgt_prt_`) or user key (`wgt_usr_`) to a browser: it carries the access of your whole account. Use an [editor session](/docs/partners/editor-sessions) instead—a session reaches only that customer's content, only the calls the editors need, and can be bound to your page origin and revoked at any time.
+  Never send an API key (`wdg_org_`, `wgt_prt_` or `wgt_usr_`) to a browser: it carries the access of your whole workspace or account. Use an [editor session](/docs/partners/editor-sessions) instead—a session reaches only that customer's content, only the calls the editors need, and can be bound to your page origin and revoked at any time.
 </Warning>
 
 ## Domain Validation
