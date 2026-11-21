@@ -44,8 +44,8 @@ Create Widget
 | `--is-draft` | switch |  | Whether the widget starts as a draft. A widget created without this is a draft. (default: true) --no-is-draft turns it off. |
 | `--canvas-id <uuid>` | uuid |  | Put the widget on this existing canvas instead of a new one. You must own the canvas. |
 | `--project-id <uuid>` | uuid |  | Project to file the widget in. You must be able to edit the project. |
-| `--organization-id <uuid>` | uuid |  | Organization the widget belongs to. You must be a member who may create widgets there. |
-| `--workspace-type <text>` | one of `personal`, `organization` |  | Whether the widget lives in your personal workspace or in an organization's. |
+| `--organization-id <uuid>` | uuid |  | The workspace the widget belongs to. You must be a member who may create widgets there. Leave it out and the widget goes where its project is, or, when it names no project, in the workspace your key, your connection or y… |
+| `--workspace-type <text>` | one of `organization` |  | Always `organization`: every widget lives in a workspace, and there is no personal workspace any more. May be left out. |
 | `--managed-user-id <uuid>` | uuid |  | Make the widget for one of your managed users, by Widgetic's id for the user. Send this or `managedUserExternalId`, not both. The managed user must be yours and active. |
 | `--managed-user-external-id <text>` | text |  | The same, by your own identifier for the user, the `externalId` you gave when you created the managed user (answers show it as `externalId`). Send this or `managedUserId`, not both. |
 | `--data <json\|@file\|->` | JSON, `@path` or `-` |  | The whole request document as JSON, `@path` to a file that holds it, or `-` for standard input. The flags above override its keys. |

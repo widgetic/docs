@@ -109,6 +109,7 @@
               "docs/cli/commands/api-invoices",
               "docs/cli/commands/api-managed-users",
               "docs/cli/commands/api-operations",
+              "docs/cli/commands/api-organizations",
               "docs/cli/commands/api-partners",
               "docs/cli/commands/api-tokens",
               "docs/cli/commands/api-uploads",

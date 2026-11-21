@@ -17,7 +17,7 @@ Archive a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -34,7 +34,7 @@ Create a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--idempotency-key <text>` | text |  | Names this one request, so a repeat of it is carried out once. The CLI makes a key when this is left out and sends the same one on every try; give your own (a UUID is ideal) to repeat the call by hand later. |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -55,7 +55,7 @@ Start a Workflow from a starting point
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--idempotency-key <text>` | text |  | Names this one request, so a repeat of it is carried out once. The CLI makes a key when this is left out and sends the same one on every try; give your own (a UUID is ideal) to repeat the call by hand later. |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -76,7 +76,7 @@ Delete a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -93,7 +93,7 @@ Discard the Unpublished Changes of a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -112,7 +112,7 @@ Duplicate a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--idempotency-key <text>` | text |  | Names this one request, so a repeat of it is carried out once. The CLI makes a key when this is left out and sends the same one on every try; give your own (a UUID is ideal) to repeat the call by hand later. |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -130,7 +130,7 @@ Get a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -147,7 +147,7 @@ Get what Visitors Did in a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--version-id <uuid>` | uuid |  | Count one version only |
 | `--from <text>` | text |  | First UTC day (YYYY-MM-DD) |
@@ -167,7 +167,7 @@ Get a Published Version of a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--version-id <uuid>` | uuid | yes | The id of a published version of the workflow |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -185,7 +185,7 @@ List the compositions a workflow can show, and what each can do
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--search <text>` | text |  | Text the composition's name must contain |
 | `--ids <text>` | text |  | Only these compositions (comma-separated ids, at most 50), those of them you may see. Ask for the compositions a workflow shows with this, so each is found whatever page it would be on. |
 | `--limit <int>` | integer |  | Page size (1-100, 50 when not given) |
@@ -205,7 +205,7 @@ List the starting points for a new Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 
@@ -221,7 +221,7 @@ List the Published Versions of a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -238,7 +238,7 @@ List the Workflows of a Workspace
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--search <text>` | text |  | Text the workflow's name must contain |
 | `--status <text>` | one of `draft`, `live`, `paused`, `archived`, `all` |  | One state to list (`draft`, `live`, `paused`, `archived`), or `all` for every state. Without it, the ones in use (draft, live and paused). |
 | `--sort <text>` | text |  | `<field>:<asc\|desc>` where field is createdAt, lastPublishedAt, runsCount or name (or just asc / desc for createdAt). Newest first when not given. |
@@ -259,7 +259,7 @@ Pause a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -276,7 +276,7 @@ Publish the Draft of a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--idempotency-key <text>` | text |  | Names this one request, so a repeat of it is carried out once. The CLI makes a key when this is left out and sends the same one on every try; give your own (a UUID is ideal) to repeat the call by hand later. |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -296,7 +296,7 @@ Restore a Version of a Workflow into the Draft
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--version-id <uuid>` | uuid | yes | The id of a published version of the workflow |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -316,7 +316,7 @@ Resume a Paused Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -333,7 +333,7 @@ Save the Draft of a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
@@ -354,7 +354,7 @@ Unarchive a Workflow
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
-| `--workspace-id <text>` | text | yes | The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your managed users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call… |
+| `--workspace-id <uuid>` | uuid | yes | The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in a workspace, and `personal` is refused with 400. |
 | `--workflow-id <uuid>` | uuid | yes | The workflow's id |
 | `--managed-user-id <uuid>` | uuid |  | The id Widgetic gave the managed user (`POST /managed-users`). Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
 | `--managed-user-external-id <text>` | text |  | Your own id for the managed user (its `externalId`), when you do not keep Widgetic's. Makes this call for one of your managed users, so that a mistake in your own code cannot reach another customer's work. |
