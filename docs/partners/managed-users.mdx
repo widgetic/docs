@@ -163,11 +163,11 @@ In `@widgetic/api-sdk-ts`, pass `xManagedUserId` or `xManagedUserExternalId` in 
 
 ### Scoping a Workflow Call to One Customer
 
-The same two headers work on the calls of [Workflows](/docs/partners/workflows#from-your-server), which are made in your own workspace, written as the word `personal`:
+The same two headers work on the calls of [Workflows](/docs/partners/workflows#from-your-server), which are made in your partner workspace, named by its id (`{workspaceId}` below: the `workspaceId` that the answer of an [editor session](/docs/partners/editor-sessions) carries):
 
-- `GET /workspaces/personal/workflows` lists only that customer's workflows, and `POST /workspaces/personal/workflows` files the new workflow under that customer, as does duplicating one of theirs.
-- Any call on `/workspaces/personal/workflows/{workflowId}` or its sub-routes (save, delete, publish, discard, versions, restore, pause, resume, archive, unarchive, counts) succeeds only if the workflow is filed under that customer. Another customer's workflow, one you made without a header, another account's and one that does not exist all return `404` `RESOURCE_WORKFLOW_NOT_FOUND`.
-- A workspace other than `personal`, such as the id of an organization, returns `403` `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`.
+- `GET /workspaces/{workspaceId}/workflows` lists only that customer's workflows, and `POST /workspaces/{workspaceId}/workflows` files the new workflow under that customer, as does duplicating one of theirs.
+- Any call on `/workspaces/{workspaceId}/workflows/{workflowId}` or its sub-routes (save, delete, publish, discard, versions, restore, pause, resume, archive, unarchive, counts) succeeds only if the workflow is filed under that customer. Another customer's workflow, one you made without a header, another account's and one that does not exist all return `404` `RESOURCE_WORKFLOW_NOT_FOUND`.
+- The id of any other workspace, a team you belong to included, returns `404` `RESOURCE_WORKSPACE_NOT_FOUND`. A word where the id belongs (`personal` named your own workspace before there was one workspace per plan, and names nothing now) returns `403` `MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`.
 - A customer you switched off keeps its workflows and you can still read and change them, but making or copying one for it returns `409` `MANAGED_USER_INACTIVE`.
 
 ## Preset Widgets

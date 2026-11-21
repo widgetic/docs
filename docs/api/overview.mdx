@@ -23,8 +23,9 @@ Self-serve developers typically use:
 
 | Key Prefix | Description |
 |------------|-------------|
-| `wgt_usr_` | Personal user API key |
-| `wdg_org_` | Organization API key (shared access) |
+| `wdg_org_` | Workspace API key: made in the dashboard, acts as the workspace, in that workspace only |
+
+A personal key (`wgt_usr_`) from before workspace keys is retired and deleted: a request with one is refused with `401`. Make a workspace key instead. A workspace key works only while its workspace is on a paid plan: see [Keys and your workspace's plan](/docs/authentication#keys-and-your-workspaces-plan).
 
 ## Core Resources
 
@@ -50,13 +51,13 @@ Here's how to fetch your widgets using the API:
 <CodeGroup>
 ```bash cURL
 curl -X GET "https://api.widgetic.com/v1/widgets" \
-  -H "Authorization: Bearer wgt_usr_your_api_key"
+  -H "Authorization: Bearer wdg_org_your_api_key"
 ```
 
 ```typescript TypeScript SDK
 import { WidgetsApi } from '@widgetic/api-sdk-ts';
 
-const widgets = new WidgetsApi('wgt_usr_your_api_key');
+const widgets = new WidgetsApi('wdg_org_your_api_key');
 
 const { data, meta } = await widgets.getWidgets({
   page: 1,

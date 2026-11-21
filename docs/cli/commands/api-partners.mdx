@@ -13,7 +13,7 @@ Confirm a partner's adapter address with the code that was emailed to it
 
 - Request: `POST /partners/{partnerId}/adapter-connections/{adapterId}/{credentialKey}/confirm`
 - Operation: `confirmPartnerAdapterConnection` (`widgetic api call confirmPartnerAdapterConnection` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -31,7 +31,7 @@ Buy extra credits for a partner
 
 - Request: `POST /partners/{partnerId}/credits/extra-invoice`
 - Operation: `createPartnerExtraCreditsInvoice` (`widgetic api call createPartnerExtraCreditsInvoice` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -48,7 +48,7 @@ Find the partner you administer
 
 - Request: `GET /partners/mine`
 - Operation: `getMyPartners` (`widgetic api call getMyPartners` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 This command takes only the flags every command takes.
 
@@ -60,7 +60,7 @@ See which adapter keys a partner has connected
 
 - Request: `GET /partners/{partnerId}/adapter-connections`
 - Operation: `getPartnerAdapterConnections` (`widgetic api call getPartnerAdapterConnections` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -74,7 +74,7 @@ What each managed user's widgets did
 
 - Request: `GET /partners/{partnerId}/analytics/managed-users`
 - Operation: `getPartnerAnalyticsByManagedUser` (`widgetic api call getPartnerAnalyticsByManagedUser` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -92,7 +92,7 @@ What was done with a partner's published widgets
 
 - Request: `GET /partners/{partnerId}/analytics/summary`
 - Operation: `getPartnerAnalyticsSummary` (`widgetic api call getPartnerAnalyticsSummary` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -110,7 +110,7 @@ What was done with a partner's widgets, day by day
 
 - Request: `GET /partners/{partnerId}/analytics/timeline`
 - Operation: `getPartnerAnalyticsTimeline` (`widgetic api call getPartnerAnalyticsTimeline` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -128,7 +128,7 @@ Which widgets were viewed the most
 
 - Request: `GET /partners/{partnerId}/analytics/top-widgets`
 - Operation: `getPartnerAnalyticsTopWidgets` (`widgetic api call getPartnerAnalyticsTopWidgets` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -147,7 +147,7 @@ Get comprehensive partner billing overview
 
 - Request: `GET /partners/{partnerId}/billing-overview`
 - Operation: `getPartnerBillingOverview` (`widgetic api call getPartnerBillingOverview` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -161,7 +161,7 @@ Get a partner's contract
 
 - Request: `GET /partners/{partnerId}/contract`
 - Operation: `getPartnerContract` (`widgetic api call getPartnerContract` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -175,7 +175,7 @@ Get partner credit balance
 
 - Request: `GET /partners/{partnerId}/credits/balance`
 - Operation: `getPartnerCreditBalance` (`widgetic api call getPartnerCreditBalance` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -189,7 +189,7 @@ Get partner credit transaction history
 
 - Request: `GET /partners/{partnerId}/credits/transactions`
 - Operation: `getPartnerCreditTransactions` (`widgetic api call getPartnerCreditTransactions` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -206,7 +206,7 @@ See the Neon database a partner keeps the data of its compositions in
 
 - Request: `GET /partners/{partnerId}/data-database`
 - Operation: `getPartnerDataDatabase` (`widgetic api call getPartnerDataDatabase` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -220,7 +220,7 @@ Read partner-wide design defaults
 
 - Request: `GET /partners/{partnerId}/design-defaults`
 - Operation: `getPartnerDesignDefaults` (`widgetic api call getPartnerDesignDefaults` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -234,7 +234,7 @@ See how the context of your embeds is signed
 
 - Request: `GET /partners/{partnerId}/entry-context-signing`
 - Operation: `getPartnerEntryContextSigning` (`widgetic api call getPartnerEntryContextSigning` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -248,7 +248,7 @@ Where your notifications go
 
 - Request: `GET /partners/{partnerId}/notifications/settings`
 - Operation: `getPartnerNotificationSettings` (`widgetic api call getPartnerNotificationSettings` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -262,7 +262,7 @@ Get where a partner's uploaded files are stored
 
 - Request: `GET /partners/{partnerId}/storage`
 - Operation: `getPartnerStorageDestination` (`widgetic api call getPartnerStorageDestination` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -276,7 +276,7 @@ What a partner's customers store
 
 - Request: `GET /partners/{partnerId}/storage/usage`
 - Operation: `getPartnerStorageUsage` (`widgetic api call getPartnerStorageUsage` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -292,7 +292,7 @@ How your notifications reached you
 
 - Request: `GET /partners/{partnerId}/notifications/deliveries`
 - Operation: `listPartnerNotificationDeliveries` (`widgetic api call listPartnerNotificationDeliveries` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -307,7 +307,7 @@ What your partner account was told
 
 - Request: `GET /partners/{partnerId}/notifications`
 - Operation: `listPartnerNotifications` (`widgetic api call listPartnerNotifications` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -323,7 +323,7 @@ List the widgets a partner offers as presets
 
 - Request: `GET /partners/{partnerId}/presets`
 - Operation: `listPartnerPresets` (`widgetic api call listPartnerPresets` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -337,7 +337,7 @@ List the workflows a partner offers as places to start
 
 - Request: `GET /partners/{partnerId}/workflow-presets`
 - Operation: `listPartnerWorkflowPresets` (`widgetic api call listPartnerWorkflowPresets` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -351,7 +351,7 @@ Remove an adapter key from a partner
 
 - Request: `DELETE /partners/{partnerId}/adapter-connections/{adapterId}/{credentialKey}`
 - Operation: `removePartnerAdapterConnection` (`widgetic api call removePartnerAdapterConnection` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 - It deletes something, so it asks first; without a terminal it needs `--yes`.
 
 | Flag | Takes | Required | What it does |
@@ -368,7 +368,7 @@ Stop keeping the data of a partner's compositions in its own database
 
 - Request: `DELETE /partners/{partnerId}/data-database`
 - Operation: `removePartnerDataDatabase` (`widgetic api call removePartnerDataDatabase` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 - It deletes something, so it asks first; without a terminal it needs `--yes`.
 
 | Flag | Takes | Required | What it does |
@@ -383,7 +383,7 @@ Take a widget off the partner's presets
 
 - Request: `DELETE /partners/{partnerId}/presets/{key}`
 - Operation: `removePartnerPreset` (`widgetic api call removePartnerPreset` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 - It deletes something, so it asks first; without a terminal it needs `--yes`.
 
 | Flag | Takes | Required | What it does |
@@ -399,7 +399,7 @@ Stop storing a partner's uploaded files in its own bucket
 
 - Request: `DELETE /partners/{partnerId}/storage`
 - Operation: `removePartnerStorageDestination` (`widgetic api call removePartnerStorageDestination` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 - It deletes something, so it asks first; without a terminal it needs `--yes`.
 
 | Flag | Takes | Required | What it does |
@@ -414,7 +414,7 @@ Stop offering a workflow as a place to start
 
 - Request: `DELETE /partners/{partnerId}/workflow-presets/{key}`
 - Operation: `removePartnerWorkflowPreset` (`widgetic api call removePartnerWorkflowPreset` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 - It deletes something, so it asks first; without a terminal it needs `--yes`.
 
 | Flag | Takes | Required | What it does |
@@ -430,7 +430,7 @@ Send a webhook delivery again
 
 - Request: `POST /partners/{partnerId}/notifications/deliveries/{deliveryId}/replay`
 - Operation: `replayPartnerNotificationDelivery` (`widgetic api call replayPartnerNotificationDelivery` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -446,7 +446,7 @@ Make a secret to sign the context of your embeds
 
 - Request: `POST /partners/{partnerId}/entry-context-signing/secret`
 - Operation: `rotatePartnerEntryContextSecret` (`widgetic api call rotatePartnerEntryContextSecret` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -461,7 +461,7 @@ Make a new secret for your webhook
 
 - Request: `POST /partners/{partnerId}/notifications/webhook-secret`
 - Operation: `rotatePartnerWebhookSecret` (`widgetic api call rotatePartnerWebhookSecret` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -476,7 +476,7 @@ Send a test event to your webhook
 
 - Request: `POST /partners/{partnerId}/notifications/test-event`
 - Operation: `sendPartnerNotificationTestEvent` (`widgetic api call sendPartnerNotificationTestEvent` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -493,7 +493,7 @@ Connect an adapter key to a partner
 
 - Request: `PUT /partners/{partnerId}/adapter-connections/{adapterId}/{credentialKey}`
 - Operation: `setPartnerAdapterConnection` (`widgetic api call setPartnerAdapterConnection` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -511,7 +511,7 @@ Keep the data of a partner's compositions in a Neon database of its own
 
 - Request: `PUT /partners/{partnerId}/data-database`
 - Operation: `setPartnerDataDatabase` (`widgetic api call setPartnerDataDatabase` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -527,7 +527,7 @@ Set or clear partner-wide design defaults
 
 - Request: `PUT /partners/{partnerId}/design-defaults`
 - Operation: `setPartnerDesignDefaults` (`widgetic api call setPartnerDesignDefaults` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -542,7 +542,7 @@ Make a widget a preset, or replace a preset
 
 - Request: `PUT /partners/{partnerId}/presets/{key}`
 - Operation: `setPartnerPreset` (`widgetic api call setPartnerPreset` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -562,7 +562,7 @@ Set where a partner's uploaded files are stored
 
 - Request: `PUT /partners/{partnerId}/storage`
 - Operation: `setPartnerStorageDestination` (`widgetic api call setPartnerStorageDestination` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -585,7 +585,7 @@ Offer a workflow as a place to start, or replace what a key offers
 
 - Request: `PUT /partners/{partnerId}/workflow-presets/{key}`
 - Operation: `setPartnerWorkflowPreset` (`widgetic api call setPartnerWorkflowPreset` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -605,7 +605,7 @@ Require a signed context, or stop requiring it
 
 - Request: `PUT /partners/{partnerId}/entry-context-signing`
 - Operation: `updatePartnerEntryContextSigning` (`widgetic api call updatePartnerEntryContextSigning` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -622,7 +622,7 @@ Choose where your notifications go
 
 - Request: `PUT /partners/{partnerId}/notifications/settings`
 - Operation: `updatePartnerNotificationSettings` (`widgetic api call updatePartnerNotificationSettings` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -642,7 +642,7 @@ Check that a partner's own database still works
 
 - Request: `POST /partners/{partnerId}/data-database/verify`
 - Operation: `verifyPartnerDataDatabase` (`widgetic api call verifyPartnerDataDatabase` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -656,7 +656,7 @@ Check that a partner's storage destination still works
 
 - Request: `POST /partners/{partnerId}/storage/verify`
 - Operation: `verifyPartnerStorageDestination` (`widgetic api call verifyPartnerStorageDestination` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |

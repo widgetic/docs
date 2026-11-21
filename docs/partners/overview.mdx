@@ -33,12 +33,17 @@ Partners build widgets for their own customers with the Widgetic API, and show t
 
 ## Partner API Key
 
-Partners use API keys with the `wgt_prt_` prefix. These keys have access to:
+A key acts as your partner in one of two ways:
+
+- **A workspace key (`wdg_org_`) made in your partner's home workspace.** Sign in, open that workspace and make the key under Settings → API keys. This is the key to make for a new integration.
+- **A partner key (`wgt_prt_`).** It belongs to the account that administers your partner record, and is made with `POST /users/{id}/keys` while signed in (see [Security](/resources/security#making-rotating-and-deleting-keys)) or by Widgetic's team.
+
+A workspace key made in any other workspace of yours acts as a customer there, so the partner endpoints refuse it. Either of the two has access to:
 
 - All user-level endpoints
 - Partner-specific endpoints (managed users, your contract, your invoices and your credits)
 
-A key belongs to the account that administers your partner record. Only a person who is signed in on widgetic.com can make a key: a request made with an API key is refused, so a leaked key cannot be used to make a second one. A key can still list, rename, switch off and delete keys.
+Only a person who is signed in on widgetic.com can make a key: a request made with an API key is refused, so a leaked key cannot be used to make a second one. A key can still list, rename, switch off and delete keys.
 
 A key does everything its account may do, unless you limit it when you make it. A server that only reads your invoices, for example, can hold a key that cannot create anything. See [Limit what a key can do](/docs/authentication#limit-what-a-key-can-do).
 
@@ -114,7 +119,7 @@ You pay Widgetic by invoice, and Widgetic issues each invoice by itself: one for
 
 <Steps>
   <Step title="Make Your Partner API Key">
-    Contact our sales team to become a partner, and tell them the website where you will integrate Widgetic, such as `acme.com`. Widgetic sets up your partner account and records that website as your platform domain, so it and all of its subdomains can always show your widgets (see [Security](/resources/security#your-platform-is-always-allowed)). The account stays inactive until it is activated (see below). You then sign in and make your own `wgt_prt_` API key under Workspace settings → API keys. The secret is shown once, so store it when you make it. See [Security](/resources/security) for rotating and deleting keys.
+    Contact our sales team to become a partner, and tell them the website where you will integrate Widgetic, such as `acme.com`. Widgetic sets up your partner account and records that website as your platform domain, so it and all of its subdomains can always show your widgets (see [Security](/resources/security#your-platform-is-always-allowed)). The account stays inactive until it is activated (see below). You then sign in, open your partner's home workspace and make your own API key under Settings → API keys: a workspace key (`wdg_org_`) made there acts as your partner. The secret is shown once, so store it when you make it. See [Security](/resources/security) for rotating and deleting keys.
   </Step>
   <Step title="Run the Four Connection Checks">
     With your partner id and key, run the [four checks](/docs/partners/connect) from your server before you write integration code.
@@ -141,7 +146,7 @@ You pay Widgetic by invoice, and Widgetic issues each invoice by itself: one for
 
 ## Partner Endpoints
 
-All partner endpoints require a `wgt_prt_` API key. Key endpoints include:
+All partner endpoints require a partner key (`wgt_prt_`) or a workspace key (`wdg_org_`) made in your partner's home workspace. Key endpoints include:
 
 | Endpoint | Description |
 |----------|-------------|
@@ -154,7 +159,7 @@ All partner endpoints require a `wgt_prt_` API key. Key endpoints include:
 | `POST /managed-users/{id}/presets/{key}/copy` | Give a customer a copy of one of your presets |
 | `GET /partners/{id}/workflow-presets` | List the workflows you offer as starting points |
 | `PUT /partners/{id}/workflow-presets/{key}` | Offer one of your published workflows as a starting point, or replace the one with that key |
-| `POST /workspaces/personal/workflows/from-preset` | Start a workflow for a customer (named in a header) from one of your starting points |
+| `POST /workspaces/{workspaceId}/workflows/from-preset` | Start a workflow for a customer (named in a header) from one of your starting points |
 | `GET /partners/mine` | Find the partner you administer, its status and its platform domain |
 | `GET /partners/{id}/contract` | Read your contract |
 | `PUT /partners/{id}/storage` | Set the bucket your customers' files are kept in |

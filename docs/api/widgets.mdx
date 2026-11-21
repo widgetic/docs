@@ -170,7 +170,7 @@ The response has status `201` and carries the new widget in `data` (shortened he
 | `canvasId` | No | Put the widget on this existing canvas instead of a new one. You must own the canvas |
 | `projectId` | No | Project to file the widget in. You must be able to edit the project |
 | `organizationId` | No | Organization the widget belongs to. You must be a member who may create widgets there |
-| `workspaceType` | No | `personal` or `organization` |
+| `workspaceType` | No | `organization`, the only kind of workspace there is. Leave it out. `personal` is refused with `400` |
 | `managedUserId` | No | File the widget under this managed user (Widgetic's id for the user). Send this or `managedUserExternalId`, not both. The managed user must be one of yours and switched on |
 | `managedUserExternalId` | No | The same, by the `external_id` you registered the managed user with |
 

@@ -31,7 +31,7 @@ Add it under the name `widgetic`, and keep the servers that are already configur
 - VS Code: add `"widgetic": { "type": "http", "url": "https://mcp.widgetic.com" }` under `servers` in `.vscode/mcp.json`.
 - Any other client that supports remote MCP servers over Streamable HTTP uses the same address.
 
-The user signs in to Widgetic in the browser and chooses **Allow**. You cannot do that for them: say what to click, then wait. Do not ask for an API key. When it is done, call `get_profile` and tell the user which account and workspace are connected. A plan without API access is refused with a message that says so: report it and stop.
+The user signs in to Widgetic in the browser and chooses **Allow**. You cannot do that for them: say what to click, then wait. Do not ask for an API key. When it is done, call `get_profile` and tell the user which workspace is connected (its name and plan). A workspace on a plan without API access, or one that has not paid yet, is refused with a message that says so: report it and stop.
 
 ## Use the command line
 
@@ -48,7 +48,7 @@ It needs Node 22.12 or later. Run `npm install -g @widgetic/cli`, then `widgetic
 - **Credits.** `create_widget` and `revise_widget` use 1 credit per call, charged when the build starts. A batch of widgets uses 1 credit each, up to 25 at a time: tell the user the total and get a yes first. Everything else, including previews, listing, embed codes and `get_profile`, is free.
 - **Publishing.** Through MCP a finished build is published on its own, unless the user wants a draft (pass `publish` false) or the plan or the connection's permissions do not allow publishing. The command line builds drafts unless you pass `--publish`. `publish_widget` and `revise_widget` change what the embeds of a published widget show, so do them only after the user agreed. When the user wants to look first, keep a draft.
 - **Deleting is permanent.** `delete_widget` removes every version, embeds already on websites stop working and credits are not refunded. Do it only when the user clearly asked, and pass the exact title (`confirm_title`) the user confirmed. `unpublish_widget` takes a widget offline without deleting it.
-- **Workspace.** A connection or a key works in one workspace at a time, the user's own or a team's. Say which one (`get_profile`, or the Workspace line of `widgetic doctor`) before you create or change anything.
+- **Workspace.** A connection or a key works in exactly one workspace, the one it was made for, and never follows the workspace the user has open on widgetic.com. Say which one (`get_profile`, or the Workspace line of `widgetic doctor`) before you create or change anything. To work in another workspace the user connects again, or makes a key, for that one.
 - **Secrets.** Never put an API key in a command argument, in a file of the user's project, in the chat or in client-side code. It comes from `WIDGETIC_API_KEY` or `widgetic auth login`.
 
 ## Build, preview, publish and embed
@@ -63,7 +63,7 @@ With the command line the same steps are `widgetic mcp create-widget --title "La
 
 ## Call the REST API from code
 
-- The base URL is `https://api.widgetic.com/v1`. Send `Authorization: Bearer <API key>`. The prefix of a key says its role: `wgt_usr_` a user, `wdg_org_` an organization, `wgt_prt_` a partner (managed users, credits, storage).
+- The base URL is `https://api.widgetic.com/v1`. Send `Authorization: Bearer <API key>`. The prefix of a key says what it is: `wdg_org_` a workspace key (what you make in the dashboard, and works in that workspace only), `wgt_prt_` a partner key (managed users, credits, storage; a workspace key made in a partner's home workspace reaches the same). A personal key (`wgt_usr_`, from before workspace keys) is no longer accepted: it gets `401`, so make a workspace key. A key works only while its workspace is on a paid plan, in the REST API, the CLI and the MCP server alike: a workspace in its free trial gets `403` `AUTHZ_PLAN_RESTRICTION`, one with no plan gets `403` `WORKSPACE_LOCKED`, and choosing a plan makes the same key work again (the CLI exits `3`; an MCP tool that refuses for the plan exits `5`).
 - A success is `{"success": true, "data": ...}`. An error is `{"success": false, "error": {"code": ..., "message": ...}}`.
 - A key that lacks a scope the call needs gets `403` with the code `API_KEY_SCOPE_MISSING` and `error.details.missingScopes`. The limits of a key cannot be changed, so make a new key with those scopes. The MCP server accepts only a key made with full access.
 - A call that creates something may need an `Idempotency-Key` header (the command line makes one for you). A `429` carries a `Retry-After` header: wait that long.

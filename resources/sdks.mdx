@@ -96,7 +96,7 @@ const embed = new PublicEmbedApi(new Configuration({ basePath: 'https://api.widg
 
 ### Calls for One Customer
 
-A call that takes the `X-Managed-User-Id` or `X-Managed-User-External-Id` header (see [Scoping a Composition Call to One Customer](/docs/partners/managed-users#scoping-a-composition-call-to-one-customer)) takes it as `xManagedUserId` or `xManagedUserExternalId` in the request object. The workflow calls also take the `workspaceId`, which is `personal` for one customer:
+A call that takes the `X-Managed-User-Id` or `X-Managed-User-External-Id` header (see [Scoping a Composition Call to One Customer](/docs/partners/managed-users#scoping-a-composition-call-to-one-customer)) takes it as `xManagedUserId` or `xManagedUserExternalId` in the request object. Workflow routes take the **organization id** of the partner's home workspace as `workspaceId` (there is no `personal` workspace id):
 
 ```javascript
 import { WorkflowsApi } from '@widgetic/api-sdk-ts';
@@ -104,7 +104,7 @@ import { WorkflowsApi } from '@widgetic/api-sdk-ts';
 const workflows = new WorkflowsApi(process.env.WIDGETIC_API_KEY);
 
 const { data } = await workflows.listWorkspaceWorkflows({
-  workspaceId: 'personal',
+  workspaceId: partnerHomeWorkspaceId, // UUID of the partner workspace
   xManagedUserId: managedUserId,
 });
 // data.items holds that customer's workflows and no one else's

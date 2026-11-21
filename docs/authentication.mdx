@@ -12,8 +12,16 @@ The Widgetic API uses Bearer token authentication. All requests must include an 
 API keys are the recommended authentication method for server-side applications. They provide persistent access without expiration.
 
 ```bash
-Authorization: Bearer wgt_usr_your_api_key_here
+Authorization: Bearer wdg_org_your_api_key_here
 ```
+
+You make a key in the dashboard: open the workspace, then **Settings → API keys** (the owner of a workspace opens that page). A key you make there is a **workspace key**. It starts with `wdg_org_`, acts as that workspace and works in it only, and it does not follow the workspace you have open afterwards, so make one key for each workspace you work in. `GET /tokens/validate` says which workspace a key works in (`data.workspace`: its `id` and `name`).
+
+A key can be limited to what its application needs, a build server for example: see [Limit what a key can do](#limit-what-a-key-can-do). Only a person signed in on widgetic.com can make a key (a key cannot make another key), and the workspace needs a paid plan to hold keys (the home workspace of a [partner](/docs/partners/overview#partner-api-key) needs none: it pays by the invoices of its contract).
+
+<Note>
+  A key that starts with `wgt_usr_` is a personal key from before workspace keys. Personal keys are retired and deleted: a request that still carries one is refused with `401`, and the message says to make a workspace key. Make a workspace key and send that instead.
+</Note>
 
 ### Editor Sessions (For Customer Browsers)
 
@@ -29,9 +37,9 @@ Your API key prefix determines your role and what endpoints you can access:
 
 | Key Prefix | Role | Access Level | Use Case |
 |------------|------|--------------|----------|
-| `wgt_usr_` | User | `user` | Personal account access |
-| `wdg_org_` | Organization | `user` | Organization-wide access |
-| `wgt_prt_` | Partner | `partner` | White-label integrations |
+| `wdg_org_` | Workspace | `user`; `partner` in the home workspace of a partner | The key of a workspace, made in the dashboard: it acts as that workspace, in that workspace only. In a partner's home workspace it acts as the partner |
+| `wgt_usr_` | None (retired) | None | A personal key from before workspace keys. It is no longer accepted: every request that carries one is refused with `401`. Make a workspace key instead |
+| `wgt_prt_` | Partner | `partner` | White-label integrations: the key of the account that administers a partner |
 | `wgt_adm_` | Admin | `admin` | Internal administration |
 
 ## Understanding Access Levels
@@ -51,13 +59,13 @@ Each API endpoint specifies an `x-access-level` that determines which roles can 
 
 A key made without a limit has **full access**: it does everything its owner can, and so does every key made before limits existed. A key you put on a build server, or in a partner's backend, needs only the part of the API it uses. Limit it, and a leaked key can do no more than that.
 
-You choose the limit when you make the key, in the dashboard (Workspace settings → API keys) or with `POST /users/{id}/keys` (see [Security](/resources/security#making-rotating-and-deleting-keys)). Send a `preset` or a list of `scopes`, never both:
+You choose the limit when you make the key, in the dialog on **Settings → API keys**: Full access, Content, Read only or Custom, where you tick what the key may do. The names below are the ones the dialog shows. A partner account that makes its keys with `POST /users/{id}/keys` (see [Security](/resources/security#making-rotating-and-deleting-keys)) sends them as a `preset` or a list of `scopes`, never both:
 
 | Preset | What the key may do |
 |--------|---------------------|
-| `read_only` | Looks at everything the account holds and changes nothing. It holds `content:read`, `partner:read`, `billing:read` and `account:read`. |
+| `read_only` | Looks at everything its owner holds and changes nothing. It holds `content:read`, `partner:read`, `billing:read` and `account:read`. |
 | `content` | Builds and manages widgets and compositions, and runs the AI. It holds `content:read`, `content:write` and `generate`, and touches no billing, no people and no partners. |
-| `full_access` | Everything the account owner may do. A key made with neither a preset nor scopes is this. |
+| `full_access` | Everything its owner may do. A key made with neither a preset nor scopes is this. |
 
 When a preset is not enough, name the scopes you want:
 
@@ -75,6 +83,7 @@ When a preset is not enough, name the scopes you want:
 
 - **Writing includes reading.** Naming `content:write` gives `content:read` too, and the same goes for the other `write` scopes. A list that names every scope makes a key with full access.
 - **Scopes only narrow.** A limited key still needs what its owner needs: the role, the plan and, for a [partner](/docs/partners/account-status), an account in force.
+- **The partner scopes (`partner:read`, `partner:write`) are for a partner's home workspace.** Only there does a workspace key act as the partner, so only there does the dialog offer them; in any other workspace they would open nothing.
 - **The limit is fixed when the key is made.** To widen it, make a new key and delete the old one.
 - **A limited key cannot make itself a bigger one.** Making, changing and deleting keys, exchanging tokens, signing in and the administration routes need full access.
 - **Changing the Brand Kit needs full access**, because a change reshapes every widget the account makes from then on. A key with `account:read` may look at it. See [Brand Kit](/docs/partners/brand-kit).
@@ -99,6 +108,26 @@ A request outside the scopes of the key is refused with `403` and the code `API_
 
 <Note>
   These scopes belong to the key and last as long as it does. To give a customer's browser limited, short-lived access to only that customer's content, mint an [editor session](/docs/partners/editor-sessions) on your server instead.
+</Note>
+
+## Keys and Your Workspace's Plan
+
+A key is a credential for a paying workspace, so it follows the plan of the workspace it was made for. One rule covers the REST API, the [CLI](/docs/cli/getting-started) and the [MCP server](/docs/agents/authentication): none of them lets a key in that another one refuses.
+
+| The workspace is... | A request made with its key gets |
+|---------------------|----------------------------------|
+| On a paid plan, or paying late inside its grace period | The answer. |
+| In its free trial | `403` `AUTHZ_PLAN_RESTRICTION`: the free trial does not include the API, the CLI or the MCP server. A key cannot be made yet either. Choose a plan to use them. |
+| Without a plan: the trial ended, the plan was cancelled, the payment failed for good, or it never had one | `403` `WORKSPACE_LOCKED`. Your work is kept for 90 days, and a plan unlocks it. |
+| On a plan whose payment is overdue beyond the grace period | `403` `AUTHZ_PLAN_RESTRICTION`: update billing to restore it. |
+| Deleted | Its keys are deleted with it, and so are the connections of AI assistants made for it. They stop working within a minute. |
+
+A key of a workspace that has lapsed is switched off, **not deleted**. Choose a plan (or update billing) and the same key works again within about a minute, with nothing to make again. Only the workspace's own plan counts: another workspace of the same person, paid or not, neither unlocks it nor locks it.
+
+A short-lived token from `POST /tokens/exchange` carries the workspace of the key that made it and follows the same rule: a token made before the plan ended is refused as soon as the plan has ended, not when it expires, and works again when the plan is back.
+
+<Note>
+  An assistant connected through the MCP server is told in another way once its workspace has no plan: the connection is accepted, and each tool answers with the plan's words instead of doing the work. Only `get_profile`, and the tools that follow or cancel a build that started while the plan was active, answer. See [When the workspace has no plan](/docs/agents/authentication#when-the-workspace-has-no-plan). The CLI exits with code `3` when the REST API refuses a key for its plan, and with `5` when an MCP tool does.
 </Note>
 
 ## Validating Tokens
@@ -135,9 +164,10 @@ Response:
   </Accordion>
   
   <Accordion title="Use Appropriate Key Types">
-    - Use `wgt_usr_` keys for personal development
-    - Use `wdg_org_` keys for organization-wide applications
-    - Use `wgt_prt_` keys for partner integrations
+    - Make one workspace key (`wdg_org_`) for each workspace you work in, and one for each application
+    - Limit a key to what its application needs: Read only for a report, Content for a build server
+    - A personal `wgt_usr_` key from before workspace keys no longer works and has been deleted: make a workspace key and switch your servers over to it
+    - For a partner integration, make the key in your partner's home workspace (`wdg_org_`): it acts as your partner. A `wgt_prt_` key does the same
   </Accordion>
   
   <Accordion title="Handle Token Expiration">
@@ -155,6 +185,8 @@ When authentication fails, you'll receive one of these responses:
 |--------|------|-------------|
 | 401 | `UNAUTHORIZED` | Missing or invalid authentication token |
 | 403 | `FORBIDDEN` | Token valid but insufficient permissions |
+| 403 | `WORKSPACE_LOCKED` | The key is valid, but its workspace has no plan. [Choose a plan](#keys-and-your-workspaces-plan) and the same key works again |
+| 403 | `AUTHZ_PLAN_RESTRICTION` | The key is valid, but its workspace's plan does not include this: it is in its free trial, or its payment is overdue |
 
 Example error response:
 ```json

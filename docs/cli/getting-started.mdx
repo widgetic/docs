@@ -63,14 +63,22 @@ Build tools (`create-widget`, `revise-widget`, …) return at once unless you pa
 ## CI patterns
 
 ```bash
-export WIDGETIC_API_KEY=wgt_usr_…   # or use widgetic auth login in a setup step
+export WIDGETIC_API_KEY=wdg_org_…   # or use widgetic auth login in a setup step
 widgetic doctor --json              # exit 1 when a check fails
 widgetic api widgets get-widgets --json --timeout 120
 ```
 
 - Use `--yes` for destructive REST or MCP calls where there is no terminal.
 - `--dry-run` prints the request (key redacted) and sends nothing — useful in pipelines.
-- Honour exit codes: `3` means auth; `6` means rate limit or unavailable; `7` means run `widgetic update`.
+- Honour exit codes: `3` means auth or plan; `6` means rate limit or unavailable; `7` means run `widgetic update`. See [When the workspace has no plan](#when-the-workspace-has-no-plan).
+
+## When the workspace has no plan
+
+The CLI has no door of its own: it sends your key over REST and over MCP, so it is held to the same rule as the key everywhere else ([Keys and your workspace's plan](/docs/authentication#keys-and-your-workspaces-plan)). A key whose workspace has no plan, or is still in its free trial, does not work in the CLI either.
+
+- A REST command exits with `3` and prints the server's own words and code, `WORKSPACE_LOCKED` when the workspace has no plan, with the request id. With `--json` the same fields are in `error`. Nothing is retried.
+- `widgetic auth login` does not save such a key and says why. `widgetic auth status` reports `accepted: false` with the code, and keeps the key you saved, so the same key is accepted again as soon as the workspace has a plan.
+- A free trial is refused at the MCP endpoint itself, so every `widgetic mcp` command exits with `3`. A workspace without a plan is let through to the tools, which refuse in the plan's words and make the command exit with `5` (a tool that answered with an error), apart from `get_profile` and the commands that follow or cancel a build already started.
 
 ## Command reference
 

@@ -13,7 +13,7 @@ Give a managed user a copy of one of your presets
 
 - Request: `POST /managed-users/{id}/presets/{key}/copy`
 - Operation: `copyPresetForManagedUser` (`widgetic api call copyPresetForManagedUser` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -51,7 +51,7 @@ Create Managed User
 - Request: `POST /managed-users`
 - Operation: `createManagedUser` (`widgetic api call createManagedUser` runs it by that name)
 - Also written: `widgetic api managed-users create`
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -68,7 +68,7 @@ Create an editor session for a managed user
 
 - Request: `POST /managed-users/{id}/editor-sessions`
 - Operation: `createManagedUserEditorSession` (`widgetic api call createManagedUserEditorSession` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ Delete Managed User
 - Request: `DELETE /managed-users/{id}`
 - Operation: `deleteManagedUser` (`widgetic api call deleteManagedUser` runs it by that name)
 - Also written: `widgetic api managed-users delete`
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 - It deletes something, so it asks first; without a terminal it needs `--yes`.
 
 | Flag | Takes | Required | What it does |
@@ -104,7 +104,7 @@ Get Managed Users
 - Request: `GET /managed-users`
 - Operation: `getAllManagedUsers` (`widgetic api call getAllManagedUsers` runs it by that name)
 - Also written: `widgetic api managed-users list`
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -121,7 +121,7 @@ Get Managed User By ID
 - Request: `GET /managed-users/{id}`
 - Operation: `getManagedUserById` (`widgetic api call getManagedUserById` runs it by that name)
 - Also written: `widgetic api managed-users get`
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -135,7 +135,7 @@ Read design defaults for one managed user
 
 - Request: `GET /managed-users/{id}/design-defaults`
 - Operation: `getManagedUserDesignDefaults` (`widgetic api call getManagedUserDesignDefaults` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -149,7 +149,7 @@ Read monthly credit cap and usage for one managed user
 
 - Request: `GET /managed-users/{id}/limits`
 - Operation: `getManagedUserLimits` (`widgetic api call getManagedUserLimits` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -163,7 +163,7 @@ Storage used by one managed user's uploads
 
 - Request: `GET /managed-users/{id}/storage-usage`
 - Operation: `getManagedUserStorageUsage` (`widgetic api call getManagedUserStorageUsage` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -177,7 +177,7 @@ What a managed user's editor sessions spent
 
 - Request: `GET /managed-users/{id}/usage`
 - Operation: `getManagedUserUsage` (`widgetic api call getManagedUserUsage` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -193,7 +193,7 @@ Get Managed Users By Manager
 
 - Request: `GET /users/{managerId}/managed-users`
 - Operation: `getManagedUsersByManagerId` (`widgetic api call getManagedUsersByManagerId` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -233,7 +233,7 @@ End one editor session of a managed user
 
 - Request: `DELETE /managed-users/{id}/editor-sessions/{sessionId}`
 - Operation: `revokeManagedUserEditorSession` (`widgetic api call revokeManagedUserEditorSession` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 - It deletes something, so it asks first; without a terminal it needs `--yes`.
 
 | Flag | Takes | Required | What it does |
@@ -249,7 +249,7 @@ End every editor session of a managed user
 
 - Request: `DELETE /managed-users/{id}/editor-sessions`
 - Operation: `revokeManagedUserEditorSessions` (`widgetic api call revokeManagedUserEditorSessions` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 - It deletes something, so it asks first; without a terminal it needs `--yes`.
 
 | Flag | Takes | Required | What it does |
@@ -264,7 +264,7 @@ Set or clear design defaults for one managed user
 
 - Request: `PUT /managed-users/{id}/design-defaults`
 - Operation: `setManagedUserDesignDefaults` (`widgetic api call setManagedUserDesignDefaults` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -279,7 +279,7 @@ Set or clear the monthly credit cap for one managed user
 
 - Request: `PUT /managed-users/{id}/limits`
 - Operation: `setManagedUserLimits` (`widgetic api call setManagedUserLimits` runs it by that name)
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
@@ -296,7 +296,7 @@ Update Managed User
 - Request: `PUT /managed-users/{id}`
 - Operation: `updateManagedUser` (`widgetic api call updateManagedUser` runs it by that name)
 - Also written: `widgetic api managed-users update`
-- Needs a partner API key (wgt_prt_…).
+- Needs a partner API key (wgt_prt_…), or a key made in a partner workspace (wdg_org_…).
 
 | Flag | Takes | Required | What it does |
 | --- | --- | --- | --- |
