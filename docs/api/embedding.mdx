@@ -51,7 +51,7 @@ The box does not accept typing, only a paste. If the text is not a Widgetic embe
 By default, a published widget can appear on any website. You can limit it:
 
 1. **Dashboard:** workspace **Settings → Allowed domains** (team workspaces: admins and owners only).
-2. **API:** `GET/POST/PUT/DELETE /users/{id}/workspace/domains` — see [Domain validation](/resources/security#domain-validation) and the matching `widgetic api users …` commands.
+2. **API:** `GET/POST/PUT/DELETE /organizations/{orgId}/domains` (`orgId` is the id of the workspace) — see [Domain validation](/resources/security#domain-validation) and the matching `widgetic api organizations …` commands. The routes under `/users/{id}/workspace/domains` are gone: there is no personal workspace any more.
 
 `localhost`, Widgetic's own sites and (for partners) your **platform domain** are always allowed. A page on another site gets `403 DOMAIN_NOT_ALLOWED`; the embed script draws nothing and sets `data-widgetic-refused="DOMAIN_NOT_ALLOWED"`.
 

@@ -1469,7 +1469,7 @@
       "get": {
         "operationId": "listWorkspaceWorkflowCompositionOptions",
         "summary": "List the compositions a workflow can show, and what each can do",
-        "description": "The workspace's compositions as the workflow editor offers them, newest first. For each one: whether it can be\nshown (its widget has a published version), the websites it may be embedded on, and which triggers it supports.\n\n- **Input added** (`inputs`) is enabled only for a composition that declares at least one table a visitor's\n  entries can be written to. Its `tables` are all of them; its `fields` are the columns a rule may read (not\n  `id` and `created_at`, not a column that is not text, a number or yes/no, and not one whose name says it holds\n  a person's private details, such as an email or a phone number).\n- **Action in the widget** (`actions`) is enabled only when the published widget version declares at least one\n  goal. Its `items` are the goals a trigger can wait for.\n\nWhen one of them is not enabled, `reason` says why (`widget_keeps_no_data`, `widget_reports_no_actions` or\n`widget_not_published`), so the editor can show the trigger disabled with an explanation. Publishing checks every\nreference again against what the composition can do at that moment.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read it.\n",
+        "description": "The workspace's compositions as the workflow editor offers them, newest first. For each one: whether it can be\nshown (its widget has a published version), the websites it may be embedded on, and which triggers it supports.\n\n- **Input added** (`inputs`) is enabled only for a composition that declares at least one table a visitor's\n  entries can be written to. Its `tables` are all of them; its `fields` are the columns a rule may read (not\n  `id` and `created_at`, not a column that is not text, a number or yes/no, and not one whose name says it holds\n  a person's private details, such as an email or a phone number).\n- **Action in the widget** (`actions`) is enabled only when the published widget version declares at least one\n  goal. Its `items` are the goals a trigger can wait for.\n\nWhen one of them is not enabled, `reason` says why (`widget_keeps_no_data`, `widget_reports_no_actions` or\n`widget_not_published`), so the editor can show the trigger disabled with an explanation. Publishing checks every\nreference again against what the composition can do at that moment.\nThe workspace is named by its UUID. Any active member can read it.\n",
         "tags": [
           "Workflows"
         ],
@@ -1556,7 +1556,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id, or ids is not a list of at most 50 composition ids",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one, or ids is not a list of at most 50 composition ids",
             "content": {
               "application/json": {
                 "schema": {
@@ -1576,7 +1576,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1602,7 +1602,7 @@
       "get": {
         "operationId": "listWorkspaceWorkflowPresets",
         "summary": "List the starting points for a new Workflow",
-        "description": "The workflows you can start from in this workspace: published workflows that Widgetic offers or, for one of a\npartner's managed users, that the partner offers (a managed user is never shown Widgetic's, and a person is never\nshown a partner's). Only what can be started now is listed, in the order the offerer set (smallest `position`\nfirst, then by `key`). Each shows what you would get, and none shows who made it or any id of its own.\nStart from one with `createWorkspaceWorkflowFromPreset`.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read the list.\n",
+        "description": "The workflows you can start from in this workspace: published workflows that Widgetic offers or, for one of a\npartner's managed users, that the partner offers (a managed user is never shown Widgetic's, and a person is never\nshown a partner's). Only what can be started now is listed, in the order the offerer set (smallest `position`\nfirst, then by `key`). Each shows what you would get, and none shows who made it or any id of its own.\nStart from one with `createWorkspaceWorkflowFromPreset`.\nThe workspace is named by its UUID. Any active member can read the list.\n",
         "tags": [
           "Workflows"
         ],
@@ -1652,7 +1652,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one",
             "content": {
               "application/json": {
                 "schema": {
@@ -1672,7 +1672,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1698,7 +1698,7 @@
       "post": {
         "operationId": "createWorkspaceWorkflowFromPreset",
         "summary": "Start a Workflow from a starting point",
-        "description": "Makes your own copy of a starting point (`listWorkspaceWorkflowPresets`): a copy of every widget it chains (an\nordinary private widget that serves the starting point's published code), a composition of your own on each copy\n(a draft, with the content, design, embed settings and tables of the original), and a draft workflow wired like the\nstarting point's live version. The workflow is named as you ask, or after the starting point. Nothing you do to the\ncopy reaches the starting point, and nothing its offerer changes afterwards reaches your copy. The workflow stays a\ndraft: publish it when it is ready.\n\nA start takes a few seconds, because each widget is copied. Send an `Idempotency-Key` so that asking again after\na timeout makes one copy. When a start fails (503 with `details.reason` `preset_copy_failed`) the compositions it\nmade are removed again, so asking again is safe; the widget copies it made stay in the workspace as ordinary\nwidgets. The workspace's limit of workflows is checked before anything is copied.\n\nA starting point that is not offered to you, or that can no longer be started, is 404.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can start one.\n",
+        "description": "Makes your own copy of a starting point (`listWorkspaceWorkflowPresets`): a copy of every widget it chains (an\nordinary private widget that serves the starting point's published code), a composition of your own on each copy\n(a draft, with the content, design, embed settings and tables of the original), and a draft workflow wired like the\nstarting point's live version. The workflow is named as you ask, or after the starting point. Nothing you do to the\ncopy reaches the starting point, and nothing its offerer changes afterwards reaches your copy. The workflow stays a\ndraft: publish it when it is ready.\n\nA start takes a few seconds, because each widget is copied. Send an `Idempotency-Key` so that asking again after\na timeout makes one copy. When a start fails (503 with `details.reason` `preset_copy_failed`) the compositions it\nmade are removed again, so asking again is safe; the widget copies it made stay in the workspace as ordinary\nwidgets. The workspace's limit of workflows is checked before anything is copied.\n\nA starting point that is not offered to you, or that can no longer be started, is 404.\nThe workspace is named by its UUID. Any active member can start one.\n",
         "tags": [
           "Workflows"
         ],
@@ -1801,7 +1801,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1847,7 +1847,7 @@
       "get": {
         "operationId": "listWorkspaceWorkflows",
         "summary": "List the Workflows of a Workspace",
-        "description": "Lists the workspace's workflows, newest first unless `sort` says otherwise. Archived workflows are left out\nunless `status` asks for them (`archived`, or `all`).\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read the list.\n",
+        "description": "Lists the workspace's workflows, newest first unless `sort` says otherwise. Archived workflows are left out\nunless `status` asks for them (`archived`, or `all`).\nThe workspace is named by its UUID. Any active member can read the list.\n",
         "tags": [
           "Workflows"
         ],
@@ -1951,7 +1951,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id, or a query value is not one this list accepts",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one, or a query value is not one this list accepts",
             "content": {
               "application/json": {
                 "schema": {
@@ -1971,7 +1971,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1995,7 +1995,7 @@
       "post": {
         "operationId": "createWorkspaceWorkflow",
         "summary": "Create a Workflow",
-        "description": "Makes a draft workflow. Give it a composition and the workflow is born with one block, which starts it; without\none it starts empty. A workspace holds up to 500 workflows.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can create one.\n",
+        "description": "Makes a draft workflow. Give it a composition and the workflow is born with one block, which starts it; without\none it starts empty. A workspace holds up to 500 workflows.\nThe workspace is named by its UUID. Any active member can create one.\n",
         "tags": [
           "Workflows"
         ],
@@ -2102,7 +2102,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2138,7 +2138,7 @@
       "get": {
         "operationId": "getWorkspaceWorkflow",
         "summary": "Get a Workflow",
-        "description": "Reads a workflow with its draft graph and the version that is live.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read it.\n",
+        "description": "Reads a workflow with its draft graph and the version that is live.\nThe workspace is named by its UUID. Any active member can read it.\n",
         "tags": [
           "Workflows"
         ],
@@ -2192,7 +2192,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one",
             "content": {
               "application/json": {
                 "schema": {
@@ -2212,7 +2212,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2246,7 +2246,7 @@
       "put": {
         "operationId": "saveWorkspaceWorkflow",
         "summary": "Save the Draft of a Workflow",
-        "description": "Saves the name, the time zone and/or the graph of the draft. Send at least one. The save names the `revision` the\neditor started from and is refused with 409 (`BUSINESS_STATE_CONFLICT`) when the draft has moved on, so two\npeople editing do not overwrite each other without knowing; read the workflow again and apply the change to it.\nA save is never refused for what is wrong with the graph (a block with no connection yet is normal in a draft):\nonly the shape is judged here, and what stops a workflow going live is told when it is published. A graph larger\nthan 200,000 bytes, or with more than 100 blocks or 300 connections, is refused.\nAn archived workflow cannot be saved. Saving a live workflow changes the draft only: visitors keep getting the\npublished version until the changes are published.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can save.\n",
+        "description": "Saves the name, the time zone and/or the graph of the draft. Send at least one. The save names the `revision` the\neditor started from and is refused with 409 (`BUSINESS_STATE_CONFLICT`) when the draft has moved on, so two\npeople editing do not overwrite each other without knowing; read the workflow again and apply the change to it.\nA save is never refused for what is wrong with the graph (a block with no connection yet is normal in a draft):\nonly the shape is judged here, and what stops a workflow going live is told when it is published. A graph larger\nthan 200,000 bytes, or with more than 100 blocks or 300 connections, is refused.\nAn archived workflow cannot be saved. Saving a live workflow changes the draft only: visitors keep getting the\npublished version until the changes are published.\nThe workspace is named by its UUID. Any active member can save.\n",
         "tags": [
           "Workflows"
         ],
@@ -2352,7 +2352,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2372,7 +2372,7 @@
             }
           },
           "409": {
-            "description": "The draft changed since `revision` (BUSINESS_STATE_CONFLICT; `details.reason` is `revision_changed`), or the\nworkflow is archived. Nothing is overwritten. `details.currentRevision` is the revision to start again from,\nand for a workflow of an organization workspace `details.lastEditedBy` (`{ id, name }`, or `null`) and\n`details.lastEditedAt` say who saved first and when.\n",
+            "description": "The draft changed since `revision` (BUSINESS_STATE_CONFLICT; `details.reason` is `revision_changed`), or the\nworkflow is archived. Nothing is overwritten. `details.currentRevision` is the revision to start again from,\nand for a workflow of a team workspace `details.lastEditedBy` (`{ id, name }`, or `null`) and\n`details.lastEditedAt` say who saved first and when.\n",
             "content": {
               "application/json": {
                 "schema": {
@@ -2396,7 +2396,7 @@
       "delete": {
         "operationId": "deleteWorkspaceWorkflow",
         "summary": "Delete a Workflow",
-        "description": "Deletes a workflow, in whatever state it is in (draft, live, paused or archived), with all its versions and\ncounts. It cannot be undone: archive the workflow instead to keep it. The compositions it chained are not\ntouched, and a page whose embed still names the workflow shows the embed's first composition, as for a paused\none. Asking for a workflow that is already gone is \"not found\".\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can delete.\n",
+        "description": "Deletes a workflow, in whatever state it is in (draft, live, paused or archived), with all its versions and\ncounts. It cannot be undone: archive the workflow instead to keep it. The compositions it chained are not\ntouched, and a page whose embed still names the workflow shows the embed's first composition, as for a paused\none. Asking for a workflow that is already gone is \"not found\".\nThe workspace is named by its UUID. Any active member can delete.\n",
         "tags": [
           "Workflows"
         ],
@@ -2449,7 +2449,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one",
             "content": {
               "application/json": {
                 "schema": {
@@ -2469,7 +2469,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2505,7 +2505,7 @@
       "post": {
         "operationId": "duplicateWorkspaceWorkflow",
         "summary": "Duplicate a Workflow",
-        "description": "Makes a draft copy of a workflow (its draft graph, not its versions or counts), named \"<name> (copy)\".\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can duplicate.\n",
+        "description": "Makes a draft copy of a workflow (its draft graph, not its versions or counts), named \"<name> (copy)\".\nThe workspace is named by its UUID. Any active member can duplicate.\n",
         "tags": [
           "Workflows"
         ],
@@ -2562,7 +2562,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one",
             "content": {
               "application/json": {
                 "schema": {
@@ -2582,7 +2582,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2628,7 +2628,7 @@
       "post": {
         "operationId": "publishWorkspaceWorkflow",
         "summary": "Publish the Draft of a Workflow",
-        "description": "Checks the draft and, when nothing stops it, makes it the next version and the one new visitors get. Versions never\nchange once published. A visitor already partway through keeps the version they started on (for up to 30 days).\nThe check reads what each composition can do right now (a table the visitor adds to, a goal the widget reports,\nthe websites it may be embedded on), so a workflow never goes live pointing at something that has gone.\nIt is refused with 422 (`BUSINESS_OPERATION_INVALID`) when the draft has errors; the `issues` in the error's\n`details` name the blocks to fix: an unconnected trigger, a condition without rules, a composition that is not\npublished, a field or action that is gone, a composition whose allowed websites exclude the site the workflow\nstarts on. Nothing is published when the draft has no changes since the live version.\nThe `revision` is the one the editor read, and a publish of a draft that has moved on is refused with 409.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can publish.\n",
+        "description": "Checks the draft and, when nothing stops it, makes it the next version and the one new visitors get. Versions never\nchange once published. A visitor already partway through keeps the version they started on (for up to 30 days).\nThe check reads what each composition can do right now (a table the visitor adds to, a goal the widget reports,\nthe websites it may be embedded on), so a workflow never goes live pointing at something that has gone.\nIt is refused with 422 (`BUSINESS_OPERATION_INVALID`) when the draft has errors; the `issues` in the error's\n`details` name the blocks to fix: an unconnected trigger, a condition without rules, a composition that is not\npublished, a field or action that is gone, a composition whose allowed websites exclude the site the workflow\nstarts on. Nothing is published when the draft has no changes since the live version.\nThe `revision` is the one the editor read, and a publish of a draft that has moved on is refused with 409.\nThe workspace is named by its UUID. Any active member can publish.\n",
         "tags": [
           "Workflows"
         ],
@@ -2703,7 +2703,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id, or the revision is missing",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one, or the revision is missing",
             "content": {
               "application/json": {
                 "schema": {
@@ -2723,7 +2723,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2743,7 +2743,7 @@
             }
           },
           "409": {
-            "description": "The draft changed since `revision`, it is archived, or there is nothing new to publish (BUSINESS_STATE_CONFLICT; `details.reason` says which). When the draft changed, `details.currentRevision` is the revision to start again from and, for a workflow of an organization workspace, `details.lastEditedBy` and `details.lastEditedAt` say who saved first and when.",
+            "description": "The draft changed since `revision`, it is archived, or there is nothing new to publish (BUSINESS_STATE_CONFLICT; `details.reason` says which). When the draft changed, `details.currentRevision` is the revision to start again from and, for a workflow of a team workspace, `details.lastEditedBy` and `details.lastEditedAt` say who saved first and when.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2779,7 +2779,7 @@
       "post": {
         "operationId": "discardWorkspaceWorkflowChanges",
         "summary": "Discard the Unpublished Changes of a Workflow",
-        "description": "Puts the draft back to the live version (its graph and its time zone). Only for a workflow that has been\npublished; one that never was has no live version to go back to. Names the `revision` the editor read.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can discard.\n",
+        "description": "Puts the draft back to the live version (its graph and its time zone). Only for a workflow that has been\npublished; one that never was has no live version to go back to. Names the `revision` the editor read.\nThe workspace is named by its UUID. Any active member can discard.\n",
         "tags": [
           "Workflows"
         ],
@@ -2852,7 +2852,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id, or the revision is missing",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one, or the revision is missing",
             "content": {
               "application/json": {
                 "schema": {
@@ -2872,7 +2872,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2918,7 +2918,7 @@
       "get": {
         "operationId": "listWorkspaceWorkflowVersions",
         "summary": "List the Published Versions of a Workflow",
-        "description": "Every version the workflow has had, newest first, with who published it and when. The one visitors get is marked\n`isLive`.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read.\n",
+        "description": "Every version the workflow has had, newest first, with who published it and when. The one visitors get is marked\n`isLive`.\nThe workspace is named by its UUID. Any active member can read.\n",
         "tags": [
           "Workflows"
         ],
@@ -2971,7 +2971,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one",
             "content": {
               "application/json": {
                 "schema": {
@@ -2991,7 +2991,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3027,7 +3027,7 @@
       "get": {
         "operationId": "getWorkspaceWorkflowVersion",
         "summary": "Get a Published Version of a Workflow",
-        "description": "One published version with its graph, for the read-only preview and for the Runs view.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read.\n",
+        "description": "One published version with its graph, for the read-only preview and for the Runs view.\nThe workspace is named by its UUID. Any active member can read.\n",
         "tags": [
           "Workflows"
         ],
@@ -3083,7 +3083,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one",
             "content": {
               "application/json": {
                 "schema": {
@@ -3103,7 +3103,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3139,7 +3139,7 @@
       "post": {
         "operationId": "restoreWorkspaceWorkflowVersion",
         "summary": "Restore a Version of a Workflow into the Draft",
-        "description": "Copies a published version into the draft, so it can be changed and published again. Nothing is published and\nnothing visitors see changes: the version stays in the history as it was. Names the `revision` the editor read.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can restore.\n",
+        "description": "Copies a published version into the draft, so it can be changed and published again. Nothing is published and\nnothing visitors see changes: the version stays in the history as it was. Names the `revision` the editor read.\nThe workspace is named by its UUID. Any active member can restore.\n",
         "tags": [
           "Workflows"
         ],
@@ -3215,7 +3215,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id, or the revision is missing",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one, or the revision is missing",
             "content": {
               "application/json": {
                 "schema": {
@@ -3235,7 +3235,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3281,7 +3281,7 @@
       "post": {
         "operationId": "pauseWorkspaceWorkflow",
         "summary": "Pause a Workflow",
-        "description": "While a workflow is paused, its embeds show only their first composition (the `composition-id` of the embed) and no\nvisitor moves on. The live version is kept, and visitors partway through carry on from where they were when it is\nresumed. Only a live workflow can be paused.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can pause.\n",
+        "description": "While a workflow is paused, its embeds show only their first composition (the `composition-id` of the embed) and no\nvisitor moves on. The live version is kept, and visitors partway through carry on from where they were when it is\nresumed. Only a live workflow can be paused.\nThe workspace is named by its UUID. Any active member can pause.\n",
         "tags": [
           "Workflows"
         ],
@@ -3335,7 +3335,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one",
             "content": {
               "application/json": {
                 "schema": {
@@ -3355,7 +3355,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3401,7 +3401,7 @@
       "post": {
         "operationId": "resumeWorkspaceWorkflow",
         "summary": "Resume a Paused Workflow",
-        "description": "Makes a paused workflow live again, on the version that was live when it was paused.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can resume.\n",
+        "description": "Makes a paused workflow live again, on the version that was live when it was paused.\nThe workspace is named by its UUID. Any active member can resume.\n",
         "tags": [
           "Workflows"
         ],
@@ -3455,7 +3455,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one",
             "content": {
               "application/json": {
                 "schema": {
@@ -3475,7 +3475,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3521,7 +3521,7 @@
       "post": {
         "operationId": "archiveWorkspaceWorkflow",
         "summary": "Archive a Workflow",
-        "description": "Takes a workflow out of the default list and stops it serving: its embeds show only their first composition,\nas when paused. It is kept, with its versions and counts, until it is deleted.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can archive.\n",
+        "description": "Takes a workflow out of the default list and stops it serving: its embeds show only their first composition,\nas when paused. It is kept, with its versions and counts, until it is deleted.\nThe workspace is named by its UUID. Any active member can archive.\n",
         "tags": [
           "Workflows"
         ],
@@ -3575,7 +3575,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one",
             "content": {
               "application/json": {
                 "schema": {
@@ -3595,7 +3595,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3641,7 +3641,7 @@
       "post": {
         "operationId": "unarchiveWorkspaceWorkflow",
         "summary": "Unarchive a Workflow",
-        "description": "Brings an archived workflow back into the list: as paused when it was ever published (resume it to serve visitors\nagain), as a draft when it never was.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can unarchive.\n",
+        "description": "Brings an archived workflow back into the list: as paused when it was ever published (resume it to serve visitors\nagain), as a draft when it never was.\nThe workspace is named by its UUID. Any active member can unarchive.\n",
         "tags": [
           "Workflows"
         ],
@@ -3695,7 +3695,7 @@
             }
           },
           "400": {
-            "description": "The workspace is neither \"personal\" nor an organization id",
+            "description": "The workspace is not the id of a workspace (a UUID); `personal` no longer names one",
             "content": {
               "application/json": {
                 "schema": {
@@ -3715,7 +3715,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3761,7 +3761,7 @@
       "get": {
         "operationId": "getWorkspaceWorkflowStats",
         "summary": "Get what Visitors Did in a Workflow",
-        "description": "Counts per block and per connection over a range of UTC days (the last 30 days when not given, up to 366), for one\nversion or for all of them. Only counts: how many visitors reached a block, took a connection, or could not be\nmoved on, and, where the visitor's browser said why a block could not be shown, how many of those failures had each\nreason (`failedReasons`: a timeout, an error of the widget, a build that failed, or another reason). No visitor and\nno value a visitor typed is ever stored.\nFor personal workspace, use 'personal' as workspaceId.\nFor organization workspace, use the organization UUID as workspaceId. Any active member can read.\n",
+        "description": "Counts per block and per connection over a range of UTC days (the last 30 days when not given, up to 366), for one\nversion or for all of them. Only counts: how many visitors reached a block, took a connection, or could not be\nmoved on, and, where the visitor's browser said why a block could not be shown, how many of those failures had each\nreason (`failedReasons`: a timeout, an error of the widget, a build that failed, or another reason). No visitor and\nno value a visitor typed is ever stored.\nThe workspace is named by its UUID. Any active member can read.\n",
         "tags": [
           "Workflows"
         ],
@@ -3864,7 +3864,7 @@
             }
           },
           "403": {
-            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than `personal` (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
+            "description": "Forbidden - Not a member of this organization, the plan does not include workflows (`AUTHZ_PLAN_RESTRICTION`), or the call is made for one managed user (`X-Managed-User-Id`) in a workspace other than your partner workspace (`MANAGED_USER_SCOPE_ROUTE_NOT_AVAILABLE`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -4432,7 +4432,7 @@
       "post": {
         "operationId": "createWidget",
         "summary": "Create Widget",
-        "description": "Creates a widget for your account: a named record with a type and some starting content, on a canvas of\nits own (or one of yours that you name). It costs no credits and has no code yet; the code is generated for\nit afterwards. The new widget is yours, and you can list it with `getWidgets`. A widget is a draft until\nyou say otherwise (`isDraft: false`).\n\nIf a step after the widget was saved does not go through, the widget is still created, and\n`data.warnings` says what did not. Read it before relying on the widget.\n\nA widget can be placed on one of your canvases (`canvasId`), in a project you can edit (`projectId`) or in an\norganization where you may create widgets (`organizationId`). Naming anything you cannot use is refused\nwith 403, and the answer is the same whether it exists or not.\n\nTo make the widget for one of your managed users, send `managedUserId` or `managedUserExternalId`. The widget\nstays in your account and is yours to edit; the tag lets you list one user's widgets with `getWidgets`. The\nmanaged user must be yours and active: one that is not yours, or does not exist, is answered with 404 and\n`MANAGED_USER_NOT_FOUND`, and one that is switched off with 409 and `MANAGED_USER_INACTIVE`. The tag is set\nhere and does not change afterwards.\n\nThis call has a limit of its own: 120 per minute for each account (ask Widgetic if you need more). Past\nthat the call is answered with 429 and a `Retry-After`. A widget has no database of its own: what the\nvisitors of a composition leave is kept in the tables of that composition, made when the composition is.\nThe `Idempotency-Key` header is required; send the same key when you retry, so one widget is created, not\ntwo.\n",
+        "description": "Creates a widget for your account: a named record with a type and some starting content, on a canvas of\nits own (or one of yours that you name). It costs no credits and has no code yet; the code is generated for\nit afterwards. The new widget is yours, and you can list it with `getWidgets`. A widget is a draft until\nyou say otherwise (`isDraft: false`).\n\nIf a step after the widget was saved does not go through, the widget is still created, and\n`data.warnings` says what did not. Read it before relying on the widget.\n\nA widget can be placed on one of your canvases (`canvasId`), in a project you can edit (`projectId`) or in a\nworkspace where you may create widgets (`organizationId`). Naming anything you cannot use is refused\nwith 403, and the answer is the same whether it exists or not.\n\nEvery widget belongs to one workspace. It goes where its project is; with no project, in the workspace you\nname (`organizationId`); and when you name neither, in the workspace the call works in (the one your API key\nor connection belongs to, or the one you last chose on widgetic.com). A project of one workspace together with\nthe id of another is refused with 400. A person who belongs to no workspace yet is told so (403\n`NO_WORKSPACE`), and a call that acts for no person (an internal service) must name the workspace.\n\nTo make the widget for one of your managed users, send `managedUserId` or `managedUserExternalId`. The widget\nstays in your account and is yours to edit; the tag lets you list one user's widgets with `getWidgets`. The\nmanaged user must be yours and active: one that is not yours, or does not exist, is answered with 404 and\n`MANAGED_USER_NOT_FOUND`, and one that is switched off with 409 and `MANAGED_USER_INACTIVE`. The tag is set\nhere and does not change afterwards.\n\nThis call has a limit of its own: 120 per minute for each account (ask Widgetic if you need more). Past\nthat the call is answered with 429 and a `Retry-After`. A widget has no database of its own: what the\nvisitors of a composition leave is kept in the tables of that composition, made when the composition is.\nThe `Idempotency-Key` header is required; send the same key when you retry, so one widget is created, not\ntwo.\n",
         "tags": [
           "Widgets"
         ],
@@ -4783,384 +4783,6 @@
         }
       }
     },
-    "/users/{id}/workspace/domains": {
-      "get": {
-        "operationId": "getPersonalWorkspaceDomains",
-        "summary": "List the websites allowed to show your widgets",
-        "description": "Lists the websites on an account's own list, newest first. It is the list Widgetic checks when a widget of the account is embedded: when it holds at least one website, the widget is shown on those websites (and on Widgetic's own) and nowhere else; when it is empty, the widget can be shown anywhere. If the account administers a partner, the websites set on the partner record by Widgetic are added to them. Widgets that belong to an organization use the organization's list instead.\nThe answer holds the whole list, however long it is: a partner's list has no limit.",
-        "tags": [
-          "Users"
-        ],
-        "security": [
-          {
-            "apiKeyAuth": []
-          }
-        ],
-        "x-access-level": "user",
-        "x-visibility": "public",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "The account the list belongs to. For your own, your own user id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Every website on the list (an empty list when nothing is restricted)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/PersonalWorkspaceDomain"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMeta"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not authenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The list belongs to another account",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The account was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "addPersonalWorkspaceDomain",
-        "summary": "Allow a website to show your widgets",
-        "description": "Adds a website to an account's own list. Give a website name such as `example.com`, or `*.example.com` for a website and all of its subdomains. A scheme, a port, a path, capital letters and a leading `www.` are dropped, so `https://www.Example.com/shop` is kept as `example.com`, and `example.com` covers `www.example.com` too. Something that is not a website name is refused, not stored.\nUntil the first website is added nothing is restricted, and a widget can be shown anywhere. Once the list has one, a widget of the account is shown on the listed websites (and on Widgetic's own) and nowhere else. A page on your own machine (`localhost`, `127.0.0.1` or `[::1]`, on any port) is always allowed, so there is nothing to add to test locally. So is the website where a partner your account administers integrates Widgetic, with every subdomain of it (`platformDomain` in the answer of `GET /partners/mine`), so there is nothing to add for it either and a list can never lock it out. A change can take about 15 seconds to reach every server.\nThe list is a safeguard against other websites showing your widgets in a visitor's browser. It is not access control: anyone who knows a widget's id can still fetch its published content with a plain request that names no website.\nThere is no limit on the list of an account that administers a partner, so a partner can add the website of each of its customers as they publish on their own domain, one call each. Any other account can list at most 50 websites, and the 51st is answered with a 409 (`BUSINESS_STATE_CONFLICT`). A wildcard such as `*.example.com` counts as one website, not one per subdomain, so use it instead of listing each subdomain.\nA page that frames a widget can name only so many websites to the browser (about fifty of ordinary length). Past that, the browser no longer checks the list for that page; the lookup that the Embed SDK makes for the widget still refuses every website that is not on the list.",
-        "tags": [
-          "Users"
-        ],
-        "security": [
-          {
-            "apiKeyAuth": []
-          }
-        ],
-        "x-access-level": "user",
-        "x-visibility": "public",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "The account the list belongs to. For your own, your own user id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddDomainRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "The website was added",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PersonalWorkspaceDomainResultResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The text is missing, longer than 255 characters, or not a website name",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not authenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The list belongs to another account",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The account was not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The website is already on the list (`RESOURCE_ALREADY_EXISTS`), or the account does not administer a partner and its list already holds 50 websites (`BUSINESS_STATE_CONFLICT`)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/{id}/workspace/domains/{domainId}": {
-      "put": {
-        "operationId": "updatePersonalWorkspaceDomain",
-        "summary": "Change a website on your list",
-        "description": "Replaces the website of one entry on an account's own list. The same rules apply as when adding one (`addPersonalWorkspaceDomain`): a website name such as `example.com` or `*.example.com`, kept in its cleaned form, and refused when it is not a website name or is already on the list.",
-        "tags": [
-          "Users"
-        ],
-        "security": [
-          {
-            "apiKeyAuth": []
-          }
-        ],
-        "x-access-level": "user",
-        "x-visibility": "public",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "The account the list belongs to. For your own, your own user id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "domainId",
-            "in": "path",
-            "required": true,
-            "description": "The `id` of the entry, as the list shows it",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateDomainRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "The entry was changed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PersonalWorkspaceDomainResultResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The text is missing, longer than 255 characters, or not a website name",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not authenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The list belongs to another account",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The list has no entry with this id",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The website is already on the list",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "operationId": "deletePersonalWorkspaceDomain",
-        "summary": "Stop allowing a website to show your widgets",
-        "description": "Removes one entry from an account's own list. When it was the last one, nothing is restricted any more and a widget can be shown anywhere again. A change can take about 15 seconds to reach every server.",
-        "tags": [
-          "Users"
-        ],
-        "security": [
-          {
-            "apiKeyAuth": []
-          }
-        ],
-        "x-access-level": "user",
-        "x-visibility": "public",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "The account the list belongs to. For your own, your own user id",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "domainId",
-            "in": "path",
-            "required": true,
-            "description": "The `id` of the entry, as the list shows it",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The entry was removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeletePersonalWorkspaceDomainResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not authenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The list belongs to another account",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The list has no entry with this id (it may already have been removed)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/users/{id}/keys": {
       "get": {
         "operationId": "getUserApiKeys",
@@ -5252,7 +4874,7 @@
       "post": {
         "operationId": "createUserApiKey",
         "summary": "Create an API key",
-        "description": "Makes a new API key for an account and returns its secret in `key`. That is the only time the secret is shown: Widgetic keeps a hash, so a key that was not stored cannot be recovered, only replaced. To rotate a key, make the new one, switch the integration over to it, then delete the old one.\nOnly a person signed in on widgetic.com can make a key: a request made with an API key, or with an SDK token, is refused with 403. That way a leaked key cannot be used to make a second one that survives its revocation. Make keys from the dashboard; a key can still list, rename, switch off and delete keys.\nAn `Idempotency-Key` header is required (8 to 50 characters: letters, digits, `-` and `_`). A retry with the same header and the same body returns the same answer instead of making a second key, and the same header with a different body is refused with 422. Make keys one at a time: two requests for the same account that run at the same moment can overwrite each other.\nA key can be limited to what it needs. Send a `preset` (`read_only`, `content` or `full_access`) or a list of `scopes`, never both. Send neither for a key that can do everything its owner can, as every key made before scopes existed. A limited key is refused with 403 and the code `API_KEY_SCOPE_MISSING` on anything outside its scopes, so a key held by a build server or by a partner's backend can be given only the part of the API it uses. The scopes of a key are fixed when it is made: to widen one, make a new key and delete the old one. A limited key cannot make, change or delete keys, exchange tokens or reach the administration routes. The list of scopes is in the `ApiKeyScope` schema.\nAccounts with API access (Solo, Teams and partner accounts) have no limit on how many keys they hold. An account on a plan without API access cannot make one (a partner account is not asked about a plan).",
+        "description": "Makes a new API key for a partner (or staff) account and returns its secret in `key`. That is the only time the secret is shown: Widgetic keeps a hash, so a key that was not stored cannot be recovered, only replaced. To rotate a key, make the new one, switch the integration over to it, then delete the old one.\nA customer account does not make personal keys: a customer's keys are workspace keys, made in Settings, under API keys, for one workspace. They take the same presets and scopes as the ones below. A request for a customer account is refused with 403 and the code `PERSONAL_API_KEY_RETIRED`. A personal key a customer made before workspace keys replaced them keeps working until it is deleted or expires, and can still be listed, renamed, switched off and deleted here.\nOnly a person signed in on widgetic.com can make a key: a request made with an API key, or with an SDK token, is refused with 403. That way a leaked key cannot be used to make a second one that survives its revocation. Make keys from the dashboard; a key can still list, rename, switch off and delete keys.\nAn `Idempotency-Key` header is required (8 to 50 characters: letters, digits, `-` and `_`). A retry with the same header and the same body returns the same answer instead of making a second key, and the same header with a different body is refused with 422. Make keys one at a time: two requests for the same account that run at the same moment can overwrite each other.\nA key can be limited to what it needs. Send a `preset` (`read_only`, `content` or `full_access`) or a list of `scopes`, never both. Send neither for a key that can do everything its owner can, as every key made before scopes existed. A limited key is refused with 403 and the code `API_KEY_SCOPE_MISSING` on anything outside its scopes, so a key held by a build server or by a partner's backend can be given only the part of the API it uses. The scopes of a key are fixed when it is made: to widen one, make a new key and delete the old one. A limited key cannot make, change or delete keys, exchange tokens or reach the administration routes. The list of scopes is in the `ApiKeyScope` schema.\nA partner or staff account has no limit on how many keys it holds, and its keys name no workspace: they act as the account.",
         "tags": [
           "Users"
         ],
@@ -5320,7 +4942,7 @@
             }
           },
           "403": {
-            "description": "The request was made with an API key or an SDK token (only a person signed in on widgetic.com can make a key), the account belongs to someone else, or its plan does not include API keys",
+            "description": "The request was made with an API key or an SDK token (only a person signed in on widgetic.com can make a key), the account belongs to someone else, or the account is a customer's (`PERSONAL_API_KEY_RETIRED`; `error.details.useInstead` names the operation that makes a workspace key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5817,7 +5439,7 @@
           "Uploads"
         ],
         "summary": "List the account's uploads",
-        "description": "The files of the workspace the caller works in, newest first: a team's shared files (every member's, and those of members who have since left) when the caller works in a team, and the account's own files otherwise. A person signed in on widgetic.com who works in their own workspace sees only the files they uploaded there, not the ones they uploaded inside a team (those are in the team's workspace). An API key lists every file of the account. Deleted files are not listed. Returns at most `limit` files and has no further pages: a client that needs more narrows the list instead, for example to one managed user's files with `managedUserId` or `managedUserExternalId`. The files that visitors sent through a widget's upload adapter (`source` is `widget-visitor-upload`) are not part of this list, so that a popular widget does not push the account's own files out of it; naming one widget with `widgetId` lists what visitors sent to that widget as well.\n",
+        "description": "The files of the workspace the caller works in, newest first: the workspace's shared files (every member's, and those of members who have since left). The workspace is the one a person signed in on widgetic.com switched to, or the one an API key or a connection belongs to; an editor session names none and lists the files of the account. Deleted files are not listed. Returns at most `limit` files and has no further pages: a client that needs more narrows the list instead, for example to one managed user's files with `managedUserId` or `managedUserExternalId`. The files that visitors sent through a widget's upload adapter (`source` is `widget-visitor-upload`) are not part of this list, so that a popular widget does not push the account's own files out of it; naming one widget with `widgetId` lists what visitors sent to that widget as well.\n",
         "security": [
           {
             "apiKeyAuth": []
@@ -6109,7 +5731,7 @@
         ],
         "operationId": "validateToken",
         "summary": "Validate current authentication token",
-        "description": "Describes the credential the request was made with: how it signs in (`tokenType`), what it may do (`scopes`) and the\naccount it belongs to (`userId`). A credential that belongs to the platform itself, and not to a customer's account, is\nheld to no scope: it is answered with `tokenType` `service_key`, `scopes` `[\"*:*\"]` and no `userId`.\n",
+        "description": "Describes the credential the request was made with: how it signs in (`tokenType`), what it may do (`scopes`), the\naccount it belongs to (`userId`) and the workspace it works in (`workspace`). An API key works in the one workspace it\nwas made for, whichever workspace its owner is looking at on widgetic.com; a signed-in session names none (`workspace`\nis null), and follows the workspace the person has chosen. A credential that belongs to the platform itself, and not to\na customer's account, is held to no scope: it is answered with `tokenType` `service_key`, `scopes` `[\"*:*\"]`, no `userId`\nand no `workspace`.\n",
         "x-access-level": "user",
         "x-visibility": "public",
         "security": [
@@ -6166,6 +5788,24 @@
                           "type": "string",
                           "format": "date-time",
                           "example": "2024-12-31T23:59:59Z"
+                        },
+                        "workspace": {
+                          "type": "object",
+                          "nullable": true,
+                          "description": "The workspace the credential works in: the one an API key was made for. Null for a credential that names none (a signed-in session follows the person's workspace choice).",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "example": "5f1c1a6e-2f0c-4f3a-9d0f-6a2a3a1c9b7e"
+                            },
+                            "name": {
+                              "type": "string",
+                              "nullable": true,
+                              "description": "The workspace's name; null when it could not be read just now.",
+                              "example": "Studio"
+                            }
+                          }
                         }
                       }
                     },
@@ -6198,7 +5838,7 @@
       "get": {
         "operationId": "getMyPartners",
         "summary": "Find the partner you administer",
-        "description": "Returns the partner (nearly always one) that the signed-in account administers, with the id every other\npartner route asks for and the standing it is in: `active`, `inactive` (not activated yet), `suspended`\n(paused, with the reason Widgetic gave) or `payment_arrears` (a contract invoice is past its due date and\nunpaid, since `overdueSince`; the partner is stopped until it is paid). A partner API key is that account's\nkey, so it reads its own partner here.\n\nAn account that administers no partner is not refused: it gets `standing: not_a_partner` and an empty\nlist, so a dashboard can tell \"this is not a partner account\" from \"something failed\".\n\nThe call stays open while the partner is paused, not yet active or in payment arrears: that is when its\ndashboard has to say why.\n",
+        "description": "Returns the partner (nearly always one) that the signed-in account administers, with the id every other\npartner route asks for and the standing it is in: `active`, `inactive` (not activated yet), `suspended`\n(paused, with the reason Widgetic gave) or `payment_arrears` (a contract invoice is past its due date and\nunpaid, since `overdueSince`; the partner is stopped until it is paid). A partner API key (`wgt_prt_`) is that\naccount's key, and so is a workspace key (`wdg_org_`) of the partner's home workspace, so either reads its own\npartner here.\n\nAn account that administers no partner is not refused: it gets `standing: not_a_partner` and an empty\nlist, so a dashboard can tell \"this is not a partner account\" from \"something failed\".\n\nThe call stays open while the partner is paused, not yet active or in payment arrears: that is when its\ndashboard has to say why.\n",
         "tags": [
           "Partners"
         ],
@@ -6247,7 +5887,7 @@
       "get": {
         "operationId": "getPartnerCreditBalance",
         "summary": "Get partner credit balance",
-        "description": "Returns the credits the partner has, and how much of that is reserved by operations that are still running.\nA partner has ONE account for its credits: the account of the person who administers it, the same account\nits API key acts as. There is nothing else to create or to fund. What its customers' editor sessions and its\nown API calls spend comes out of that account, and the credits a paid invoice carries are added to it, so\nthis is that person's whole balance (the credits of every workspace of the account together), where\n`getUserCreditBalance` reads the one workspace the request acts in.\n\nA partner with no administrator has no account to hold credits, and reads a balance of 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
+        "description": "Returns the credits the partner has, and how much of that is reserved by operations that are still running.\nA partner's credits belong to its own workspace, the one that is made with the partner, and are all held in\nONE account: the account of the person who administers it, the same account its API key acts as. There is\nnothing else to create or to fund. What its customers' editor sessions and its own API calls spend comes out of that\nworkspace, and the credits a paid invoice carries are added to it, so this is the balance of the partner's\nworkspace, where `getUserCreditBalance` reads the workspace the request acts in. The other workspaces its\nadministrator may own hold credits of their own, which are not the partner's and are not in this balance.\n\nA partner with no administrator has no account to hold credits, and reads a balance of 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
           "Partners"
         ],
@@ -6318,7 +5958,7 @@
       "get": {
         "operationId": "getPartnerCreditTransactions",
         "summary": "Get partner credit transaction history",
-        "description": "Lists what happened to the partner's credits, newest first: the entries of the credit ledger of the account of\nthe person who administers it, the one account a partner has for its credits. Every operation that spends\ncredits is a `debit` entry, and the credits an invoice carried arrive as `credit` entries when the invoice is\npaid, so this is also how the partner's usage is read. It is that person's whole ledger (the entries of every\nworkspace of the account together), where `getUserCreditTransactions` reads the one workspace the request acts\nin.\n\nA partner with no administrator has no account, and an empty ledger.\n\nThe page is always bounded: `limit` defaults to 20 and is capped at 100, `offset` defaults to 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
+        "description": "Lists what happened to the partner's credits, newest first: the entries of the credit ledger of the partner's\nworkspace, held in the account of the person who administers it, the one account a partner has for its credits.\nEvery operation that spends credits is a `debit` entry, the credits an invoice carried arrive as `credit`\nentries when the invoice is paid, and the credits of a contract period that end are an `expiration` entry, so\nthis is also how the partner's usage is read. It is the statement of the partner's workspace, where\n`getUserCreditTransactions` reads the workspace the request acts in; the entries of the other workspaces its\nadministrator may own are not in it.\n\nA partner with no administrator has no account, and an empty ledger.\n\nThe page is always bounded: `limit` defaults to 20 and is capped at 100, `offset` defaults to 0.\n\nAccess: the person who administers the partner, or a Widgetic administrator.\n",
         "tags": [
           "Partners"
         ],
@@ -6580,7 +6220,7 @@
       "get": {
         "operationId": "getPartnerBillingOverview",
         "summary": "Get comprehensive partner billing overview",
-        "description": "Retrieves the partner's credits (`operationalCredits`), the partner's contract terms (`partnerCustomization`, the same fields as `getPartnerContract`) and billing integration status. Internal negotiation notes are not part of it.\n`operationalCredits` is the one account a partner has for its credits: the account of the person who administers it. It holds `balance` (the same balance `getPartnerCreditBalance` reads), `reservedBalance`, `availableBalance` (what a new operation can use) and `recentTransactions` (the ten newest entries of the ledger `getPartnerCreditTransactions` lists). A partner with no administrator has no account, and reads 0 and an empty list.\n",
+        "description": "Retrieves the partner's credits (`operationalCredits`), the partner's contract terms (`partnerCustomization`, the same fields as `getPartnerContract`) and billing integration status. Internal negotiation notes are not part of it.\n`operationalCredits` is the credits of the partner's workspace, held in the one account a partner has for its credits: the account of the person who administers it. It holds `balance` (the same balance `getPartnerCreditBalance` reads), `reservedBalance`, `availableBalance` (what a new operation can use) and `recentTransactions` (the ten newest entries of the ledger `getPartnerCreditTransactions` lists). A partner with no administrator has no account, and reads 0 and an empty list.\n",
         "tags": [
           "Partners"
         ],
@@ -9818,6 +9458,384 @@
         ]
       }
     },
+    "/organizations/{orgId}/domains": {
+      "get": {
+        "operationId": "getOrganizationDomains",
+        "summary": "Get Organization Allowed Domains",
+        "description": "Lists the websites on a workspace's own list, newest first. It is the list Widgetic checks when a widget of the workspace is embedded: when it holds at least one website, the widget is shown on those websites (and on Widgetic's own) and nowhere else; when it is empty, the widget can be shown anywhere. A partner's home workspace also has the websites set on the partner record by Widgetic added to its list, and those are not in this answer. The answer holds the whole list, however long it is: a partner's list has no limit.",
+        "tags": [
+          "Organizations"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Organization ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization domains retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OrganizationDomain"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a member of this organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organization not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "addOrganizationDomain",
+        "summary": "Add Organization Allowed Domain",
+        "description": "Adds a new domain to the workspace's allowed domains list for widget embedding restrictions. The list of an ordinary workspace holds at most 50 websites (a 409 says so); the home workspace of a partner has no limit, because a partner adds its customers' websites by code.",
+        "tags": [
+          "Organizations"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Organization ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddDomainRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Domain added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddOrganizationDomainResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid domain format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not authorized to manage domains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organization not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Domain already exists, or the list already holds 50 websites (not for a partner's home workspace)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{orgId}/domains/{domainId}": {
+      "put": {
+        "operationId": "updateOrganizationDomain",
+        "summary": "Update Organization Allowed Domain",
+        "description": "Updates an existing domain in the organization's allowed domains list",
+        "tags": [
+          "Organizations"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "in": "path",
+            "name": "domainId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Domain ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDomainRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOrganizationDomainResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid domain format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not authorized to manage domains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organization or domain not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Domain already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteOrganizationDomain",
+        "summary": "Delete Organization Allowed Domain",
+        "description": "Removes a domain from the organization's allowed domains list",
+        "tags": [
+          "Organizations"
+        ],
+        "security": [
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "x-access-level": "user",
+        "x-visibility": "public",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "in": "path",
+            "name": "domainId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Domain ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteOrganizationDomainResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not authorized to manage domains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organization or domain not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/operations/{id}": {
       "get": {
         "operationId": "getOperation",
@@ -10435,7 +10453,7 @@
       "post": {
         "operationId": "createManagedUserEditorSession",
         "summary": "Create an editor session for a managed user",
-        "description": "Makes a short-lived credential that lets the browser of ONE of your managed users use Widgetic's editor\npieces, such as the File Browser and the composition editor, without your API key ever reaching that\nbrowser. Call this from your server when the page that hosts the editor opens, and hand the `token` in\nthe answer to that page.\n\nThe token is shown once. It starts with `wgt_ses_` and the browser sends it as\n`Authorization: Bearer <token>`. It can do only what the `surfaces` you name allow, and only for this\nmanaged user:\n\n- `files`: upload a file (`uploadFile`) and list the files uploaded for this user (`listUploads`). Every\n  file is filed for this user and stored in your own storage destination, never in Widgetic's: a file a\n  customer uploads is yours to keep, and takes none of your storage allowance. Partner storage is not\n  optional, so no session, whatever its surfaces, can be made until you have set a destination\n  (`setPartnerStorageDestination`); until then it is refused with 409 and `PARTNER_STORAGE_REQUIRED`, and\n  when the destination cannot be used with 503 and `STORAGE_DESTINATION_UNAVAILABLE`. A destination you\n  remove after the session was made stops its uploads too (the same 409; the browser is only told that\n  the feature is not available right now). To keep a customer from uploading, leave `files` out of the\n  session and hand the editors your own media library instead (`mediaLibrary`).\n- `editor`: edit one of this user's compositions: read it (`getCompositionById`, its content, design,\n  embed settings and schemas), check a content change (`validateCompositionContent`), and change its\n  name, content, design and embed settings (`updateComposition`, `setDynamicContent`). For a widget that\n  answers visitors' questions from documents (the `ai-answers` adapter), it also lists those documents,\n  adds one as text or as a file (a text file or a picture; a PDF once PDFs are read), and removes one\n  (`getAiAnswersKnowledge`, `addAiAnswersKnowledgeDocument`, `addAiAnswersKnowledgeFile`,\n  `removeAiAnswersKnowledgeDocument`); adding costs no credits, and is limited for each of your users\n  separately. It can reach\n  only compositions you created for this managed user (tag them with `managedUserId` when you create\n  them); any other composition, including another of your users', answers 404.\n- `creator`: use Widgetic's widget creator for this user, including its AI. Draw on canvases and save\n  them (`getAllCanvases`, `getCanvas`, `createCanvas`, `updateCanvas`, `previewDeleteCanvas`,\n  `deleteCanvas`); make, change, copy and delete the widgets on them (`createWidget`, `getWidgets`,\n  `getWidgetsBatch`, `updateWidget`, `uploadWidgetThumbnail`, `duplicateWidget`, `deleteWidget`);\n  list and make the compositions of a widget it built (`getAllCompositions`, `createComposition`), which\n  is how it shows the widget with sample values; keep the\n  conversation of each widget (`getConversationsByWidgetId`, `createConversationForWidget`,\n  `updateConversation`, `getMessages`, `createMessage`, `updateMessage`, `restoreCheckpoint`); and read a\n  widget's schemas and give it its repository (`getWidgetContentSchema`, `getWidgetDesignSchema`,\n  `updateWidgetRepository`). The AI that builds a widget is part of it: list the models\n  (`listLlmModels`), open the widget's repository (`createRepository`,\n  `getRepository`), start a generation and follow or cancel it (`generateCode`,\n  `streamOperationUpdates`, `getOperation`, `cancelOperation`), build and preview the result\n  (`getWidgetRepositoryHead`, `buildWidgetFromRepo`, `previewWidgetVersion`), publish a\n  version of the widget and move between its versions (`publishBuiltWidget`,\n  `getWidgetPublishHistory`, `setWidgetPublishHistoryLive`, `renameWidgetPublishHistoryTitle`), and\n  turn a stroke or a sentence into a decision (`recognizeShape`, `resolveDesignProperty`). It can\n  also offer the customer your presets as starting points: read them and ask for a copy for this customer\n  (`listMyPresets`, `copyMyPreset`; you choose the presets with `setPartnerPreset`).\n  What the session makes is filed for this managed user, and the lists it reads hold only this user's\n  canvases, widgets and compositions. It can reach only canvases, widgets, compositions, repositories,\n  uploaded files and operations made for this managed user (tag the canvases and widgets you create\n  with `managedUserId`); any other canvas, widget, composition, conversation, message, repository, file\n  or operation, including another of your users', answers 404. The creator also saves the composition\n  it is editing (`updateComposition`, from the `editor` surface) and attaches pictures to its chat\n  (`uploadFile`, from the `files` surface), and the surfaces do not imply one another: to open the\n  whole creator for a user, ask for `creator`, `editor` and `files` together. A generation or a build\n  one user starts can be followed and cancelled by that user and by you, never by another of your\n  users. The AI is paid for by your account, as your own calls are: its credits and allowances are\n  yours. A session cannot make a widget public (publishing a version does not), file one under a\n  project or an organization, or set anything the creator does not set: a body with another field is\n  refused with 403 and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n- `workflows`: use Widgetic's Workflows editor for this user. List their workflows and the compositions\n  a workflow of theirs can chain (`listWorkspaceWorkflows`, `listWorkspaceWorkflowCompositionOptions`);\n  list the starting points you offer them and make a workflow from one, which gives the user their own copy\n  of every widget it chains, a composition of their own on each copy, and a draft\n  (`listWorkspaceWorkflowPresets`, `createWorkspaceWorkflowFromPreset`; you offer them with\n  `setPartnerWorkflowPreset`);\n  make, open, change and delete one (`createWorkspaceWorkflow`, `getWorkspaceWorkflow`,\n  `saveWorkspaceWorkflow`, `deleteWorkspaceWorkflow`) and copy it (`duplicateWorkspaceWorkflow`); publish\n  it or discard the changes of its draft (`publishWorkspaceWorkflow`,\n  `discardWorkspaceWorkflowChanges`); read and restore its versions (`listWorkspaceWorkflowVersions`,\n  `getWorkspaceWorkflowVersion`, `restoreWorkspaceWorkflowVersion`); pause, resume, archive and unarchive it\n  (`pauseWorkspaceWorkflow`, `resumeWorkspaceWorkflow`, `archiveWorkspaceWorkflow`,\n  `unarchiveWorkspaceWorkflow`); and read its counts (`getWorkspaceWorkflowStats`). The workspace in each\n  path is `personal`: a session has no other, and a path that names an organization is refused. What the\n  session makes is filed for this managed user (`managedUserId`), the lists hold only this user's workflows,\n  and it can reach only workflows made for this managed user; any other workflow, including one of yours\n  or of another of your users, answers 404. A workflow can chain only the compositions you made for this\n  managed user (tag them with `managedUserId`): one that belongs to anybody else is not available, and\n  publishing a workflow that uses it is refused. A customer can have at most 50 workflows, and what a\n  customer's session reads never says who published a version. A session cannot set who a workflow belongs\n  to or which workspace it is in: a body with another field is refused with 403 and\n  `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n\nEverything else is refused with 403 and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`: a session cannot read your\naccount, make more sessions, change your presets or delete a composition, and a session without the `creator` surface cannot\ncreate or list compositions. Create the composition yourself with your API key, then open the editor on it.\n\nA session ends at `expiresAt` (at most four hours), when you end it (`revokeManagedUserEditorSession`),\nor when the managed user is switched off or deleted. A managed user can have at most 100 live sessions at\nonce (`429 EDITOR_SESSION_LIMIT_REACHED`). A session that is bound to a web page (`allowedOrigin`) is\nrefused from any other origin.\n\nThe AI the session runs is paid for with your credits. Set `maxCredits` to hold the session to a number\nof them: once its generations have taken that many (a generation that fails is refunded and does not\ncount), the next one is refused with 402 and `EDITOR_SESSION_CREDIT_LIMIT_REACHED`, and the browser is told\nonly that the feature is not available right now. Without it, the limit Widgetic has set for your account\napplies when it has set one (the same limit for every session you make, and `maxCredits: null` asks for\nnone), and otherwise the credits of your account are the only ceiling. What each of your users' sessions\nhas spent is in `getManagedUserUsage`.\n\nEach call makes a new session. It does not take an `Idempotency-Key`: the answer holds the token, and\nthe token is never stored where a retry could read it back. The answer is sent with\n`Cache-Control: no-store`.\n",
+        "description": "Makes a short-lived credential that lets the browser of ONE of your managed users use Widgetic's editor\npieces, such as the File Browser and the composition editor, without your API key ever reaching that\nbrowser. Call this from your server when the page that hosts the editor opens, and hand the `token` in\nthe answer to that page.\n\nThe token is shown once. It starts with `wgt_ses_` and the browser sends it as\n`Authorization: Bearer <token>`. It can do only what the `surfaces` you name allow, and only for this\nmanaged user:\n\n- `files`: upload a file (`uploadFile`) and list the files uploaded for this user (`listUploads`). Every\n  file is filed for this user and stored in your own storage destination, never in Widgetic's: a file a\n  customer uploads is yours to keep, and takes none of your storage allowance. Partner storage is not\n  optional, so no session, whatever its surfaces, can be made until you have set a destination\n  (`setPartnerStorageDestination`); until then it is refused with 409 and `PARTNER_STORAGE_REQUIRED`, and\n  when the destination cannot be used with 503 and `STORAGE_DESTINATION_UNAVAILABLE`. A destination you\n  remove after the session was made stops its uploads too (the same 409; the browser is only told that\n  the feature is not available right now). To keep a customer from uploading, leave `files` out of the\n  session and hand the editors your own media library instead (`mediaLibrary`).\n- `editor`: edit one of this user's compositions: read it (`getCompositionById`, its content, design,\n  embed settings and schemas), check a content change (`validateCompositionContent`), and change its\n  name, content, design and embed settings (`updateComposition`, `setDynamicContent`). For a widget that\n  answers visitors' questions from documents (the `ai-answers` adapter), it also lists those documents,\n  adds one as text or as a file (a text file or a picture; a PDF once PDFs are read), and removes one\n  (`getAiAnswersKnowledge`, `addAiAnswersKnowledgeDocument`, `addAiAnswersKnowledgeFile`,\n  `removeAiAnswersKnowledgeDocument`); adding costs no credits, and is limited for each of your users\n  separately. It can reach\n  only compositions you created for this managed user (tag them with `managedUserId` when you create\n  them); any other composition, including another of your users', answers 404.\n- `creator`: use Widgetic's widget creator for this user, including its AI. Draw on canvases and save\n  them (`getAllCanvases`, `getCanvas`, `createCanvas`, `updateCanvas`, `previewDeleteCanvas`,\n  `deleteCanvas`); make, change, copy and delete the widgets on them (`createWidget`, `getWidgets`,\n  `getWidgetsBatch`, `updateWidget`, `uploadWidgetThumbnail`, `duplicateWidget`, `deleteWidget`);\n  list and make the compositions of a widget it built (`getAllCompositions`, `createComposition`), which\n  is how it shows the widget with sample values; keep the\n  conversation of each widget (`getConversationsByWidgetId`, `createConversationForWidget`,\n  `updateConversation`, `getMessages`, `createMessage`, `updateMessage`, `restoreCheckpoint`); and read a\n  widget's schemas and give it its repository (`getWidgetContentSchema`, `getWidgetDesignSchema`,\n  `updateWidgetRepository`). The AI that builds a widget is part of it: list the models\n  (`listLlmModels`), open the widget's repository (`createRepository`,\n  `getRepository`), start a generation and follow or cancel it (`generateCode`,\n  `streamOperationUpdates`, `getOperation`, `cancelOperation`), build and preview the result\n  (`getWidgetRepositoryHead`, `buildWidgetFromRepo`, `previewWidgetVersion`), publish a\n  version of the widget and move between its versions (`publishBuiltWidget`,\n  `getWidgetPublishHistory`, `setWidgetPublishHistoryLive`, `renameWidgetPublishHistoryTitle`), and\n  turn a stroke or a sentence into a decision (`recognizeShape`, `resolveDesignProperty`). It can\n  also offer the customer your presets as starting points: read them and ask for a copy for this customer\n  (`listMyPresets`, `copyMyPreset`; you choose the presets with `setPartnerPreset`).\n  What the session makes is filed for this managed user, and the lists it reads hold only this user's\n  canvases, widgets and compositions. It can reach only canvases, widgets, compositions, repositories,\n  uploaded files and operations made for this managed user (tag the canvases and widgets you create\n  with `managedUserId`); any other canvas, widget, composition, conversation, message, repository, file\n  or operation, including another of your users', answers 404. The creator also saves the composition\n  it is editing (`updateComposition`, from the `editor` surface) and attaches pictures to its chat\n  (`uploadFile`, from the `files` surface), and the surfaces do not imply one another: to open the\n  whole creator for a user, ask for `creator`, `editor` and `files` together. A generation or a build\n  one user starts can be followed and cancelled by that user and by you, never by another of your\n  users. The AI is paid for by your account, as your own calls are: its credits and allowances are\n  yours. A session cannot make a widget public (publishing a version does not), file one under a\n  project or an organization, or set anything the creator does not set: a body with another field is\n  refused with 403 and `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n- `workflows`: use Widgetic's Workflows editor for this user. List their workflows and the compositions\n  a workflow of theirs can chain (`listWorkspaceWorkflows`, `listWorkspaceWorkflowCompositionOptions`);\n  list the starting points you offer them and make a workflow from one, which gives the user their own copy\n  of every widget it chains, a composition of their own on each copy, and a draft\n  (`listWorkspaceWorkflowPresets`, `createWorkspaceWorkflowFromPreset`; you offer them with\n  `setPartnerWorkflowPreset`);\n  make, open, change and delete one (`createWorkspaceWorkflow`, `getWorkspaceWorkflow`,\n  `saveWorkspaceWorkflow`, `deleteWorkspaceWorkflow`) and copy it (`duplicateWorkspaceWorkflow`); publish\n  it or discard the changes of its draft (`publishWorkspaceWorkflow`,\n  `discardWorkspaceWorkflowChanges`); read and restore its versions (`listWorkspaceWorkflowVersions`,\n  `getWorkspaceWorkflowVersion`, `restoreWorkspaceWorkflowVersion`); pause, resume, archive and unarchive it\n  (`pauseWorkspaceWorkflow`, `resumeWorkspaceWorkflow`, `archiveWorkspaceWorkflow`,\n  `unarchiveWorkspaceWorkflow`); and read its counts (`getWorkspaceWorkflowStats`). The workspace in each\n  path is your partner workspace, the `workspaceId` the session answers with: a session has no other, and a\n  path that names any other workspace (a team you belong to included) answers 404. What the\n  session makes is filed for this managed user (`managedUserId`), the lists hold only this user's workflows,\n  and it can reach only workflows made for this managed user; any other workflow, including one of yours\n  or of another of your users, answers 404. A workflow can chain only the compositions you made for this\n  managed user (tag them with `managedUserId`): one that belongs to anybody else is not available, and\n  publishing a workflow that uses it is refused. A customer can have at most 50 workflows, and what a\n  customer's session reads never says who published a version. A session cannot set who a workflow belongs\n  to or which workspace it is in: a body with another field is refused with 403 and\n  `EDITOR_SESSION_FIELD_NOT_ALLOWED`.\n\nEverything else is refused with 403 and `EDITOR_SESSION_ROUTE_NOT_ALLOWED`: a session cannot read your\naccount, make more sessions, change your presets or delete a composition, and a session without the `creator` surface cannot\ncreate or list compositions. Create the composition yourself with your API key, then open the editor on it.\n\nA session ends at `expiresAt` (at most four hours), when you end it (`revokeManagedUserEditorSession`),\nor when the managed user is switched off or deleted. A managed user can have at most 100 live sessions at\nonce (`429 EDITOR_SESSION_LIMIT_REACHED`). A session that is bound to a web page (`allowedOrigin`) is\nrefused from any other origin.\n\nThe AI the session runs is paid for with your credits. Set `maxCredits` to hold the session to a number\nof them: once its generations have taken that many (a generation that fails is refunded and does not\ncount), the next one is refused with 402 and `EDITOR_SESSION_CREDIT_LIMIT_REACHED`, and the browser is told\nonly that the feature is not available right now. Without it, the limit Widgetic has set for your account\napplies when it has set one (the same limit for every session you make, and `maxCredits: null` asks for\nnone), and otherwise the credits of your account are the only ceiling. What each of your users' sessions\nhas spent is in `getManagedUserUsage`.\n\nEach call makes a new session. It does not take an `Idempotency-Key`: the answer holds the token, and\nthe token is never stored where a retry could read it back. The answer is sent with\n`Cache-Control: no-store`.\n",
         "tags": [
           "Managed Users"
         ],
@@ -12143,7 +12161,7 @@
       "get": {
         "operationId": "getUserCreditBalance",
         "summary": "Get an account's credit balance",
-        "description": "Returns the credits an account holds in the workspace the request acts in: the balance, and how much of\nit is reserved by operations that are still running. A credential that belongs to a team acts in that\nteam, a person signed in on widgetic.com acts in the workspace they last switched to, and any other\ncredential acts in the person's own workspace.\n\nAn account reads its own balance; with a partner's API key, that is the account of the person who\nadministers the partner. Widgetic administrators can read any account's, and read all of it (the credits\nof every workspace of that account together). An account that has never held credits reads a balance of\n0. `getPartnerCreditBalance` reads that account's whole balance by partner id.\n",
+        "description": "Returns the credits an account holds in the workspace the request acts in: the balance, and how much of\nit is reserved by operations that are still running. A credential that belongs to a team acts in that\nteam, a person signed in on widgetic.com acts in the workspace they last switched to, and any other\ncredential acts in the person's default workspace (the oldest workspace they own, and for the person who\nadministers a partner, the partner's own workspace).\n\nAn account reads its own balance; with a partner's API key, that is the account of the person who\nadministers the partner. Widgetic administrators can read any account's, and read all of it (the credits\nof every workspace of that account together). An account that has never held credits reads a balance of\n0. `getPartnerCreditBalance` reads the balance of the partner's workspace by partner id.\n",
         "tags": [
           "Credits"
         ],
@@ -20172,7 +20190,7 @@
               "lastEditedBy": {
                 "type": "object",
                 "nullable": true,
-                "description": "Who made the latest change to a workflow of an organization workspace (a team), so that a teammate who\nopens it can be told \"Anna changed this at 14:32\". `null` when nobody can be named (a change made before\nthis was recorded). Left out for a workflow of a personal workspace, and whenever it cannot be read just\nnow. A save that someone else got ahead of says it in `details` of its 409.\n",
+                "description": "Who made the latest change to a workflow of a team workspace, so that a teammate who\nopens it can be told \"Anna changed this at 14:32\". `null` when nobody can be named (a change made before\nthis was recorded). Left out for a workflow made for one of your managed users, and whenever it cannot be read just\nnow. A save that someone else got ahead of says it in `details` of its 409.\n",
                 "properties": {
                   "id": {
                     "type": "string",
@@ -20935,67 +20953,6 @@
           "removed": true
         }
       },
-      "PersonalWorkspaceDomain": {
-        "type": "object",
-        "description": "One website on a person's own list of the websites allowed to show their widgets",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "description": "The id of the entry. Use it to change or remove the entry"
-          },
-          "userId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "The account the list belongs to"
-          },
-          "domain": {
-            "type": "string",
-            "description": "The website as it is kept: lower case, with no scheme, port, path or leading `www.`. A leading `*.` means the website and all of its subdomains",
-            "example": "example.com"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "domain"
-        ],
-        "example": {
-          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "domain": "example.com",
-          "createdAt": "2026-01-15T09:30:00.000Z",
-          "updatedAt": "2026-01-15T09:30:00.000Z"
-        }
-      },
-      "PersonalWorkspaceDomainResult": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "example": "Domain added successfully"
-          },
-          "domain": {
-            "$ref": "#/components/schemas/PersonalWorkspaceDomain"
-          }
-        },
-        "required": [
-          "message",
-          "domain"
-        ],
-        "example": {
-          "message": "Domain added successfully",
-          "domain": null
-        }
-      },
       "ApiKeyScope": {
         "type": "string",
         "enum": [
@@ -21050,6 +21007,11 @@
             "type": "boolean",
             "description": "Whether the key works. A key that is switched off is refused until it is switched on again"
           },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Only on a key a customer made before workspace keys replaced them: the workspace it was made for. The key works in that workspace and nowhere else, whichever workspace its owner is signed in to on widgetic.com. Absent for a key of a partner or staff account, which are the only personal keys made now"
+          },
           "scopes": {
             "type": "array",
             "items": {
@@ -21085,6 +21047,7 @@
           "expiresAt": "2026-01-15T09:30:00.000Z",
           "lastUsedAt": "2026-01-15T09:30:00.000Z",
           "isActive": true,
+          "organizationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "scopes": [
             "Example ApiKeyScope"
           ],
@@ -21751,7 +21714,7 @@
                 }
               }
             },
-            "description": "The partner's credits: what the account that pays for the partner (its administrator's) holds, and the newest entries of that account's ledger. A partner with no administrator reads 0 and an empty list.\n"
+            "description": "The partner's credits: what the partner's workspace holds in the account that pays for the partner (its administrator's), and the newest entries of that workspace's ledger. A partner with no administrator reads 0 and an empty list.\n"
           },
           "partnerCustomization": {
             "nullable": true,
@@ -23572,6 +23535,47 @@
           "updatedAt": "2026-01-15T09:30:00.000Z"
         }
       },
+      "OrganizationDomain": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the organization domain",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain pattern (supports wildcards)",
+            "example": "example.com"
+          },
+          "organizationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the organization that owns this domain",
+            "example": "456e7890-e89b-12d3-a456-426614174001"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the domain was added",
+            "example": "2024-01-15T09:00:00Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the domain was last updated",
+            "example": "2024-01-15T09:00:00Z"
+          }
+        },
+        "example": {
+          "id": "123e4567-e89b-12d3-a456-426614174000",
+          "domain": "example.com",
+          "organizationId": "456e7890-e89b-12d3-a456-426614174001",
+          "createdAt": "2024-01-15T09:00:00Z",
+          "updatedAt": "2024-01-15T09:00:00Z"
+        }
+      },
       "AddDomainRequest": {
         "type": "object",
         "required": [
@@ -23746,7 +23750,7 @@
                 "workflows"
               ]
             },
-            "description": "The pieces of Widgetic's editor the session may drive. `files` is the media library (the File Browser: upload a file, list the files uploaded for this user); what a user uploads is kept in your own storage destination. Partner storage is not optional: a session of any surface can be made only once you have set a destination up (`setPartnerStorageDestination`), and is refused with `409 PARTNER_STORAGE_REQUIRED` until then. `editor` is editing one of this user's compositions: read it, change its name, content, design and embed settings, read its schemas, and ask where to show it (`getCompositionPreview`: the widget's published page). `creator` is Widgetic's widget creator, with its drawing canvas and its AI: this user's canvases, the widgets on them and the conversation of each widget, the generation, build and publish calls that make a widget, and the compositions of those widgets (list, make). The surfaces do not imply one another: the whole creator also saves a composition (`editor`) and attaches pictures to its chat (`files`), so ask for `[\"creator\", \"editor\", \"files\"]`. `workflows` is the Workflows editor: this user's own workflows (list, make, make from one of your starting points, draw, publish, pause, resume, archive, delete, the version history and the counts) under `/workspaces/personal/workflows`, and the compositions made for this user, which are the only ones a workflow of theirs can chain. A workflow is filed under the user it was made for (`managedUserId`), and the session reaches nothing of another user's, nor of yours.\n",
+            "description": "The pieces of Widgetic's editor the session may drive. `files` is the media library (the File Browser: upload a file, list the files uploaded for this user); what a user uploads is kept in your own storage destination. Partner storage is not optional: a session of any surface can be made only once you have set a destination up (`setPartnerStorageDestination`), and is refused with `409 PARTNER_STORAGE_REQUIRED` until then. `editor` is editing one of this user's compositions: read it, change its name, content, design and embed settings, read its schemas, and ask where to show it (`getCompositionPreview`: the widget's published page). `creator` is Widgetic's widget creator, with its drawing canvas and its AI: this user's canvases, the widgets on them and the conversation of each widget, the generation, build and publish calls that make a widget, and the compositions of those widgets (list, make). The surfaces do not imply one another: the whole creator also saves a composition (`editor`) and attaches pictures to its chat (`files`), so ask for `[\"creator\", \"editor\", \"files\"]`. `workflows` is the Workflows editor: this user's own workflows (list, make, make from one of your starting points, draw, publish, pause, resume, archive, delete, the version history and the counts) under `/workspaces/{workspaceId}/workflows`, where `workspaceId` is the one the session answers with (your partner workspace, and no other), and the compositions made for this user, which are the only ones a workflow of theirs can chain. A workflow is filed under the user it was made for (`managedUserId`), and the session reaches nothing of another user's, nor of yours.\n",
             "example": [
               "files",
               "editor"
@@ -23792,6 +23796,7 @@
           "sessionId",
           "managedUserId",
           "managedUserExternalId",
+          "workspaceId",
           "surfaces",
           "expiresAt",
           "createdAt"
@@ -23814,6 +23819,12 @@
           "managedUserExternalId": {
             "type": "string",
             "description": "Your own identifier for the managed user"
+          },
+          "workspaceId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "The workspace this user's content is filed in: your partner workspace, the one made with your partner account (your customers have no workspace of their own). The `workflows` surface names it in every path (`/workspaces/{workspaceId}/workflows`), and the Workflows editor takes it as its `workspaceId`. Any other workspace, your teams included, is refused. Null only when your account has no partner workspace.\n"
           },
           "surfaces": {
             "type": "array",
@@ -23851,6 +23862,7 @@
           "sessionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "managedUserId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "managedUserExternalId": "Example managedUserExternalId",
+          "workspaceId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "surfaces": [],
           "allowedOrigin": "Example allowedOrigin",
           "maxCredits": 42,
@@ -24384,7 +24396,7 @@
       },
       "AccountCreditBalance": {
         "type": "object",
-        "description": "The credits an account holds in one workspace. A workspace's credits are its own: a team's allowance can be spent in that team only, and a person's own credits in their personal workspace only, so the same person reads a different balance in each workspace they belong to, and a team nobody subscribed holds none.\n",
+        "description": "The credits an account holds in one workspace. A workspace's credits are its own and can be spent in that workspace only, so the same person reads a different balance in each workspace they belong to, and a workspace nobody subscribed holds none.\n",
         "properties": {
           "id": {
             "type": "string",
@@ -27258,17 +27270,16 @@
           "organizationId": {
             "type": "string",
             "format": "uuid",
-            "description": "Organization the widget belongs to. You must be a member who may create widgets there.",
+            "description": "The workspace the widget belongs to. You must be a member who may create widgets there. Leave it out and the widget goes where its project is, or, when it names no project, in the workspace your key, your connection or your workspace switcher is working in. Naming a project of one workspace and the id of another is refused (400).",
             "example": "5e2d3f4a-1b6c-4a1f-8b9c-3c2d4e5f6a7b"
           },
           "workspaceType": {
             "type": "string",
             "enum": [
-              "personal",
               "organization"
             ],
-            "description": "Whether the widget lives in your personal workspace or in an organization's.",
-            "example": "personal"
+            "description": "Always `organization`: every widget lives in a workspace, and there is no personal workspace any more. May be left out.",
+            "example": "organization"
           },
           "managedUserId": {
             "type": "string",
@@ -27295,7 +27306,7 @@
           "canvasId": "abc12345-def6-7890-ab12-cd3456ef7890",
           "projectId": "7c1e2f30-4a5b-4c6d-8e9f-0a1b2c3d4e5f",
           "organizationId": "5e2d3f4a-1b6c-4a1f-8b9c-3c2d4e5f6a7b",
-          "workspaceType": "personal",
+          "workspaceType": "organization",
           "managedUserId": "b7c8d9e0-1f2a-4b3c-8d4e-5f6a7b8c9d0e",
           "managedUserExternalId": "user-8841"
         }
@@ -27700,52 +27711,6 @@
                     }
                   }
                 }
-              }
-            }
-          },
-          "meta": {
-            "$ref": "#/components/schemas/ResponseMeta"
-          }
-        }
-      },
-      "PersonalWorkspaceDomainResultResponse": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "Always `true` on a success.",
-            "example": true
-          },
-          "data": {
-            "$ref": "#/components/schemas/PersonalWorkspaceDomainResult"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/ResponseMeta"
-          }
-        }
-      },
-      "DeletePersonalWorkspaceDomainResponse": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "description": "Always `true` on a success.",
-            "example": true
-          },
-          "data": {
-            "type": "object",
-            "properties": {
-              "message": {
-                "type": "string",
-                "example": "Domain deleted successfully"
               }
             }
           },
@@ -28345,6 +28310,87 @@
           },
           "data": {
             "$ref": "#/components/schemas/PartnerDataDatabaseRemoval"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "AddOrganizationDomainResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Always `true` on a success.",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "domain": {
+                "$ref": "#/components/schemas/OrganizationDomain"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "UpdateOrganizationDomainResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Always `true` on a success.",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "domain": {
+                "$ref": "#/components/schemas/OrganizationDomain"
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "DeleteOrganizationDomainResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Always `true` on a success.",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              }
+            }
           },
           "meta": {
             "$ref": "#/components/schemas/ResponseMeta"
@@ -29397,11 +29443,12 @@
         "name": "workspaceId",
         "in": "path",
         "required": true,
-        "description": "The workspace: 'personal' for your own workspace, or the UUID of an organization. A call made for one of your\nmanaged users (`X-Managed-User-Id`) always uses 'personal': a managed user has no other workspace, and a call\nthat names an organization is refused with 403.\n",
+        "description": "The workspace: the UUID of a workspace you belong to. There is no personal workspace: everything you make lives in\na workspace, and `personal` is refused with 400. A call made for one of your managed users (`X-Managed-User-Id`, or\nan editor session) always names your partner workspace, the one an editor session answers with (`workspaceId`): a\nmanaged user has no workspace of their own, and a call that names any other workspace is refused (403 for the\nkey, 404 for an editor session).\n",
         "schema": {
-          "type": "string"
+          "type": "string",
+          "format": "uuid"
         },
-        "example": "personal"
+        "example": "7d0b4c1a-2f6e-4f3a-9b1c-5e8a3d2c1b0f"
       },
       "WorkflowId": {
         "name": "workflowId",
